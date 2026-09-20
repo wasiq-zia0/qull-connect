@@ -1,0 +1,882 @@
+{
+  "/api/cases": {
+    "post": {
+      "201": {
+        "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "case_id": {
+                  "type": "string"
+                },
+                "event_emitted": {},
+                "user_message": {
+                  "type": "string"
+                },
+                "provider": {
+                  "type": "string"
+                },
+                "service_type": {
+                  "type": "string"
+                },
+                "current_monthly_bill": {
+                  "type": "number"
+                },
+                "promo_end_date": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "account_tenure_months": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "user_name": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "created_at": {
+                  "type": "string"
+                },
+                "billing_status": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "stripe_customer_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "outcome": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "additionalProperties": true
+                },
+                "savings": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "fee_rate": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "fee_cents": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "payment_intent_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": true
+            },
+            "examples": {
+              "example_1": {
+                "summary": "Illustrative local test response",
+                "value": {
+                  "case_id": "4c939f410f584c0bb4b617b32836fcdd",
+                  "event_emitted": null,
+                  "user_message": "Case opened for your Comcast internet bill ($100/mo). Your script pack is ready — one tap and you're calling with a plan.",
+                  "provider": "Comcast",
+                  "service_type": "internet",
+                  "current_monthly_bill": 100.0,
+                  "promo_end_date": null,
+                  "account_tenure_months": null,
+                  "user_name": "Alice",
+                  "created_at": "2026-09-20T19:29:08.748837+00:00",
+                  "billing_status": "not_set_up",
+                  "stripe_customer_id": null,
+                  "outcome": null,
+                  "savings": null,
+                  "fee_rate": 0.35,
+                  "fee_cents": null,
+                  "payment_intent_id": null
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cases/{cid}/script": {
+    "get": {
+      "200": {
+        "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "case_id": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                },
+                "script": {
+                  "type": "object",
+                  "properties": {
+                    "provider": {
+                      "type": "string"
+                    },
+                    "provider_matched_as": {
+                      "type": "string"
+                    },
+                    "service_type": {
+                      "type": "string"
+                    },
+                    "current_monthly_bill": {
+                      "type": "number"
+                    },
+                    "retention_note": {
+                      "type": "string"
+                    },
+                    "before_you_call": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "call_script": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "chat_script": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "talking_points": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "after_the_call": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "disclaimer": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "additionalProperties": true
+            },
+            "examples": {
+              "example_1": {
+                "summary": "Illustrative local test response",
+                "value": {
+                  "case_id": "4c939f410f584c0bb4b617b32836fcdd",
+                  "user_message": "Your Comcast script is ready. Contact the provider yourself, describe only changes that actually occurred, and ask about available options. Confirm total costs and terms before accepting an offer.",
+                  "script": {
+                    "provider": "Comcast",
+                    "provider_matched_as": "comcast",
+                    "service_type": "internet",
+                    "current_monthly_bill": 100.0,
+                    "retention_note": "Use this provider's official support channel to ask about account-specific options. No discount, waived fee or special department access is promised.",
+                    "before_you_call": [
+                      "If you're a long-time customer, lead with loyalty and on-time payment history.",
+                      "Know your current bill: $100.00/mo for internet.",
+                      "If available, compare one real competitor offer for equivalent service, including fees and contract terms."
+                    ],
+                    "call_script": [
+                      "Use the support number on your bill or the provider's official website. Ask who can review plan pricing.",
+                      "State your actual current monthly charge and the amount you would like to budget. Explain a promotion ending or bill change only if that happened.",
+                      "Ask: \"Are there any plans, promotions or account-specific discounts available that would lower my total bill?\""
+                    ],
+                    "chat_script": [
+                      "Open the provider's official support site or app.",
+                      "State your actual current bill and ask for available options to lower the total cost.",
+                      "Compare any offered plan against your required service and a real alternative offer, if you have one."
+                    ],
+                    "talking_points": [
+                      "Mention customer tenure and payment history only if accurate.",
+                      "Ask whether existing-customer promotions or discounts apply to your account. Availability is not guaranteed.",
+                      "Compare equivalent service including taxes, recurring fees, equipment and commitment."
+                    ],
+                    "after_the_call": [
+                      "Confirm the new monthly bill, the effective date, and how many months the rate is locked.",
+                      "Get the confirmation number and the rep's name.",
+                      "Report the outcome back here (even 'no success') so savings — and the fee — are accurate."
+                    ],
+                    "disclaimer": "Scripts are negotiation guidance only, not legal or financial advice. The connector never contacts providers on your behalf — you make the call or chat yourself."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cases/{cid}/outcome": {
+    "post": {
+      "200": {
+        "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "case_id": {
+                  "type": "string"
+                },
+                "success": {
+                  "type": "boolean"
+                },
+                "old_monthly_bill": {
+                  "type": "number"
+                },
+                "new_monthly_bill": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "months_locked": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "monthly_saving": {
+                  "type": "number"
+                },
+                "documented_savings": {
+                  "type": "number"
+                },
+                "estimated_fee_cents": {
+                  "type": "integer"
+                },
+                "estimated_fee_rate": {
+                  "type": "number"
+                },
+                "user_message": {
+                  "type": "string"
+                },
+                "provider": {
+                  "type": "string"
+                },
+                "service_type": {
+                  "type": "string"
+                },
+                "current_monthly_bill": {
+                  "type": "number"
+                },
+                "promo_end_date": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "account_tenure_months": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "user_name": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "created_at": {
+                  "type": "string"
+                },
+                "billing_status": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "stripe_customer_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "outcome": {
+                  "type": "object",
+                  "properties": {
+                    "new_monthly_bill": {
+                      "type": "number"
+                    },
+                    "months_locked": {
+                      "type": "integer"
+                    },
+                    "reported_at": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "savings": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "fee_rate": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "fee_cents": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "payment_intent_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": true
+            },
+            "examples": {
+              "example_1": {
+                "summary": "Illustrative local test response",
+                "value": {
+                  "case_id": "4c939f410f584c0bb4b617b32836fcdd",
+                  "success": true,
+                  "old_monthly_bill": 100.0,
+                  "new_monthly_bill": 80.0,
+                  "months_locked": 12,
+                  "monthly_saving": 20.0,
+                  "documented_savings": 240.0,
+                  "estimated_fee_cents": 8400,
+                  "estimated_fee_rate": 0.35,
+                  "user_message": "That's $240 in documented savings over 12 months — from $100 down to $80/mo. My fee would be $84 (35%), and only if you confirm this bill.",
+                  "provider": "Comcast",
+                  "service_type": "internet",
+                  "current_monthly_bill": 100.0,
+                  "promo_end_date": null,
+                  "account_tenure_months": null,
+                  "user_name": "Alice",
+                  "created_at": "2026-09-20T19:29:08.748837+00:00",
+                  "billing_status": "not_set_up",
+                  "stripe_customer_id": null,
+                  "outcome": {
+                    "new_monthly_bill": 80.0,
+                    "months_locked": 12,
+                    "reported_at": "2026-09-20T19:29:08.755305+00:00"
+                  },
+                  "savings": 240.0,
+                  "fee_rate": 0.35,
+                  "fee_cents": null,
+                  "payment_intent_id": null
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/life-events": {
+    "post": {
+      "200": {
+        "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "received": {
+                  "type": "boolean"
+                },
+                "handled": {
+                  "type": "boolean"
+                },
+                "event_type": {
+                  "type": "string"
+                },
+                "case_id": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                },
+                "script": {
+                  "type": "object",
+                  "properties": {
+                    "provider": {
+                      "type": "string"
+                    },
+                    "provider_matched_as": {
+                      "type": "string"
+                    },
+                    "service_type": {
+                      "type": "string"
+                    },
+                    "current_monthly_bill": {
+                      "type": "number"
+                    },
+                    "retention_note": {
+                      "type": "string"
+                    },
+                    "before_you_call": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "call_script": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "chat_script": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "talking_points": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "after_the_call": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "disclaimer": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "provider": {
+                  "type": "string"
+                },
+                "service_type": {
+                  "type": "string"
+                },
+                "current_monthly_bill": {
+                  "type": "number"
+                },
+                "promo_end_date": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "account_tenure_months": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "user_name": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "created_at": {
+                  "type": "string"
+                },
+                "billing_status": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "stripe_customer_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "outcome": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "additionalProperties": true
+                },
+                "savings": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "fee_rate": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "fee_cents": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "payment_intent_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": true
+            },
+            "examples": {
+              "example_1": {
+                "summary": "Illustrative local test response",
+                "value": {
+                  "received": true,
+                  "handled": true,
+                  "event_type": "bill_spike",
+                  "case_id": "5c4091b13ed64c099093e698cd462665",
+                  "user_message": "Your Comcast internet bill changed — I've drafted your case and pulled the negotiation script. Want it? One tap.",
+                  "script": {
+                    "provider": "Comcast",
+                    "provider_matched_as": "comcast",
+                    "service_type": "internet",
+                    "current_monthly_bill": 100.0,
+                    "retention_note": "Use this provider's official support channel to ask about account-specific options. No discount, waived fee or special department access is promised.",
+                    "before_you_call": [
+                      "If you're a long-time customer, lead with loyalty and on-time payment history.",
+                      "Know your current bill: $100.00/mo for internet.",
+                      "If available, compare one real competitor offer for equivalent service, including fees and contract terms."
+                    ],
+                    "call_script": [
+                      "Use the support number on your bill or the provider's official website. Ask who can review plan pricing.",
+                      "State your actual current monthly charge and the amount you would like to budget. Explain a promotion ending or bill change only if that happened.",
+                      "Ask: \"Are there any plans, promotions or account-specific discounts available that would lower my total bill?\""
+                    ],
+                    "chat_script": [
+                      "Open the provider's official support site or app.",
+                      "State your actual current bill and ask for available options to lower the total cost.",
+                      "Compare any offered plan against your required service and a real alternative offer, if you have one."
+                    ],
+                    "talking_points": [
+                      "Mention customer tenure and payment history only if accurate.",
+                      "Ask whether existing-customer promotions or discounts apply to your account. Availability is not guaranteed.",
+                      "Compare equivalent service including taxes, recurring fees, equipment and commitment."
+                    ],
+                    "after_the_call": [
+                      "Confirm the new monthly bill, the effective date, and how many months the rate is locked.",
+                      "Get the confirmation number and the rep's name.",
+                      "Report the outcome back here (even 'no success') so savings — and the fee — are accurate."
+                    ],
+                    "disclaimer": "Scripts are negotiation guidance only, not legal or financial advice. The connector never contacts providers on your behalf — you make the call or chat yourself."
+                  },
+                  "provider": "Comcast",
+                  "service_type": "internet",
+                  "current_monthly_bill": 100.0,
+                  "promo_end_date": null,
+                  "account_tenure_months": null,
+                  "user_name": "Alice",
+                  "created_at": "2026-09-20T19:29:08.759329+00:00",
+                  "billing_status": "not_set_up",
+                  "stripe_customer_id": null,
+                  "outcome": null,
+                  "savings": null,
+                  "fee_rate": 0.35,
+                  "fee_cents": null,
+                  "payment_intent_id": null
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cases/{cid}/billing/setup": {
+    "post": {
+      "200": {
+        "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "case_id": {
+                  "type": "string"
+                },
+                "stripe_customer_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "setup_url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "checkout_session_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "setup_intent_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "fee_disclosure": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "examples": {
+              "example_1": {
+                "summary": "Illustrative hosted-setup response; example URL is not a usable payment session",
+                "value": {
+                  "case_id": "4c939f410f584c0bb4b617b32836fcdd",
+                  "stripe_customer_id": "cus_owned",
+                  "setup_url": "https://checkout.stripe.com/example-not-a-live-session",
+                  "checkout_session_id": "cs_owned",
+                  "setup_intent_id": null,
+                  "fee_disclosure": "You will be charged 35% of your documented bill savings, only if you confirm the new lower bill. No charge otherwise.",
+                  "user_message": "You will be charged 35% of your documented bill savings, only if you confirm the new lower bill. No charge otherwise. Open setup_url to save a payment method securely with Stripe. Saving it does not charge a fee."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cases/{cid}/billing/status": {
+    "get": {
+      "200": {
+        "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "case_id": {
+                  "type": "string"
+                },
+                "billing_status": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "card_state": {
+                  "type": "string"
+                },
+                "setup_status": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "fee_disclosure": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "examples": {
+              "example_1": {
+                "summary": "Card setup pending (illustrative provider fixture)",
+                "value": {
+                  "case_id": "4c939f410f584c0bb4b617b32836fcdd",
+                  "billing_status": "card_pending",
+                  "card_state": "pending",
+                  "setup_status": "requires_confirmation",
+                  "fee_disclosure": "You will be charged 35% of your documented bill savings, only if you confirm the new lower bill. No charge otherwise.",
+                  "user_message": "Card setup has not been confirmed. Open the Stripe setup link and complete it."
+                }
+              },
+              "example_2": {
+                "summary": "Card setup ready (illustrative provider fixture)",
+                "value": {
+                  "case_id": "4c939f410f584c0bb4b617b32836fcdd",
+                  "billing_status": "card_pending",
+                  "card_state": "ready",
+                  "setup_status": "succeeded",
+                  "fee_disclosure": "You will be charged 35% of your documented bill savings, only if you confirm the new lower bill. No charge otherwise.",
+                  "user_message": "Your payment method is saved. Review and explicitly approve the fee before payment."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cases/{cid}/billing/quote": {
+    "get": {
+      "200": {
+        "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "case_id": {
+                  "type": "string"
+                },
+                "currency": {
+                  "type": "string"
+                },
+                "documented_savings": {
+                  "type": "number"
+                },
+                "months_locked": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "fee_rate": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "fee_amount_cents": {
+                  "type": "integer"
+                },
+                "charged": {
+                  "type": "boolean"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "examples": {
+              "example_1": {
+                "summary": "Illustrative local test response",
+                "value": {
+                  "case_id": "4c939f410f584c0bb4b617b32836fcdd",
+                  "currency": "USD",
+                  "documented_savings": 240.0,
+                  "months_locked": 12,
+                  "fee_rate": 0.35,
+                  "fee_amount_cents": 8400,
+                  "charged": false,
+                  "user_message": "The fee would be $84.00, based on the recorded savings and capped at 12 months. Review and approve the exact amount before payment."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cases/{cid}/savings-confirmed": {
+    "post": {
+      "200": {
+        "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "case_id": {
+                  "type": "string"
+                },
+                "documented_savings": {
+                  "type": "number"
+                },
+                "fee_rate": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "fee_cents": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "payment_intent_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "status": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "examples": {
+              "example_1": {
+                "summary": "Illustrative local test response",
+                "value": {
+                  "case_id": "4c939f410f584c0bb4b617b32836fcdd",
+                  "documented_savings": 240.0,
+                  "fee_rate": 0.35,
+                  "fee_cents": 8400,
+                  "payment_intent_id": "pi_owned",
+                  "status": "fee_charged",
+                  "user_message": "Done — $84 charged (35% of $240 in savings). That's money back in your pocket every month from here on."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

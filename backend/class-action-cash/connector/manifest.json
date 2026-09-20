@@ -1,138 +1,253 @@
 {
- "actions_on_install": "none",
- "auth": {
-  "type": "oauth2_user",
-  "why": "To read the user's email receipts (read-only) and match them against open class-action settlements. The connector never sends, replies to, forwards, or deletes mail."
- },
- "description": "Matches your email receipts against open class-action settlements, prepares pre-filled claim packs, and takes 20% only when you confirm a payout. You always file the claim yourself; the connector never files or auto-charges.",
- "display_name": "Class Action Cash",
- "proactive_triggers": [
-  {
-   "action": "receive_life_event",
-   "description": "A Gmail receipt matches an open settlement's purchase criteria",
-   "event": "settlement_match",
-   "needs_user_confirmation": true
-  }
- ],
- "tools": [
-  {
-   "description": "List currently-open class-action settlements with deadlines and a data-freshness warning",
-   "input_schema": {
-    "properties": {},
-    "type": "object"
-   },
-   "name": "list_settlements"
+  "actions_on_install": "none",
+  "auth": {
+    "type": "api_key",
+    "header": "Authorization",
+    "scheme": "Bearer",
+    "description": "Operator-provisioned opaque key for one user. No OAuth or confirmed Muse identity exchange is implemented."
   },
-  {
-   "description": "Scan receipts against open settlements ('gmail' read-only, or 'fixtures' demo data); emits settlement_match life events",
-   "input_schema": {
-    "properties": {
-     "source": {
-      "default": "gmail",
-      "enum": [
-       "gmail",
-       "fixtures"
-      ],
-      "type": "string"
-     }
+  "description": "Match receipts you provide against the available settlement catalog and prepare a claim-information pack for you to review and file on the official site. 20% of the actual settlement payout you confirm for this service. Filing directly with a settlement administrator is free.",
+  "display_name": "Class Action Cash",
+  "proactive_triggers": [],
+  "tools": [
+    {
+      "name": "list_settlements",
+      "description": "List source-verified unexpired settlements; matches are only eligibility candidates.",
+      "input_schema": {
+        "properties": {},
+        "title": "list_settlementsArguments",
+        "type": "object"
+      }
     },
-    "type": "object"
-   },
-   "name": "scan_receipts"
-  },
-  {
-   "description": "List all settlement matches found so far",
-   "input_schema": {
-    "properties": {},
-    "type": "object"
-   },
-   "name": "get_matches"
-  },
-  {
-   "description": "Build the filing pack for a match: eligibility checklist, filing steps, pre-filled info sheet. The user files the claim; this never files anything.",
-   "input_schema": {
-    "properties": {
-     "address": {
-      "type": "string"
-     },
-     "email": {
-      "type": "string"
-     },
-     "full_name": {
-      "type": "string"
-     },
-     "match_id": {
-      "type": "string"
-     }
+    {
+      "name": "scan_receipts",
+      "description": "Match user-supplied receipt excerpts. Gmail OAuth is not implemented.",
+      "input_schema": {
+        "properties": {
+          "receipts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Receipts",
+            "type": "array"
+          },
+          "source": {
+            "default": "receipts",
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "receipts"
+        ],
+        "title": "scan_receiptsArguments",
+        "type": "object"
+      }
     },
-    "required": [
-     "match_id"
-    ],
-    "type": "object"
-   },
-   "name": "generate_claim_pack"
-  },
-  {
-   "description": "Save a card for the later fee. Response carries the exact fee disclosure first: 20% of the confirmed payout, charged only if the user confirms the payout.",
-   "input_schema": {
-    "properties": {
-     "email": {
-      "type": "string"
-     },
-     "match_id": {
-      "type": "string"
-     },
-     "name": {
-      "type": "string"
-     }
+    {
+      "name": "get_matches",
+      "description": "",
+      "input_schema": {
+        "properties": {},
+        "title": "get_matchesArguments",
+        "type": "object"
+      }
     },
-    "required": [
-     "match_id",
-     "name"
-    ],
-    "type": "object"
-   },
-   "name": "setup_billing"
-  },
-  {
-   "description": "User confirms the settlement paid out; charges the 20% fee off-session against the saved card",
-   "input_schema": {
-    "properties": {
-     "amount": {
-      "description": "Confirmed payout received, in dollars",
-      "type": "number"
-     },
-     "match_id": {
-      "type": "string"
-     }
+    {
+      "name": "generate_claim_pack",
+      "description": "Prepare filing information after the user reviews and confirms class eligibility.",
+      "input_schema": {
+        "properties": {
+          "match_id": {
+            "title": "Match Id",
+            "type": "string"
+          },
+          "eligibility_confirmed": {
+            "title": "Eligibility Confirmed",
+            "type": "boolean"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
+            "type": "string"
+          },
+          "email": {
+            "default": "",
+            "title": "Email",
+            "type": "string"
+          },
+          "address": {
+            "default": "",
+            "title": "Address",
+            "type": "string"
+          }
+        },
+        "required": [
+          "match_id",
+          "eligibility_confirmed"
+        ],
+        "title": "generate_claim_packArguments",
+        "type": "object"
+      }
     },
-    "required": [
-     "amount",
-     "match_id"
-    ],
-    "type": "object"
-   },
-   "name": "confirm_payout"
-  },
-  {
-   "name": "receive_life_event",
-   "description": "Shared-bus receiver: log a detected life event, create a draft match, and return the proactive nudge",
-   "input_schema": {
-    "type": "object",
-    "properties": {
-     "event_type": {
-      "type": "string"
-     },
-     "payload": {
-      "type": "object"
-     }
+    {
+      "name": "setup_billing",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "match_id": {
+            "title": "Match Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "accept_fee_terms": {
+            "title": "Accept Fee Terms",
+            "type": "boolean"
+          },
+          "email": {
+            "default": "",
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "match_id",
+          "name",
+          "accept_fee_terms"
+        ],
+        "title": "setup_billingArguments",
+        "type": "object"
+      }
     },
-    "required": [
-     "event_type"
-    ]
-   }
-  }
- ],
- "version": "0.1.0",
- "webhooks": {}
+    {
+      "name": "billing_status",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "match_id": {
+            "title": "Match Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "match_id"
+        ],
+        "title": "billing_statusArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "confirm_payout",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "match_id": {
+            "title": "Match Id",
+            "type": "string"
+          },
+          "amount": {
+            "title": "Amount",
+            "type": "number"
+          },
+          "confirm_fee": {
+            "title": "Confirm Fee",
+            "type": "boolean"
+          },
+          "fee_amount_cents": {
+            "title": "Fee Amount Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "match_id",
+          "amount",
+          "confirm_fee",
+          "fee_amount_cents"
+        ],
+        "title": "confirm_payoutArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "receive_life_event",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          }
+        },
+        "required": [
+          "event_type",
+          "payload"
+        ],
+        "title": "receive_life_eventArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "export_my_data",
+      "description": "Export the caller's local service records.",
+      "input_schema": {
+        "properties": {},
+        "title": "export_my_dataArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "delete_my_data",
+      "description": "Delete the caller's local cases and generated documents after explicit confirmation. Financial records may be retained by Stripe and the payment ledger.",
+      "input_schema": {
+        "properties": {
+          "confirm_delete": {
+            "title": "Confirm Delete",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "confirm_delete"
+        ],
+        "title": "delete_my_dataArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "quote_fee",
+      "description": "Calculate the exact fee without charging, for the user to review.",
+      "input_schema": {
+        "properties": {
+          "match_id": {
+            "title": "Match Id",
+            "type": "string"
+          },
+          "amount": {
+            "title": "Amount",
+            "type": "number"
+          }
+        },
+        "required": [
+          "match_id",
+          "amount"
+        ],
+        "title": "quote_feeArguments",
+        "type": "object"
+      }
+    }
+  ],
+  "version": "1.0.0",
+  "webhooks": {},
+  "documentation_url": "https://qull.io/connect/class-action-cash/api-docs/",
+  "privacy_policy_url": "https://qull.io/connect/class-action-cash/privacy/",
+  "terms_of_service_url": "https://qull.io/connect/class-action-cash/terms/",
+  "support_email": "wasiq@qull.io"
 }

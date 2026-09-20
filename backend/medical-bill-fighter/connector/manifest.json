@@ -1,1 +1,328 @@
-{"actions_on_install":"none","auth":{"type":"oauth2_user","why":"To act on the user's medical bills: read bill/EOB details you provide, generate dispute letters, and collect the contingency fee only when you confirm a reduction."},"description":"Spots errors in medical bills and EOBs in about a minute — duplicates, bill-vs-EOB mismatches, possible balance billing, unbundling heuristics. Builds dispute letter packs. Contingency: 25% of the bill reduction you confirm, charged only then.","display_name":"Medical Bill Fighter","proactive_triggers":[{"action":"receive_life_event","description":"Hospital/provider bill or EOB email detected in Gmail","event":"medical_bill_received","needs_user_confirmation":true,"nudge":"That $4,200 ER bill just landed. 8 in 10 medical bills have errors, and I spot them in seconds. Want me to check yours? One tap."}],"tools":[{"description":"Start the conversational bill check — one question at a time, the golden path","input_schema":{"properties":{"prefill":{"description":"Any known fields: patient_name, provider_name, bill_date, total","type":"object"}},"type":"object"},"name":"start_bill_check"},{"description":"Answer the current bill-check question; detection runs when the last one is answered","input_schema":{"properties":{"answer":{"type":"string"},"case_id":{"type":"string"}},"required":["answer","case_id"],"type":"object"},"name":"answer_question"},{"description":"Open a case from structured bill/EOB data (for agents that already have it)","input_schema":{"properties":{"intake":{"type":"object"}},"required":["intake"],"type":"object"},"name":"create_case"},{"description":"Get a case with its intake, findings, and outcome","input_schema":{"properties":{"case_id":{"type":"string"}},"required":["case_id"],"type":"object"},"name":"get_case"},{"description":"Generate a letter pack PDF (dispute|itemized|assistance|negotiate)","input_schema":{"properties":{"case_id":{"type":"string"},"pack_type":{"enum":["dispute","itemized","assistance","negotiate"],"type":"string"}},"required":["case_id","pack_type"],"type":"object"},"name":"generate_pack"},{"description":"Record the user-confirmed bill reduction; computes the 25% fee","input_schema":{"properties":{"case_id":{"type":"string"},"reduction_amount":{"type":"number"}},"required":["case_id"],"type":"object"},"name":"report_outcome"},{"description":"Create the Stripe customer + SetupIntent; returns the exact fee terms before any card is saved","input_schema":{"properties":{"case_id":{"type":"string"}},"required":["case_id"],"type":"object"},"name":"setup_billing"},{"description":"Charge 25% of the confirmed reduction off-session against the saved card","input_schema":{"properties":{"case_id":{"type":"string"}},"required":["case_id"],"type":"object"},"name":"confirm_reduction_charge"}],"version":"0.2.0","webhooks":{}}
+{
+  "actions_on_install": "none",
+  "auth": {
+    "type": "api_key",
+    "header": "Authorization",
+    "scheme": "Bearer",
+    "description": "Operator-provisioned opaque key for one user. No OAuth or confirmed Muse identity exchange is implemented."
+  },
+  "description": "Review bill and EOB details you enter for a limited set of potential billing issues, then prepare a dispute-letter PDF to send to the billing office yourself. 25% of the actual bill reduction you report and confirm. A flagged item is not a verified error or a guaranteed saving.",
+  "display_name": "Medical Bill Fighter",
+  "proactive_triggers": [],
+  "tools": [
+    {
+      "name": "create_case",
+      "description": "Review user-supplied bill and EOB data for possible issues. Findings are flags for provider/insurer review, not confirmed errors.",
+      "input_schema": {
+        "properties": {
+          "patient_name": {
+            "title": "Patient Name",
+            "type": "string"
+          },
+          "provider_name": {
+            "title": "Provider Name",
+            "type": "string"
+          },
+          "bill_date": {
+            "title": "Bill Date",
+            "type": "string"
+          },
+          "billed_patient_responsibility": {
+            "title": "Billed Patient Responsibility",
+            "type": "number"
+          },
+          "line_items": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Line Items",
+            "type": "array"
+          },
+          "patient_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Patient Email"
+          },
+          "eob": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Eob"
+          },
+          "insurance_plan": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Insurance Plan"
+          },
+          "is_emergency": {
+            "default": false,
+            "title": "Is Emergency",
+            "type": "boolean"
+          },
+          "is_out_of_network": {
+            "default": false,
+            "title": "Is Out Of Network",
+            "type": "boolean"
+          },
+          "facility_in_network": {
+            "default": true,
+            "title": "Facility In Network",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "patient_name",
+          "provider_name",
+          "bill_date",
+          "billed_patient_responsibility",
+          "line_items"
+        ],
+        "title": "create_caseArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_case",
+      "description": "Read only the authenticated user's bill review.",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id"
+        ],
+        "title": "get_caseArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "pack",
+      "description": "Return an authenticated PDF download endpoint after verifying this user's case and pack type. The user reviews and sends the letter.",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id",
+          "type"
+        ],
+        "title": "packArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "list_packs",
+      "description": "List the available letter templates; Qull does not contact providers.",
+      "input_schema": {
+        "properties": {},
+        "title": "list_packsArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "report_outcome",
+      "description": "Record the user's actual reduction and disclose the exact fee. No charge yet.",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "reduction_amount": {
+            "title": "Reduction Amount",
+            "type": "number"
+          }
+        },
+        "required": [
+          "case_id",
+          "reduction_amount"
+        ],
+        "title": "report_outcomeArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "setup_billing",
+      "description": "Return a secure hosted card-save URL and the 25% fee disclosure. No charge.",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "accept_fee_terms": {
+            "title": "Accept Fee Terms",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "case_id",
+          "accept_fee_terms"
+        ],
+        "title": "setup_billingArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "billing_status",
+      "description": "Verify payment method setup and fee status.",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id"
+        ],
+        "title": "billing_statusArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "confirm_reduction_charge",
+      "description": "Charge 25% of the recorded reduction only after the user explicitly consents to the displayed fee.",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "confirm_fee": {
+            "title": "Confirm Fee",
+            "type": "boolean"
+          },
+          "fee_amount_cents": {
+            "title": "Fee Amount Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "case_id",
+          "confirm_fee",
+          "fee_amount_cents"
+        ],
+        "title": "confirm_reduction_chargeArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "start_bill_check",
+      "description": "Start a conversational bill review using only the data supplied by this user.",
+      "input_schema": {
+        "properties": {
+          "payload": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Payload"
+          }
+        },
+        "title": "start_bill_checkArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "answer_question",
+      "description": "Answer the next bill-review intake question.",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "answer": {
+            "title": "Answer",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id",
+          "answer"
+        ],
+        "title": "answer_questionArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "fee_quote",
+      "description": "Read the exact USD fee on the case's stored reduction before asking for payment consent.",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id"
+        ],
+        "title": "fee_quoteArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "delete_my_data",
+      "description": "Delete this user's operational records after explicit confirmation. Required payment records are retained separately.",
+      "input_schema": {
+        "properties": {
+          "consent": {
+            "title": "Consent",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "consent"
+        ],
+        "title": "delete_my_dataArguments",
+        "type": "object"
+      }
+    }
+  ],
+  "version": "1.0.0",
+  "webhooks": {},
+  "documentation_url": "https://qull.io/connect/medical-bill-fighter/api-docs/",
+  "privacy_policy_url": "https://qull.io/connect/medical-bill-fighter/privacy/",
+  "terms_of_service_url": "https://qull.io/connect/medical-bill-fighter/terms/",
+  "support_email": "wasiq@qull.io"
+}

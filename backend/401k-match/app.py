@@ -24,8 +24,9 @@ from typing import Literal
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import ConfigDict, BaseModel, Field
 
+from src import billing
 from src.calc import calculate, ANNUAL_FEE_DOLLARS, PAY_PERIODS
 from src.db import save_plan, get_plan, set_paid, set_billing, save_draft, get_draft, delete_draft
 from src.billing import setup_customer, create_card_setup, charge_fee, CONNECTOR
@@ -42,9 +43,9 @@ app = FastAPI(title="401k-match API", version="0.1.0",
 
 # Middleware order: added last runs first. IdentityMiddleware must run before
 # everything else so unauthenticated requests never reach handlers.
-app.add_middleware(BodySizeLimitMiddleware)
-app.add_middleware(RateLimitMiddleware)
 app.add_middleware(IdentityMiddleware)
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(BodySizeLimitMiddleware)
 
 
 @app.exception_handler(IdentityError)
@@ -60,8 +61,8 @@ DISCLAIMER = (
 )
 
 FEE_DISCLOSURE = (
-    "You will be charged a flat $99.00 per year for the match analysis and fix plan. "
-    "Charged once, after you confirm."
+    "You will be charged a one-time $99.00 for this match analysis and fix plan. "
+    "There is no subscription or automatic renewal. Charged only after you confirm."
 )
 
 NUDGE_JOB_CHANGE = (
@@ -74,8 +75,8 @@ Q_BASICS = (
     "For example: $120k and 4%."
 )
 Q_MATCH = (
-    "Most employers match 50% of contributions up to 6% of salary — want me to "
-    "use that formula? Just say yes, or tell me yours like '100% up to 4%'."
+    "An example formula matches 50% of contributions up to 6% of salary. Use your confirmed plan formula, or choose this example: "
+    "say yes for the example, or enter a formula like '100% up to 4%'."
 )
 Q_BASICS_RETRY = (
     "I didn't quite catch that — what's your annual salary and current "
@@ -99,25 +100,26 @@ def sanitize_text(value: str, max_length: int = 120) -> str:
     return cleaned[:max_length]
 
 
-def _bus_emit(event_type: str, payload: dict) -> dict:
-    """Emit a life event on the shared bus. Never breaks the caller."""
-    try:
-        import sys
-        from pathlib import Path as _P
-        sys.path.insert(0, str(_P.home() / "workspace/connectors/life-events"))
-        import events as life_events
-        return life_events.emit(event_type, payload, source="401k-match")
-    except Exception as exc:  # bus must never break the money flow
-        return {"error": str(exc)}
-
-
 def _money(v: float) -> str:
     return f"${v:,.0f}"
 
 
-class PlanIn(BaseModel):
+class SafeModel(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False, str_strip_whitespace=True)
+
+
+class BillingConsent(SafeModel):
+    accept_fee_terms: Literal[True]
+
+
+class ChargeConsent(SafeModel):
+    fee_amount_cents: int = Field(..., gt=0)
+    confirm_fee: Literal[True] = Field(..., description="Explicit permission to charge the disclosed fee for this record.")
+
+
+class PlanIn(SafeModel):
     name: str = Field(..., min_length=1, max_length=200, description="Plan holder name")
-    salary: float = Field(..., gt=0, description="Annual gross salary in dollars")
+    salary: float = Field(..., gt=0, le=360000, description="Annual gross salary in dollars")
     pay_frequency: Literal["weekly", "biweekly", "semimonthly", "monthly"]
     current_contrib_pct: float = Field(..., ge=0, le=100,
                                       description="Current per-paycheck contribution as % of salary")
@@ -130,17 +132,18 @@ class PlanIn(BaseModel):
                                      description="Optional: new employer name — emits a job_change event so sibling connectors can help")
 
 
-class BillingSetupIn(BaseModel):
-    email: str = ""
+class BillingSetupIn(SafeModel):
+    accept_fee_terms: Literal[True]
+    email: str = Field(default="", max_length=200)
 
 
-class DraftAnswerIn(BaseModel):
+class DraftAnswerIn(SafeModel):
     answer: str = Field(..., min_length=1, max_length=500)
 
 
-class LifeEventIn(BaseModel):
+class LifeEventIn(SafeModel):
     event_type: str
-    payload: dict = {}
+    payload: dict = Field(default_factory=dict)
 
 
 # ---------- speak helpers ----------
@@ -152,8 +155,8 @@ def speak_summary(plan: dict) -> str:
             f"Ran your numbers: at {r['current_contrib_pct']}% you're capturing "
             f"{_money(r['employer_match_now'])} of your {_money(r['max_annual_employer_match'])} "
             f"possible match — leaving {_money(r['uncaptured_match_annual'])} a year on the table. "
-            f"Bump to {r['required_contrib_pct']}% (${r['new_per_paycheck_contrib']:,.2f} a paycheck) "
-            f"and it's yours. Want the full step-by-step fix plan? It's a flat $99 a year, "
+            f"The modeled minimum match-capture rate is {r['required_contrib_pct']}% (${r['new_per_paycheck_contrib']:,.2f} per paycheck). "
+            f"Confirm your plan rules before changing contributions. Want the full step-by-step fix plan? It's a one-time $99, "
             f"charged once after you confirm — just say the word."
         )
     return (
@@ -165,12 +168,12 @@ def speak_summary(plan: dict) -> str:
 def speak_pack(plan: dict) -> str:
     r = plan["result"]
     msg = (
-        f"Here's your fix plan: set your 401(k) contribution to {r['required_contrib_pct']}% — "
+        f"Your illustration uses a minimum match-capture contribution of {r['required_contrib_pct']}% — "
         f"that's ${r['new_per_paycheck_contrib']:,.2f} per paycheck. In your provider's site or app, "
-        f"go to Contributions and change the rate; it usually kicks in within a paycheck or two."
+        f"check the contribution rules and effective date with your plan administrator before making a change."
     )
     if r["true_up"]:
-        msg += " Your employer does a year-end true-up, so hitting the target by December captures the full match."
+        msg += " Your reported plan includes a true-up; confirm its eligibility, timing, and calculation rules with the administrator."
     else:
         msg += " No true-up here, so the sooner you change it, the more match you capture."
     return msg
@@ -224,16 +227,15 @@ def _pack(plan: dict) -> dict:
     steps = [
         "Log in to your 401(k) provider's site or app (e.g. Fidelity, Vanguard, Empower, Schwab).",
         "Open your plan's contribution settings — look for 'Contributions', 'Manage contributions', or 'Deferral elections'.",
-        f"Set your pre-tax (or Roth, per your situation) contribution rate to {r['required_contrib_pct']}%.",
+        f"Ask whether a {r['required_contrib_pct']}% contribution captures the modeled match under your plan rules. This is a minimum match illustration, not a recommendation to reduce existing contributions.",
         "Confirm the change and note the effective date — it usually applies to the next paycheck or within 1–2 pay cycles.",
         f"Verify the next pay stub shows ${r['new_per_paycheck_contrib']} going to the 401(k).",
     ]
     notes = []
     if r["true_up"]:
         notes.append(
-            "Your employer runs a year-end true-up, so the match will be trued up at "
-            "year-end based on your total annual contributions — hitting the target % "
-            "by year-end should capture the full match."
+            "You reported a year-end true-up. Its eligibility and payment rules vary by plan; "
+            "confirm those rules with the administrator. This full-year illustration does not calculate a midyear catch-up."
         )
     else:
         notes.append(
@@ -299,6 +301,7 @@ def _draft_question(draft: dict) -> dict:
 
 def _finalize_draft(draft: dict, owner_id: str) -> dict:
     inputs = draft["state"]["inputs"]
+    inputs = PlanIn(**inputs).model_dump(exclude={"new_employer"})
     plan = _store_plan(inputs, owner_id)
     delete_draft(draft["id"], owner_id)
     summary = _summary(plan)
@@ -315,7 +318,7 @@ def _answer_draft(draft: dict, answer: str, owner_id: str) -> dict:
     if state["step"] == "basics":
         salary = parse_money(answer)
         pct = parse_pct(answer)
-        if salary is None or pct is None:
+        if salary is None or pct is None or not 0 < salary <= 360000 or not 0 <= pct <= 100:
             return {"draft_id": draft["id"], "step": "basics", "done": False,
                     "user_message": Q_BASICS_RETRY}
         inputs["salary"] = salary
@@ -332,7 +335,10 @@ def _answer_draft(draft: dict, answer: str, owner_id: str) -> dict:
                     "user_message": Q_MATCH_RETRY}
         inputs["match_pct"], inputs["match_cap_pct"] = parsed
         save_draft(draft)
-        return _finalize_draft(draft, owner_id)
+        try:
+            return _finalize_draft(draft, owner_id)
+        except ValueError:
+            raise HTTPException(422, "The formula is outside supported ranges; use match rate 0–200% and cap 0–100%.")
 
     return {"draft_id": draft["id"], "step": state["step"], "done": False,
             "user_message": Q_BASICS}
@@ -352,6 +358,7 @@ def receive_life_event(event: LifeEventIn):
 
     job_change -> start a draft plan and return the proactive nudge.
     """
+    owner = require_owner()
     if event.event_type != "job_change":
         return {"received": True, "acted": False,
                 "user_message": "Noted — that's not a moment I can help with, "
@@ -370,7 +377,7 @@ def receive_life_event(event: LifeEventIn):
             pass
     if payload.get("name"):
         prefill["name"] = sanitize_text(str(payload["name"]))
-    draft = _new_draft(prefill=prefill, source="life-event:job_change")
+    draft = _new_draft(prefill=prefill, source="life-event:job_change", owner_id=owner)
     # If the bus already gave us salary + contribution, skip straight to the match question.
     if "salary" in prefill and "current_contrib_pct" in prefill:
         draft["state"]["step"] = "match"
@@ -395,11 +402,11 @@ def create_plan(payload: PlanIn):
     owner = require_owner()
     inputs = {**payload.model_dump(), "name": sanitize_text(payload.name)}
     new_employer = inputs.pop("new_employer", None)
-    plan = _store_plan(inputs, owner)
+    try:
+        plan = _store_plan(inputs, owner)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc))
     out = _summary(plan)
-    if new_employer:
-        emit_res = _bus_emit("job_change", {"new_employer": sanitize_text(new_employer)})
-        out["job_change_emit"] = emit_res
     return out
 
 
@@ -439,7 +446,8 @@ def billing_setup(plan_id: str, payload: BillingSetupIn):
         raise HTTPException(404, "Plan not found")
     if plan["paid"]:
         raise HTTPException(409, "Plan already paid")
-    cust = setup_customer(plan["inputs"]["name"], payload.email)
+    cust = ({"customer_id": plan["stripe_customer_id"]} if plan.get("stripe_customer_id") else
+            setup_customer(plan["inputs"]["name"], payload.email, idempotency_key=f"{CONNECTOR}-customer-{owner}-{plan_id}"))
     if "error" in cust:
         raise HTTPException(502, f"Stripe customer creation failed: {cust['error']}")
     si = create_card_setup(
@@ -447,25 +455,25 @@ def billing_setup(plan_id: str, payload: BillingSetupIn):
         idempotency_key=f"{CONNECTOR}-setup-{owner}-{plan_id}")
     if "error" in si:
         raise HTTPException(502, f"Stripe SetupIntent failed: {si['error']}")
-    set_billing(plan_id, cust["customer_id"], si["setup_intent_id"], owner)
+    set_billing(plan_id, cust["customer_id"], si.get("setup_intent_id"), owner, si.get("checkout_session_id"))
     return {
         "plan_id": plan_id,
         "stripe_customer_id": cust["customer_id"],
         "setup_intent_id": si["setup_intent_id"],
-        "client_secret": si["client_secret"],
+        "client_secret": si.get("client_secret"),
+        "setup_url": si.get("setup_url"), "checkout_session_id": si.get("checkout_session_id"),
         "fee_disclosure": FEE_DISCLOSURE,
         "user_message": (
             "Your card setup is ready — saving a card now costs nothing. "
             + FEE_DISCLOSURE + " Ready to save your card?"
         ),
-        "note": "Collect the card against this client_secret. No charge happens now; "
-                "the $99.00/year fee is charged only after you confirm.",
+        "note": "Open setup_url to save a payment method securely, then return and check billing/status. Saving a card does not authorize the $99 fee.",
     }
 
 
 @app.get("/api/plans/{plan_id}/billing/status")
 def billing_status(plan_id: str):
-    """Pollable billing state: card state + whether the $99/year fee is settled."""
+    """Pollable billing state: card state + whether the $99 one-time fee is settled."""
     owner = require_owner()
     plan = get_plan(plan_id, owner)
     if not plan:
@@ -476,21 +484,25 @@ def billing_status(plan_id: str):
         um = "No card on file yet — say the word and I'll set one up."
     elif plan["paid"]:
         status, card_state = "paid", "ready"
-        um = "The $99.00 yearly fee is paid — your fix plan is unlocked."
+        um = "The $99.00 one-time fee is paid — your fix plan is unlocked."
     else:
         status, card_state = "card_pending", "pending"
-        um = "Your card is on file; nothing is charged until you confirm."
+        verified = billing.retrieve_card_setup(customer_id, setup_intent_id=plan.get("stripe_setup_intent_id"), checkout_session_id=plan.get("checkout_session_id"))
+        if verified.get("status") == "succeeded":
+            status, card_state = "card_ready", "ready"
+        um = "Payment method ready; confirm the fee to continue." if card_state == "ready" else "Complete the secure card setup link before confirming payment."
     return {"plan_id": plan_id,
             "billing_status": status,
             "card_state": card_state,
             "amount_dollars": ANNUAL_FEE_DOLLARS,
+            "fee_amount_cents": 9900, "currency": "usd",
             "fee_disclosure": FEE_DISCLOSURE,
             "user_message": um}
 
 
 @app.post("/api/plans/{plan_id}/pay")
-def pay(plan_id: str):
-    """Charge the flat $99/year fee off-session against the saved card."""
+def pay(plan_id: str, consent: ChargeConsent):
+    """Charge the flat $99 one-time fee off-session against the saved card."""
     owner = require_owner()
     plan = get_plan(plan_id, owner)
     if not plan:
@@ -499,13 +511,16 @@ def pay(plan_id: str):
         raise HTTPException(409, "Plan already paid")
     if not plan.get("stripe_customer_id"):
         raise HTTPException(400, "Run POST /api/plans/{id}/billing/setup first to save a card")
+    if consent.fee_amount_cents != 9900:
+        raise HTTPException(409, detail={"error": "fee_quote_changed", "fee_amount_cents": 9900})
     # The fee amount is the server-side ANNUAL_FEE_CENTS constant — never client input.
     # The stored customer id is used; nothing from the request reaches Stripe.
     res = charge_fee(
         plan["stripe_customer_id"],
-        idempotency_key=f"{CONNECTOR}-fee-{owner}-{plan_id}")
+        idempotency_key=f"{CONNECTOR}-fee-{owner}-{plan_id}",
+        setup_intent_id=plan.get("stripe_setup_intent_id"), checkout_session_id=plan.get("checkout_session_id"), consent=consent.confirm_fee)
     if "error" in res:
-        raise HTTPException(502, f"Stripe charge failed: {res['error']}")
+        return _payment_error(res)
     paid_at = datetime.now(timezone.utc).isoformat()
     # Atomic compare-and-set: a concurrent retry can never double-mark paid.
     if not set_paid(plan_id, plan["stripe_customer_id"], res["payment_intent_id"], paid_at, owner):
@@ -518,13 +533,13 @@ def pay(plan_id: str):
         "payment_intent_id": res["payment_intent_id"],
         "status": res["status"],
         "paid_at": paid_at,
-        "user_message": "All set — $99.00 for the year is paid, and your full fix plan is unlocked. Here it comes.",
+        "user_message": "All set — $99.00 for this analysis is paid, and your full fix plan is unlocked. Here it comes.",
     }
 
 
 @app.get("/api/plans/{plan_id}/pack")
 def get_pack(plan_id: str):
-    """Full fix plan. Locked (402) until the $99/year fee is paid."""
+    """Full fix plan. Locked (402) until the $99 one-time fee is paid."""
     owner = require_owner()
     plan = get_plan(plan_id, owner)
     if not plan:
@@ -532,8 +547,32 @@ def get_pack(plan_id: str):
     if not plan["paid"]:
         raise HTTPException(
             402,
-            "Payment required: save a card and pay the $99/year fee "
+            "Payment required: save a card and pay the $99 one-time fee "
             f"(POST /api/plans/{plan_id}/billing/setup then POST /api/plans/{plan_id}/pay) "
             "to unlock the fix plan.",
         )
     return _pack(plan)
+
+
+@app.delete("/api/data")
+def delete_my_data() -> dict:
+    """Delete the authenticated user's operational data. Payment/accounting records remain with the processor and protected billing ledger."""
+    owner = require_owner()
+    from src.db import _conn
+    with _conn() as conn:
+        conn.execute("DELETE FROM drafts WHERE owner_id=?", (owner,))
+        conn.execute("DELETE FROM plans WHERE owner_id=?", (owner,))
+    return {"deleted": True, "retained": "Required payment/accounting records and processor records; backups follow the operator's retention policy.", "user_message": "Your operational records for this connector were deleted. Required payment records are retained separately."}
+
+
+
+def _payment_error(result: dict) -> JSONResponse:
+    code = result.get("code")
+    status = {"payment_processing": 202, "billing_conflict": 409, "payment_not_captured": 409,
+              "billing_configuration": 503, "billing_unavailable": 503, "billing_busy": 503,
+              "billing_failed": 503, "invalid_fee": 422, "consent_required": 422}.get(code, 402)
+    return JSONResponse(status_code=status, content=result)
+
+
+from api_support import install_api_contract
+install_api_contract(app, "401k-match", app.title)

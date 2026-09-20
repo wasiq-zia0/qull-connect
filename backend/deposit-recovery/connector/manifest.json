@@ -1,1 +1,351 @@
-{"actions_on_install":"none","auth":{"type":"oauth2_user","why":"To act on the user's tenancy: read move-related mail with permission, send demand letters, and track their cases."},"description":"Recovers wrongfully withheld rental security deposits. Detects moves, diaries each state's legal deadline, sends statute-citing demand letters on day one past due, and escalates to small-claims packets. Contingency: 25% of recovered funds.","display_name":"Deposit Recovery","proactive_triggers":[{"action":"create_case","description":"Lease, mover confirmation, or USPS change-of-address email detected","event":"user appears to have moved","needs_user_confirmation":true}],"tools":[{"description":"Open a deposit-recovery case after a move","input_schema":{"properties":{"deposit":{"type":"number"},"forwarding_date":{"format":"date","type":"string"},"landlord_address":{"type":"string"},"landlord_name":{"type":"string"},"move_out":{"format":"date","type":"string"},"rental_address":{"type":"string"},"state":{"maxLength":2,"minLength":2,"type":"string"},"tenant_forwarding_address":{"type":"string"},"tenant_name":{"type":"string"}},"required":["tenant_name","state","move_out","deposit","landlord_name","landlord_address","rental_address","tenant_forwarding_address"],"type":"object"},"name":"create_case"},{"description":"Current status: deadline, days remaining/overdue, max recovery, next action","input_schema":{"properties":{"case_id":{"type":"string"}},"required":["case_id"],"type":"object"},"name":"get_case_status"},{"description":"Generate the statute-citing demand letter PDF (only once the deadline has passed)","input_schema":{"properties":{"case_id":{"type":"string"}},"required":["case_id"],"type":"object"},"name":"generate_demand_letter"},{"description":"Look up a state's return deadline, statute, and penalty multiple","input_schema":{"properties":{"state":{"maxLength":2,"minLength":2,"type":"string"}},"required":["state"],"type":"object"},"name":"get_state_law"}],"version":"0.2.0","webhooks":{"case_deadline_passed":"Fired when a tracked case's legal deadline passes; agent generates and queues the demand letter for user approval."}}
+{
+  "actions_on_install": "none",
+  "auth": {
+    "type": "api_key",
+    "header": "Authorization",
+    "scheme": "Bearer",
+    "description": "Operator-provisioned opaque key for one user. No OAuth or confirmed Muse identity exchange is implemented."
+  },
+  "description": "Organize your tenancy details, review an estimated state return deadline, and prepare a demand-letter PDF you can send to your landlord. 25% of the recovered deposit amount you confirm. No recovery confirmation means no recovery fee.",
+  "display_name": "Deposit Recovery",
+  "proactive_triggers": [],
+  "tools": [
+    {
+      "name": "create_case",
+      "description": "Save deposit facts. Reviewed deadlines have limited scope; other states need review.",
+      "input_schema": {
+        "properties": {
+          "tenant_name": {
+            "title": "Tenant Name",
+            "type": "string"
+          },
+          "tenant_forwarding_address": {
+            "title": "Tenant Forwarding Address",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "move_out": {
+            "title": "Move Out",
+            "type": "string"
+          },
+          "deposit": {
+            "title": "Deposit",
+            "type": "number"
+          },
+          "landlord_name": {
+            "title": "Landlord Name",
+            "type": "string"
+          },
+          "landlord_address": {
+            "title": "Landlord Address",
+            "type": "string"
+          },
+          "rental_address": {
+            "title": "Rental Address",
+            "type": "string"
+          },
+          "forwarding_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Forwarding Date"
+          },
+          "tenancy_end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Tenancy End"
+          }
+        },
+        "required": [
+          "tenant_name",
+          "tenant_forwarding_address",
+          "state",
+          "move_out",
+          "deposit",
+          "landlord_name",
+          "landlord_address",
+          "rental_address"
+        ],
+        "title": "create_caseArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_case_status",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id"
+        ],
+        "title": "get_case_statusArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "generate_demand_letter",
+      "description": "Prepare a factual request; the user reviews and sends it.",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id"
+        ],
+        "title": "generate_demand_letterArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "mark_letter_status",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id",
+          "status"
+        ],
+        "title": "mark_letter_statusArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_state_law",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "get_state_lawArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "setup_billing",
+      "description": "Open secure card setup only after the user accepts the disclosed 25% fee terms.",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "accept_fee_terms": {
+            "title": "Accept Fee Terms",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "case_id",
+          "accept_fee_terms"
+        ],
+        "title": "setup_billingArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "billing_status",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id"
+        ],
+        "title": "billing_statusArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "confirm_recovery",
+      "description": "Charge only the exact fee the user explicitly approved on their received recovery.",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "amount_recovered": {
+            "title": "Amount Recovered",
+            "type": "number"
+          },
+          "confirm_fee": {
+            "title": "Confirm Fee",
+            "type": "boolean"
+          },
+          "fee_amount_cents": {
+            "title": "Fee Amount Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "case_id",
+          "amount_recovered",
+          "confirm_fee",
+          "fee_amount_cents"
+        ],
+        "title": "confirm_recoveryArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "receive_life_event",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          }
+        },
+        "required": [
+          "event_type",
+          "payload"
+        ],
+        "title": "receive_life_eventArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_draft",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "draft_id": {
+            "title": "Draft Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "draft_id"
+        ],
+        "title": "get_draftArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "promote_draft",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "draft_id": {
+            "title": "Draft Id",
+            "type": "string"
+          },
+          "fields": {
+            "additionalProperties": true,
+            "title": "Fields",
+            "type": "object"
+          }
+        },
+        "required": [
+          "draft_id",
+          "fields"
+        ],
+        "title": "promote_draftArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "export_my_data",
+      "description": "Export the caller's local service records.",
+      "input_schema": {
+        "properties": {},
+        "title": "export_my_dataArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "delete_my_data",
+      "description": "Delete the caller's local cases and generated documents after explicit confirmation. Financial records may be retained by Stripe and the payment ledger.",
+      "input_schema": {
+        "properties": {
+          "confirm_delete": {
+            "title": "Confirm Delete",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "confirm_delete"
+        ],
+        "title": "delete_my_dataArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "quote_fee",
+      "description": "Calculate the exact fee without charging, for the user to review.",
+      "input_schema": {
+        "properties": {
+          "cid": {
+            "title": "Cid",
+            "type": "string"
+          },
+          "amount_recovered": {
+            "title": "Amount Recovered",
+            "type": "number"
+          }
+        },
+        "required": [
+          "cid",
+          "amount_recovered"
+        ],
+        "title": "quote_feeArguments",
+        "type": "object"
+      }
+    }
+  ],
+  "version": "1.0.0",
+  "webhooks": {},
+  "documentation_url": "https://qull.io/connect/deposit-recovery/api-docs/",
+  "privacy_policy_url": "https://qull.io/connect/deposit-recovery/privacy/",
+  "terms_of_service_url": "https://qull.io/connect/deposit-recovery/terms/",
+  "support_email": "wasiq@qull.io"
+}

@@ -1,10 +1,11 @@
 """SQLite persistence for the 401k-match connector. File-backed only (data/app.db)."""
 
 import json
+import os
 import sqlite3
 from pathlib import Path
 
-DB_PATH = Path(__file__).resolve().parent.parent / "data" / "app.db"
+DB_PATH = Path(os.environ.get("DATA_DIR", str(Path(__file__).resolve().parents[1] / "data"))) / "app.db"
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS plans (
@@ -44,6 +45,10 @@ def _conn() -> sqlite3.Connection:
         if "owner_id" not in cols:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN owner_id TEXT")
         conn.execute(f"CREATE INDEX IF NOT EXISTS idx_{table}_owner ON {table}(owner_id)")
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(plans)")}
+    if "checkout_session_id" not in cols:
+        conn.execute("ALTER TABLE plans ADD COLUMN checkout_session_id TEXT")
+    conn.commit()
     return conn
 
 
@@ -78,6 +83,7 @@ def _row_to_plan(row) -> dict:
         "paid": bool(row["paid"]),
         "stripe_customer_id": row["stripe_customer_id"],
         "stripe_setup_intent_id": row["stripe_setup_intent_id"],
+        "checkout_session_id": row["checkout_session_id"],
         "stripe_payment_intent_id": row["stripe_payment_intent_id"],
         "paid_at": row["paid_at"],
         "owner_id": row["owner_id"],
@@ -108,12 +114,12 @@ def set_paid(plan_id: str, customer_id: str, payment_intent_id: str, paid_at: st
     return cur.rowcount > 0
 
 
-def set_billing(plan_id: str, customer_id: str, setup_intent_id: str, owner_id: str) -> None:
+def set_billing(plan_id: str, customer_id: str, setup_intent_id: str | None, owner_id: str, checkout_session_id: str | None = None) -> None:
     with _conn() as c:
         c.execute(
-            """UPDATE plans SET stripe_customer_id = ?, stripe_setup_intent_id = ?
+            """UPDATE plans SET stripe_customer_id = ?, stripe_setup_intent_id = ?, checkout_session_id = ?
                WHERE id = ? AND owner_id = ?""",
-            (customer_id, setup_intent_id, plan_id, owner_id),
+            (customer_id, setup_intent_id, checkout_session_id, plan_id, owner_id),
         )
 
 
@@ -130,19 +136,10 @@ def save_draft(draft: dict) -> None:
 
 
 def get_draft(draft_id: str, owner_id: str) -> dict | None:
-    """Owner-scoped read. Claims ownerless life-event drafts on first touch."""
+    """Owner-scoped read. Legacy ownerless drafts remain inaccessible."""
     with _conn() as c:
         row = c.execute("SELECT * FROM drafts WHERE id = ? AND owner_id = ?",
                         (draft_id, owner_id)).fetchone()
-        if row is None:
-            unowned = c.execute("SELECT * FROM drafts WHERE id = ? AND owner_id IS NULL",
-                                (draft_id,)).fetchone()
-            if unowned is None:
-                return None
-            c.execute("UPDATE drafts SET owner_id = ? WHERE id = ? AND owner_id IS NULL",
-                      (owner_id, draft_id))
-            row = c.execute("SELECT * FROM drafts WHERE id = ? AND owner_id = ?",
-                            (draft_id, owner_id)).fetchone()
     if not row:
         return None
     return {"id": row["id"], "created_at": row["created_at"],

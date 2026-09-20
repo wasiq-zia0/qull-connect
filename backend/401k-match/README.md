@@ -1,145 +1,118 @@
-# 401(k) Match Finder — connector
+# MatchMax
 
-Finds uncaptured employer 401(k) match and delivers a contribution fix plan.
-**Flat $99.00/year** (charged once, after the user confirms — see "Money flow").
+Model a simple employer-match formula, compare contribution amounts, and get an explanation of the calculation and steps to discuss with your plan administrator.
 
-## Agent-native design
+**Current scope:** Educational calculations for the supported U.S. employer-match formula. Confirm all rules with your plan administrator.
 
-The agent is the UI — there is no app screen. **Every success response carries
-a `user_message` field**: a warm, ready-to-speak sentence the agent says
-verbatim, so every flow is fully demoable inside a plain chat transcript.
+## Deliverables
 
-**Golden path (trigger → one tap → done):** `job_change` life event →
-proactive nudge → one draft question (salary + contribution %) → confirm the
-match formula (defaults to the common 50%-up-to-6%) → payoff summary →
-optional $99/year fix pack. No forms, no homework.
+- A transparent calculation of current contributions and modeled employer matching.
+- A comparison of the current rate with the rate needed for the supported formula.
+- A paid action pack with per-paycheck figures and questions for your plan administrator.
 
-**Advanced path:** `POST /api/plans` with the full intake in one call.
+## What the user supplies
 
-## Run
+- Annual salary and pay frequency
+- Current employee contribution percentage
+- Employer matching percentage and eligible pay cap
+- Whether your plan provides a true-up, as confirmed by its documents
 
-```bash
-cd ~/workspace/connectors/401k-match
-python3 -m venv .venv && .venv/bin/pip install fastapi uvicorn pydantic "mcp>=2"
-.venv/bin/python run.py        # REST :8479 + MCP :8579
-# or individually:
-.venv/bin/python -m uvicorn app:app --port 8479
-.venv/bin/python mcp_server.py  # MCP on :8579
-```
+## Customer workflow
 
-Data: file-backed SQLite at `data/app.db` (never in-memory).
+1. **Read your plan formula.** Get the actual matching terms from your employer or plan documents. Do not assume the example formula applies.
+2. **Enter your figures.** Supply salary, pay frequency, current contribution, and the confirmed match terms.
+3. **Review the comparison.** Check the assumptions and modeled annual amounts. The summary is educational.
+4. **Choose the detailed pack.** If useful, authorize the one-time $99 fee. Make any payroll changes yourself after checking your plan's rules.
 
-## REST endpoints
+## Price and collection
 
-| Method | Path | Description |
+USD $99 once for a plan's detailed analysis and action pack. No automatic annual renewal or recurring billing is included.
+
+For a $120,000 salary with a 50% match up to 6% of pay, contributing 4% models a $2,400 match; contributing 6% models $3,600 before plan-specific limits and timing.
+
+Your employer or retirement-plan administrator may provide match information and calculators at no charge.
+
+Billing setup requires explicit fee-term acceptance (`accept_fee_terms: true`)
+and returns Stripe's hosted setup URL. A return redirect does not establish
+that a payment method is ready; poll the authenticated billing-status endpoint.
+Retrieve the fee quote before asking for payment confirmation; fixed-price
+Moving Concierge and MatchMax expose their amount in billing status. A quote
+does not charge. The charge call requires a fresh confirmation
+(`confirm_fee: true`), the exact expected `fee_amount_cents`, and the
+operation's outcome data. The server
+calculates the amount and verifies the saved payment method. Never treat a
+local customer ID, a sample response, or a health response as proof of payment.
+
+No test may create a live charge without separate explicit authorization.
+Use Stripe test mode for end-to-end payment verification. There is no automatic
+renewal, generic subscription, or automated tax calculation in this release.
+
+## Authentication and access
+
+REST calls use `Authorization: Bearer <opaque Qull user API key>`.
+Each credential maps to one server-controlled owner in `QULL_API_KEYS_FILE`.
+A caller-supplied platform/user header is not production authentication.
+Life-event intake follows the same owner-bound authentication.
+See [integration guide](../../docs/INTEGRATION.md) and
+[deployment documentation](../deploy/DEPLOY.md) for provisioning and hosting.
+
+Public `/health` is process liveness. `/ready` is configuration readiness, not
+confirmation that a customer workflow or payment was completed. No OAuth flow
+or Meta-specific credential exchange is implemented; confirm that integration
+contract before describing the service as connected to Muse.
+
+## Run and develop
+
+From this service directory, install `requirements.txt` in an isolated Python
+environment. Run `python run.py` to start the REST/MCP processes according to
+the checked-in ports, or `uvicorn app:app --host 127.0.0.1 --port 8000` for REST.
+Use the deploy scripts and their current environment documentation for the
+production configuration. Keep databases and credentials out of Git.
+
+## REST operations
+
+| Method | Path | Operation |
 |---|---|---|
-| GET | `/health` | Liveness check |
-| POST | `/api/life-events` | Receive a fanned-out life event (`{"event_type","payload"}`). `job_change` starts a draft plan and returns the proactive nudge in `user_message` |
-| POST | `/api/plans/draft` | Start the conversational intake; returns the first question in `user_message` |
-| POST | `/api/plans/draft/{id}/answer` | Answer the current question; returns the next question or the finished payoff summary |
-| POST | `/api/plans` | Full intake in one call (advanced path). Plan stored; **fix pack locked** |
-| GET | `/api/plans/{id}` | Summary: uncaptured $, current vs max match, paid status |
-| POST | `/api/plans/{id}/billing/setup` | Creates Stripe customer + SetupIntent; returns `client_secret` to save a card. **No charge at this step.** Includes the exact fee disclosure. |
-| POST | `/api/plans/{id}/pay` | Charges the flat $99.00/year off-session against the saved card. Includes the exact fee disclosure. |
-| GET | `/api/plans/{id}/pack` | Full fix plan. **402 Payment Required** until the fee is paid |
+| `GET` | `/health` | Health |
+| `POST` | `/api/life-events` | Receive a fanned-out life event from the shared bus. |
+| `POST` | `/api/plans` | Advanced path: full intake in one call. Plan stored; pack locked. |
+| `POST` | `/api/plans/draft` | Golden path: start the conversational intake. Returns the first question. |
+| `POST` | `/api/plans/draft/{draft_id}/answer` | Answer the current draft question; advances the conversation or finishes the plan. |
+| `GET` | `/api/plans/{plan_id}` | Get plan summary |
+| `POST` | `/api/plans/{plan_id}/billing/setup` | Create the Stripe customer + SetupIntent so the user can save a card. |
+| `GET` | `/api/plans/{plan_id}/billing/status` | Pollable billing state: card state + whether the $99 one-time fee is settled. |
+| `POST` | `/api/plans/{plan_id}/pay` | Charge the flat $99 one-time fee off-session against the saved card. |
+| `GET` | `/api/plans/{plan_id}/pack` | Full fix plan. Locked (402) until the $99 one-time fee is paid. |
+| `DELETE` | `/api/data` | Delete the authenticated user's operational data. Payment/accounting records remain with the processor and protected billing ledger. |
 
-Validation errors return 422 with details; unknown plan/draft → 404.
+The OpenAPI spec in `../../openapi/401k-match.json` supplies exact request
+models. The public server origin is `https://5.78.152.6.nip.io/401k-match`; operation paths
+already contain `/api`. Do not compose `/api/api`.
 
-## Life events (shared bus)
+## Important limits
 
-Integrated per `~/workspace/connectors/life-events/README.md`:
+- The model covers a simple percentage match up to a percentage of pay; it does not model every tiered or discretionary plan.
+- Annualized figures are not a midyear payroll plan. Prior contributions, changing pay, catch-up eligibility, vesting, and payroll timing may change the result.
+- Qull does not access retirement accounts, change payroll elections, choose investments, or guarantee employer contributions.
 
-- **Receives** `job_change` via `POST /api/life-events` (the bus fans it out to
-  `final-paycheck` and `401k-match`). Pre-fills whatever the payload provides
-  (salary, contribution %, name, new employer) and returns the nudge:
-  > "New job, new 401(k). Most people leave free match money on the table in
-  > year one. Tell me your salary and contribution % and I'll check yours in
-  > 30 seconds."
-- **Emits** `job_change` when the user mentions a new employer in the plan
-  intake (`new_employer` field), so sibling connectors can act on it too.
-- Proactive trigger spec: `connector/triggers.yaml`.
+Financial education only; no investment, tax, fiduciary, or individualized financial advice.
 
-## MCP server
+## Data handled
 
-Streamable HTTP at `http://127.0.0.1:8579` (via `mcp_server.py`).
+Salary, pay frequency, contribution/match percentages, true-up assumption, optional name/employer details, calculated plan, and Stripe references.
 
-Tools: `start_draft`, `answer_draft`, `create_plan`, `get_plan_summary`,
-`setup_billing`, `pay_fee`, `get_fix_pack`, `disclaimer`.
-Every tool return carries `user_message`.
+User records are scoped to the authenticated owner. Use documented deletion
+operations where available. Local record deletion does not reverse payments
+or erase Stripe's independent records. A final retention/backup policy and
+support process remain operational launch requirements.
 
-## Money flow (flat $99.00/year)
+## Links
 
-1. `POST /api/plans` — free. Summary shows the uncaptured match and the
-   recommendation; the fix pack stays locked.
-2. `POST /api/plans/{id}/billing/setup` — creates a Stripe customer and a
-   SetupIntent; the user saves a card against the returned `client_secret`.
-   Response states: "You will be charged a flat $99.00 per year for the
-   match analysis and fix plan. Charged once, after you confirm."
-   **No money moves here.**
-3. `POST /api/plans/{id}/pay` — charges **$99.00 once** off-session
-   (Stripe PaymentIntent, `$99.00` = 9900 cents). The fee disclosure is
-   repeated in the response. Plan flips to `paid`.
-4. `GET /api/plans/{id}/pack` — unlocked only when `paid = true`.
+- [Product overview](https://qull.io/connect/matchmax/)
+- [Integration and schema reference](https://qull.io/connect/matchmax/api-docs/)
+- [Privacy policy — draft](https://qull.io/connect/matchmax/privacy/)
+- [Terms — draft](https://qull.io/connect/matchmax/terms/)
+- Contact: wasiq@qull.io (existing Qull contact; mailbox delivery not verified here).
 
-Refund policy: full refund within 14 days of the charge if the fix plan was
-not used/viewed. Full terms: `connector/TERMS.md`.
-
-Stripe is called through the skill CLI
-(`~/workspace/skills/stripe/bin/stripe`) via `src/billing.py`; no raw keys
-in code or logs. Deployment uses a least-privilege restricted Stripe key
-(Customers / SetupIntents / PaymentIntents write only).
-
-## Math (every step shown in `result`)
-
-Inputs: `salary`, `pay_frequency` (weekly 52 / biweekly 26 / semimonthly 24 /
-monthly 12), `current_contrib_pct`, `match_pct` (e.g. 50), `match_cap_pct`
-(e.g. 6), `true_up` (bool).
-
-1. `per_paycheck_gross = salary / periods`
-2. `current_annual_employee = per_paycheck × pct/100 × periods`
-3. `match_cap_dollars = salary × match_cap_pct/100`
-4. `matchable = min(current_annual_employee, match_cap_dollars)`
-5. `employer_match_now = matchable × match_pct/100`
-6. `max_match = match_cap_dollars × match_pct/100`
-7. `uncaptured = max_match − employer_match_now`
-8. `required_contrib_pct = ceil(match_cap_pct to nearest 0.5%)`, capped so
-   `salary × pct/100` never exceeds the IRS elective-deferral limit
-9. `new_per_paycheck = salary × required_pct/100 / periods`
-10. `projected_annual_gain = new_employer_match − employer_match_now`
-
-Worked example: $120,000 salary, biweekly, 4% contribution, 50% match up to
-6% → per-paycheck $4,615.38; current annual $4,800; cap $7,200; match now
-$2,400; max match $3,600; **uncaptured $1,200/yr**; required **6%** → $276.92
-per paycheck.
-
-### IRS-limit constant note
-`src/calc.py` holds `IRS_ELECTIVE_DEFERRAL_LIMIT = 23500.0` with
-`IRS_LIMIT_TAX_YEAR = 2026`. This constant is tax-year-specific and **must
-be reviewed and updated every year** (the 2026 figure is the IRS-published
-elective-deferral limit).
-
-## Fix plan (pack)
-
-Unlocked after payment. Contains: recommended contribution %, per-paycheck
-dollars, annual employee contribution, projected annual gain, generic steps
-to change the rate in any 401(k) provider, and notes on true-up (year-end
-true-up vs per-paycheck matching) and any IRS-limit binding.
-
-## Disclaimer (not financial advice)
-
-This connector is an **educational/financial-education tool only — NOT
-financial advice**. Every summary and pack carries the disclaimer, and users
-should confirm their match formula, vesting, and contribution rules with
-their plan administrator. Full terms: `connector/TERMS.md`.
-
-## Security
-
-- All inputs validated via pydantic; SQLite access uses parameterized queries.
-- All user-supplied text is treated as untrusted data: `sanitize_text()`
-  strips control characters and caps length before storage/use; user input is
-  never interpolated into prompts, SQL, or shell commands.
-- No secrets in code, logs, or the database.
-
-## Hosting
-
-TBD — deployment target not yet chosen.
+A functioning local test is not Meta approval. See [review status](../../STATUS.md)
+for the distinction between source changes, tests, deployment, and review.

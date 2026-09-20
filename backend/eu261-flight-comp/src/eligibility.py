@@ -86,7 +86,9 @@ def verdict(claim: dict) -> dict:
 
     from_ap = lookup_airport(claim.get("from_iata", ""))
     to_ap = lookup_airport(claim.get("to_iata", ""))
-    if from_ap and to_ap and distance_km is None:
+    if not from_ap or not to_ap:
+        return _verdict(False, 0, None, ["Missing airport jurisdiction metadata: manual review required."], claim, from_ap, to_ap)
+    if from_ap and to_ap:
         distance_km = great_circle_km(claim["from_iata"], claim["to_iata"])
         reasons.append(
             f"Great-circle distance {from_ap['city']} ({claim['from_iata'].upper()}) -> "
@@ -99,6 +101,8 @@ def verdict(claim: dict) -> dict:
         return _verdict(eligible, 0, None, reasons, claim, from_ap, to_ap)
 
     tier, reduce_below_h = tier_amount(distance_km)
+    if from_ap and to_ap and from_ap["eu_eea"] and to_ap["eu_eea"] and distance_km > 1500:
+        tier, reduce_below_h = 400, 3
     reasons.append(f"Distance {distance_km:,.0f} km -> Article 7 tier EUR {tier}.")
 
     # --- Scope (Article 3) ---
@@ -125,7 +129,7 @@ def verdict(claim: dict) -> dict:
     # --- Extraordinary circumstances (Art 5(3)) ---
     if claim.get("extraordinary_circumstances"):
         eligible = False
-        reasons.append("Ineligible: airline attributes the disruption to extraordinary "
+        reasons.append("Manual review required: airline attributes the disruption to extraordinary "
                        "circumstances (Art 5(3)). Note: technical faults are generally NOT "
                        "extraordinary (CJEU Wallentin-Hermann); contest this if the cited "
                        "cause is a technical defect.")
@@ -141,7 +145,7 @@ def verdict(claim: dict) -> dict:
         elif arr_delay_h >= 3:
             reasons.append(
                 f"Arrival delay {arr_delay_h:.1f}h >= 3h at final destination: "
-                + ("compensation due (Sturgeon / Art 7)." if ok_so_far
+                + ("preliminary delay criteria met (Sturgeon / Art 7)." if ok_so_far
                    else "meets the delay threshold, but the claim is disqualified above."))
         else:
             eligible = False
@@ -156,9 +160,11 @@ def verdict(claim: dict) -> dict:
         reasons.extend(tmp)
         eligible = eligible and qualifies
     elif disruption == "denied_boarding":
-        reasons.append("Denied boarding against the passenger's will: "
-                       + ("compensation due (Art 4)." if ok_so_far
-                          else "meets the criteria, but the claim is disqualified above."))
+        if claim.get("denied_boarding_involuntary") is not True or claim.get("valid_travel_documents") is not True:
+            eligible = False
+            reasons.append("Missing involuntary denial and valid-document confirmation: manual review required; health or security grounds may exclude compensation.")
+        if eligible:
+            reasons.append("Involuntary denial with valid documents was reported. Article 4 eligibility remains subject to check-in and other conditions.")
     else:
         eligible = False
         reasons.append(f"Unknown disruption type: {disruption!r}.")
@@ -167,11 +173,11 @@ def verdict(claim: dict) -> dict:
     reduced = False
     if eligible and claim.get("rerouted"):
         r_delay = claim.get("reroute_arr_delay_h", arr_delay_h)
-        if r_delay is not None and r_delay < reduce_below_h:
+        if r_delay is not None and r_delay <= reduce_below_h:
             reduced = True
             base_amount = tier // 2
             reasons.append(
-                f"Rerouted with arrival delay {r_delay:.1f}h < {reduce_below_h}h threshold: "
+                f"Rerouted with arrival delay {r_delay:.1f}h <= {reduce_below_h}h threshold: "
                 f"Article 7(2) reduction applies -> EUR {base_amount}.")
     if eligible and not reduced:
         base_amount = tier
@@ -185,16 +191,18 @@ def verdict(claim: dict) -> dict:
 def _cancellation_qualifies(claim: dict, reasons: list[str]) -> bool:
     notice = claim.get("notice_days")
     if notice is None:
-        reasons.append("Cancellation with unknown notice period: treated as <14 days' notice; "
-                       "compensation due unless an Art 5(1)(c) rerouting exception applies.")
-        return True
+        reasons.append("Missing cancellation notice period: manual review required before estimating eligibility.")
+        return False
     if notice >= 14:
         reasons.append(f"Cancellation notified {notice} days before departure (>= 14 days): "
                        "no compensation (Art 5(1)(c)(i)).")
         return False
     if claim.get("rerouted"):
-        early = claim.get("reroute_dep_early_h") or 0
-        late = claim.get("reroute_arr_delay_h") or 0
+        early = claim.get("reroute_dep_early_h")
+        late = claim.get("reroute_arr_delay_h")
+        if early is None or late is None:
+            reasons.append("Missing rerouting departure/arrival timing: manual review required.")
+            return False
         if notice >= 7 and early <= 2 and late < 4:
             reasons.append("Cancellation notified 7-14 days before, rerouting departs <=2h early "
                            "and arrives <4h late: no compensation (Art 5(1)(c)(ii)).")
@@ -204,13 +212,16 @@ def _cancellation_qualifies(claim: dict, reasons: list[str]) -> bool:
                            "and arrives <2h late: no compensation (Art 5(1)(c)(iii)).")
             return False
     reasons.append(f"Cancellation notified {notice} days before departure (< 14 days) without a "
-                   "qualifying rerouting exception: compensation due (Art 5(1)(c)).")
+                   "qualifying rerouting exception: preliminary compensation criteria met (Art 5(1)(c)).")
     return True
 
 
 def _verdict(eligible, amount, distance_km, reasons, claim, from_ap, to_ap):
     return {
         "eligible": eligible,
+        "assessment": "preliminary_eligible" if eligible else "needs_review" if any("manual review" in r.lower() or "missing" in r.lower() or "could not" in r.lower() for r in reasons) else "preliminary_ineligible",
+        "not_a_guarantee": True,
+        "official_source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32004R0261",
         "compensation_eur": amount,
         "distance_km": distance_km,
         "from": {"iata": claim.get("from_iata", "").upper(),

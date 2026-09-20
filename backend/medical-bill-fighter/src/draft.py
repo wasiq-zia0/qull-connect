@@ -10,6 +10,7 @@ Every response is fully demoable inside a plain chat transcript.
 from __future__ import annotations
 
 import re
+import math
 from datetime import date
 from typing import Any, Optional
 
@@ -84,8 +85,23 @@ def new_draft(prefill: Optional[dict[str, Any]] = None) -> dict[str, Any]:
     prefill = prefill or {}
     answers: dict[str, Any] = {}
     for key in ("patient_name", "provider_name", "bill_date", "total", "insurance_plan"):
-        if prefill.get(key) is not None:
-            answers[key] = prefill[key]
+        value = prefill.get(key)
+        if value is None:
+            continue
+        if key in ("patient_name", "provider_name", "insurance_plan"):
+            if isinstance(value, str) and value.strip():
+                answers[key] = value.strip()[:120 if key == "patient_name" else 200]
+        elif key == "bill_date":
+            parsed = _parse_date(str(value))
+            if parsed:
+                answers[key] = parsed
+        elif key == "total":
+            try:
+                number = float(value)
+                if math.isfinite(number) and 0 < number <= 1_000_000:
+                    answers[key] = number
+            except (ValueError, TypeError):
+                pass
     step = 0
     field = _STEPS[step][0]
     while field in answers:
@@ -128,7 +144,7 @@ def apply_answer(draft: dict[str, Any], answer_text: str) -> dict[str, Any]:
         answers[field] = parsed
     elif field == "total":
         amount = _parse_money(text)
-        if amount is None or amount <= 0:
+        if amount is None or not math.isfinite(amount) or not 0 < amount <= 1_000_000:
             return reask("How much is the bill for? Just a number like 4200.")
         answers[field] = amount
     elif field == "line_items":
@@ -136,6 +152,8 @@ def apply_answer(draft: dict[str, Any], answer_text: str) -> dict[str, Any]:
             answers[field] = []
         else:
             items = _parse_line_items(text)
+            if len(items) > 200 or any(not math.isfinite(i["amount"]) or not 0 <= i["amount"] <= 1_000_000 or len(i["code"]) > 20 for i in items):
+                return reask("Provide no more than 200 valid line items with amounts between 0 and 1,000,000.")
             if not items:
                 return reask("I couldn't read those lines — try one per line like '99213 180', or say 'skip'.")
             answers[field] = items
@@ -144,7 +162,7 @@ def apply_answer(draft: dict[str, Any], answer_text: str) -> dict[str, Any]:
             answers[field] = None
         else:
             amount = _parse_money(text)
-            if amount is None:
+            if amount is None or not math.isfinite(amount) or not 0 <= amount <= 1_000_000:
                 return reask("What's the patient-responsibility amount on your EOB? Or say 'skip'.")
             answers[field] = amount
     elif field in ("emergency", "out_of_network"):
@@ -154,6 +172,8 @@ def apply_answer(draft: dict[str, Any], answer_text: str) -> dict[str, Any]:
         answers[field] = val
 
     step += 1
+    while step < len(_STEPS) and _STEPS[step][0] in answers:
+        step += 1
     draft["step"] = step
     draft["answers"] = answers
 

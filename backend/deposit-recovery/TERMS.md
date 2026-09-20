@@ -1,75 +1,63 @@
 # Terms of Service — Deposit Recovery
 
-Plain-language terms. If anything here conflicts with the short summaries in
-the app, this document controls.
+**Draft — pending legal and operational review.**
 
-## What the service does
+Updated September 20, 2026. Operated by Qull, Inc.
 
-Deposit Recovery tracks your rental security deposit after you move out. It
-looks up your state's legal return deadline, watches the calendar, and
-generates a template demand letter citing your state's statute once the
-deadline passes. It can also remind you to confirm whether your deposit came
-back.
+## Service and scope
 
-## What the service does NOT do
+Organize your tenancy details, review an estimated state return deadline, and prepare a demand-letter PDF you can send to your landlord.
 
-- **This is template automation, NOT legal advice.** The demand letter is a
-  fill-in template citing publicly compiled statute references. It is not
-  reviewed by a lawyer and does not create an attorney–client relationship.
-- We do not file lawsuits, negotiate with landlords, or send mail on your behalf.
-- State law data is compiled from public legal guides and may be outdated or
-  incomplete. **Verify the cited statute against current law in your state
-  before sending anything or relying on a deadline.**
+U.S. residential rental deposits. Limited deadline estimates are currently supported for reviewed California, Connecticut, and Texas rules; other states require review and use factual request letters.
 
-## Fees — exactly what you pay and when
+- A case summary with the information used to estimate the return deadline.
+- A letter PDF using your tenancy details; unreviewed state rules produce a neutral request without unsupported legal assertions.
+- A record of your letter status, reported recovery, and fee status.
 
-- **25% of the recovered deposit.** That is the only fee. There are no setup
-  fees, monthly fees, or per-letter fees.
-- **You are charged only if you confirm the recovery.** After you tell us your
-  deposit came back, we charge 25% of the amount you confirmed against the
-  card you saved. Example: you confirm $1,800 recovered → we charge $450.00.
-- **No charge otherwise.** If your deposit never comes back, you pay $0.
-- You will see this exact fee disclosure before you save a card.
+## Your responsibilities
 
-## Cancellation and refunds
+Use the service for records and information you are authorized to provide. Check dates, amounts, identity details, and statements before relying on a result or sending a document. Do not fabricate eligibility, recoveries, savings, receipts, or claims. You remain responsible for taking the action with the relevant organization and meeting its deadlines.
 
-- **You can cancel any time before a charge.** Until you confirm a recovery,
-  nothing can be charged. Ask us to close your case and we will — no fee, no
-  questions.
-- **Refunds:** because the fee is only charged after you confirm you received
-  the money, refunds should be rare. If you believe a charge was made in
-  error, contact support within 30 days and we will review and reverse
-  erroneous charges.
+- The service prepares documents; it does not contact your landlord, mail letters, negotiate, file in court, or provide representation.
+- Only specifically reviewed rule paths provide deadline estimates. Other states or incomplete facts require manual review; lease terms, notices, local rules, and exceptions can change the result.
+- Deadline status is calculated when requested. A live email watcher, scheduled mailing service, and automated reminders are not included.
 
-## Your card
+## Fees and authorization
 
-When you set up billing, we create a Stripe customer for you and collect your
-card against a SetupIntent so it can be charged later, off-session, only on
-your confirmed recovery. We never see or store your full card number — Stripe
-handles that.
+25% of the recovered deposit amount you confirm. No recovery confirmation means no recovery fee.
 
-## Data
+If you confirm that $1,800 was returned, the fee is $450 and you keep $1,350.
 
-We store your case details (names, addresses, dates, deposit amount, billing
-status) to operate the service. We do not sell your data. Case data is stored
-on the server running this connector.
+You can contact your landlord yourself and use your state or local tenant resources without paying Qull.
 
-## Changes
+Saving a payment method does not by itself authorize a fee. Review the exact amount and currency before the final payment confirmation. Qull uses Stripe to process a separately authorized fee; a failed or incomplete card setup does not mean a charge succeeded. No automatic renewal is included in this release.
 
-If the fee or these terms change, the new terms apply only to cases opened
-after the change. Existing cases keep the terms they started under.
+Any applicable tax treatment and final fee agreement must be disclosed before a live charge. Third-party fees, postage, filing costs, provider charges, and government fees are not included unless expressly stated.
 
-## Support
+## Stopping, corrections, and refunds
 
-Questions, cancellations, refund requests: **support@qull.io**.
+You may stop using the service and decline a proposed payment before authorizing it. Stopping use or deleting a record does not automatically cancel a completed payment. Do not describe an outcome as recovered or saved unless it actually occurred.
 
-## Governing law
+If a charge is duplicated, made without the agreed authorization, based on an incorrect amount, or the purchased pack cannot be delivered, contact Qull with the record and payment reference. Qull will investigate and correct confirmed errors. Final refund periods and procedures require approval before paid public launch. Nothing in this draft removes a refund or cancellation right that applicable law requires.
 
-These terms are governed by the laws of **Ontario, Canada**,
-without regard to conflict-of-law principles.
+## Limits of the service
 
-_Last updated: 2026-09-19. Version 0.2.0._
+Document preparation and general information; no legal advice or attorney–client relationship.
 
-_Note: the support contact (support@qull.io) and governing law (Ontario,
-Canada) above were filled as placeholders — counsel must still confirm them.
-These are not final legal terms._
+A generated document, rule flag, match, estimate, or third-party link is not a verified outcome. Results depend on your information, the supported rules, and decisions by other organizations. Qull does not guarantee recovery, savings, eligibility, a successful claim, or acceptance of a document.
+
+## Privacy and acceptable use
+
+[Read the draft privacy policy](/connect/deposit-recovery/privacy/) for the information used by this connector. Do not misuse credentials, access another user’s records, submit unnecessary sensitive information, or use the service to misrepresent facts. Access may be suspended to address abuse, a security issue, or a required operational restriction.
+
+## Availability, law, and changes
+
+This is a pre-launch draft, not a statement that the service is approved by Meta or available in Muse. Public access, final terms, legally permitted fee arrangements, and operational support must be confirmed before launch.
+
+The final agreement, governing-law provision, statutory rights, liability terms, and any sector-specific requirements need legal review. This draft does not assert that a percentage fee is lawful in every jurisdiction or waive mandatory consumer protections.
+
+Qull will publish the final terms and their effective date before general availability. A changed fee must be disclosed and agreed before a later charge; a page edit must not silently change an already accepted payment amount.
+
+## Contact
+
+Questions, account requests, billing errors, and refund requests: [wasiq@qull.io](mailto:wasiq@qull.io). Include the connector name and record/payment reference; never send full card details.

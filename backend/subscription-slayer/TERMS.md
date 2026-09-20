@@ -1,55 +1,63 @@
 # Terms of Service — Subscription Slayer
 
-_Last updated: September 19, 2026_
+**Draft — pending legal and operational review.**
 
-## What this service does
+Updated September 20, 2026. Operated by Qull, Inc.
 
-Subscription Slayer scans for recurring charges (with your Gmail permission), identifies subscriptions, generates cancellation packs with exact steps and scripts, and tracks confirmed savings.
-Everything happens in a chat conversation; there is no app to install.
+## Service and scope
 
-## What this service does NOT do
+Identify recurring charges in receipts you provide, get merchant-specific cancellation instructions, and track the cancellations you complete.
 
-- **We cancel subscriptions on your behalf without your explicit confirmation.**
-- **We read email content beyond receipts.**
-- **We modify your accounts.**
-- We do not store or view your payment card details — card handling is done by Stripe.
+Supported receipt data and merchant guides. Merchant procedures, notice periods, and cancellation fees vary.
 
-## Fee
+- A list of likely recurring subscriptions detected from your supplied receipts.
+- A cancellation guide and merchant link where available, with a generic guide for unsupported merchants.
+- A record of subscription status and the monthly savings you report.
 
-- **$10 flat per completed cancellation.**
-- You are told, in plain language, **before** you save a card:
-  > "You will be charged $10 for each subscription cancellation you confirm — charged once, after you confirm. No charge otherwise."
-- You pay $10 for each subscription you marked cancelled that you confirm — nothing if you confirm nothing.
-- The charge happens **once**, only after you confirm. It is charged off-session to the card
-  you saved. Duplicate charges are prevented: an already-billed cancellation can never be charged again.
+## Your responsibilities
 
-## Refund policy
+Use the service for records and information you are authorized to provide. Check dates, amounts, identity details, and statements before relying on a result or sending a document. Do not fabricate eligibility, recoveries, savings, receipts, or claims. You remain responsible for taking the action with the relevant organization and meeting its deadlines.
 
-- If a cancellation fails to take effect through no fault of yours, the associated savings are removed and no fee is charged for them.
-- To request a refund, contact support (below).
+- Receipt matching can miss subscriptions or mistake repeated purchases for subscriptions. Review every result.
+- Qull does not log into merchant accounts, cancel on your behalf, guarantee refunds, or override merchant terms.
+- Live Gmail access is unavailable. Import your own receipts or enter subscriptions directly; fixture scans are development demonstrations and do not establish real subscriptions.
 
-## Support
+## Fees and authorization
 
-- Email: support@qull.io
-- We aim to respond within 2 business days.
+USD $10 for each completed cancellation you select and explicitly confirm for billing. No recurring Qull subscription fee.
 
-## Privacy
+If you confirm two completed cancellations, the total fee is $20. Cancelling with the merchants remains your responsibility.
 
-- We store detected merchant names, amounts, and billing dates — only from receipts you let it scan.
-- Payment data is processed by Stripe under Stripe's privacy policy; we keep only
-  customer IDs and charge references.
-- We never sell your personal information.
+You can cancel directly with the merchant without using or paying Qull.
 
-## Governing law
+Saving a payment method does not by itself authorize a fee. Review the exact amount and currency before the final payment confirmation. Qull uses Stripe to process a separately authorized fee; a failed or incomplete card setup does not mean a charge succeeded. No automatic renewal is included in this release.
 
-These terms are governed by the laws of Ontario, Canada,
-without regard to its conflict-of-law principles.
+Any applicable tax treatment and final fee agreement must be disclosed before a live charge. Third-party fees, postage, filing costs, provider charges, and government fees are not included unless expressly stated.
 
-## Changes
+## Stopping, corrections, and refunds
 
-We may update these terms; material changes will be shown in chat before they apply to
-a new case. Continued use of the service after the effective date constitutes acceptance.
+You may stop using the service and decline a proposed payment before authorizing it. Stopping use or deleting a record does not automatically cancel a completed payment. Do not describe an outcome as recovered or saved unless it actually occurred.
 
-_Note: the support contact (support@qull.io) and governing law (Ontario,
-Canada) above were filled as placeholders — counsel must still confirm them.
-These are not final legal terms._
+If a charge is duplicated, made without the agreed authorization, based on an incorrect amount, or the purchased pack cannot be delivered, contact Qull with the record and payment reference. Qull will investigate and correct confirmed errors. Final refund periods and procedures require approval before paid public launch. Nothing in this draft removes a refund or cancellation right that applicable law requires.
+
+## Limits of the service
+
+Cancellation guidance and tracking. Merchant charges and terms remain separate from Qull's fee.
+
+A generated document, rule flag, match, estimate, or third-party link is not a verified outcome. Results depend on your information, the supported rules, and decisions by other organizations. Qull does not guarantee recovery, savings, eligibility, a successful claim, or acceptance of a document.
+
+## Privacy and acceptable use
+
+[Read the draft privacy policy](/connect/subscription-slayer/privacy/) for the information used by this connector. Do not misuse credentials, access another user’s records, submit unnecessary sensitive information, or use the service to misrepresent facts. Access may be suspended to address abuse, a security issue, or a required operational restriction.
+
+## Availability, law, and changes
+
+This is a pre-launch draft, not a statement that the service is approved by Meta or available in Muse. Public access, final terms, legally permitted fee arrangements, and operational support must be confirmed before launch.
+
+The final agreement, governing-law provision, statutory rights, liability terms, and any sector-specific requirements need legal review. This draft does not assert that a percentage fee is lawful in every jurisdiction or waive mandatory consumer protections.
+
+Qull will publish the final terms and their effective date before general availability. A changed fee must be disclosed and agreed before a later charge; a page edit must not silently change an already accepted payment amount.
+
+## Contact
+
+Questions, account requests, billing errors, and refund requests: [wasiq@qull.io](mailto:wasiq@qull.io). Include the connector name and record/payment reference; never send full card details.

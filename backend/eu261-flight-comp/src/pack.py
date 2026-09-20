@@ -67,12 +67,11 @@ def build_pdf(claim: dict, verdict: dict, path: str) -> str:
         f"{_u(p.get('flight_number'))} on {_u(p.get('flight_date'))} from "
         f"{_u(v['from']['iata'])} to {_u(v['to']['iata'])}.<br/><br/>"
         f"The flight {_u(delay_txt)} at my final destination. Under Article 7 of the "
-        f"Regulation, I am entitled to fixed compensation of <b>EUR {v['compensation_eur']}</b>.<br/><br/>"
-        f"I enclose copies of my booking confirmation and identification. Please pay the amount "
+        f"Regulation, I request your assessment and payment of <b>EUR {v['compensation_eur']}</b>.<br/><br/>"
+        f"I will provide the booking and travel evidence required to assess my claim. Please pay any amount owed "
         f"to the account details I will provide on request, or contact me at "
         f"{_u(p.get('passenger_email'))}.<br/><br/>"
-        f"If I do not receive a substantive response within six weeks, I will escalate this "
-        f"matter to the relevant national enforcement body.<br/><br/>"
+        f"Please explain any refusal and the applicable complaint or appeal procedure.<br/><br/>"
         f"Yours faithfully,<br/>{_u(p.get('passenger_name'))}"
     )
     add(Paragraph(letter, body))

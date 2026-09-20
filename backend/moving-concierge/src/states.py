@@ -13,9 +13,12 @@ def get_state(abbr: str) -> dict:
     key = (abbr or "").strip().upper()
     if key not in STATES:
         raise KeyError(f"Unknown state abbreviation: {abbr!r}")
-    return STATES[key]
+    record = dict(STATES[key])
+    record["dmv_deadline"] = "after confirming the applicable deadline with the state DMV"
+    record["voter_note"] = "Check the official election office for registration deadlines, eligibility, and available application methods."
+    return record
 
 
 def list_states() -> list[dict]:
     return [{"abbr": s["abbr"], "state": s["state"],
-             "dmv_deadline": s["dmv_deadline"]} for s in STATES.values()]
+             "dmv_deadline": get_state(s["abbr"])["dmv_deadline"]} for s in STATES.values()]

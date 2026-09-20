@@ -1,0 +1,518 @@
+{
+  "/health": {
+    "get": {
+      "200": {
+        "description": "Public process-liveness response; does not establish payment or launch readiness.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ok": {
+                  "type": "boolean"
+                },
+                "service": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "string"
+                },
+                "states": {
+                  "type": "integer"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "ok": true,
+              "service": "unclaimed-property",
+              "version": "0.2.0",
+              "states": 51,
+              "user_message": "Unclaimed-property lookup is up, covering all 50 states plus DC."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/searches": {
+    "post": {
+      "201": {
+        "description": "Creates a free claim guide and user-maintained checklist; no state database is searched.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "search_id": {
+                  "type": "string"
+                },
+                "claimant": {
+                  "type": "string"
+                },
+                "states": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "abbr": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "portal_url": {
+                        "type": "string"
+                      },
+                      "reference_needs_review": {
+                        "type": "boolean"
+                      },
+                      "status": {
+                        "type": "string"
+                      },
+                      "claim_pack": {
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": true
+                  }
+                },
+                "fanout": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "search_id": "a1b2c3d4e5f6",
+              "claimant": "Example User",
+              "states": [
+                {
+                  "abbr": "CA",
+                  "name": "California",
+                  "portal_url": "https://unclaimed.org/",
+                  "reference_needs_review": true,
+                  "status": "not_started",
+                  "claim_pack": "/api/searches/a1b2c3d4e5f6/claim-pack?state=CA"
+                }
+              ],
+              "fanout": null,
+              "user_message": "Done — I've prepared claim packs for California. Each pack has the portal link, step-by-step filing instructions, and your cover sheet. Want to walk through the first one?"
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/searches/{search_id}": {
+    "get": {
+      "200": {
+        "description": "The user-maintained checklist and reported recovery status.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "search_id": {
+                  "type": "string"
+                },
+                "draft": {
+                  "type": "integer"
+                },
+                "claimant": {
+                  "type": "string"
+                },
+                "states": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "abbr": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "portal_url": {
+                        "type": "string"
+                      },
+                      "reference_needs_review": {
+                        "type": "boolean"
+                      },
+                      "status": {
+                        "type": "string"
+                      },
+                      "claim_pack": {
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": true
+                  }
+                },
+                "status_counts": {
+                  "type": "object",
+                  "properties": {
+                    "not_started": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "recoveries": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "search_id": "a1b2c3d4e5f6",
+              "draft": 0,
+              "claimant": "Example User",
+              "states": [
+                {
+                  "abbr": "CA",
+                  "name": "California",
+                  "portal_url": "https://unclaimed.org/",
+                  "reference_needs_review": true,
+                  "status": "not_started",
+                  "claim_pack": "/api/searches/a1b2c3d4e5f6/claim-pack?state=CA"
+                }
+              ],
+              "status_counts": {
+                "not_started": 1
+              },
+              "recoveries": [],
+              "user_message": "Your search covers 1 states and nothing is filed yet. Say the word and I'll walk you through the first claim pack."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/searches/{search_id}/claim-pack": {
+    "get": {
+      "200": {
+        "description": "General guide with the authoritative NAUPA directory, example documents, and reference URLs marked for review.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "search_id": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "object",
+                  "properties": {
+                    "abbr": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "portal_url": {
+                  "type": "string"
+                },
+                "reference_portal_url": {
+                  "type": "string"
+                },
+                "directory_source_url": {
+                  "type": "string"
+                },
+                "reference_needs_review": {
+                  "type": "boolean"
+                },
+                "filing": {
+                  "type": "string"
+                },
+                "steps": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "document_checklist": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "document_checklist_note": {
+                  "type": "string"
+                },
+                "cover_sheet": {
+                  "type": "object",
+                  "properties": {
+                    "full_legal_name": {
+                      "type": "string"
+                    },
+                    "prior_names": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "date_of_birth": {
+                      "type": "string"
+                    },
+                    "state_of_residence_years": {
+                      "type": "string"
+                    },
+                    "note": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "claim_summary": {
+                  "type": "string"
+                },
+                "last_verified": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "reference_review_required": {
+                  "type": "boolean"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "search_id": "a1b2c3d4e5f6",
+              "state": {
+                "abbr": "CA",
+                "name": "California"
+              },
+              "portal_url": "https://unclaimed.org/",
+              "reference_portal_url": "https://www.sco.ca.gov/upd_msg.html",
+              "directory_source_url": "https://www.usa.gov/unclaimed-money",
+              "reference_needs_review": true,
+              "filing": "online",
+              "steps": [
+                "Open the NAUPA directory and select California to reach its current official unclaimed-property program.",
+                "Search the state's database for each of these names (try last name only, and each prior name): Example User",
+                "When you find property that is yours, start a claim from that property record.",
+                "Fill in the claimant details from the cover sheet below and upload or mail every document on the checklist.",
+                "Submit, save the confirmation / claim number, then tell me and I'll mark California as filed.",
+                "State searches and claims are free through the official portals. Paid recovery assistance from this connector is currently unavailable."
+              ],
+              "document_checklist": [
+                "Government-issued photo ID",
+                "Proof of Social Security number (SSN card, W-2, or tax document)",
+                "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+              ],
+              "document_checklist_note": "Examples only. Confirm the exact documents and submission method on the current state portal; do not send sensitive identity documents to this connector.",
+              "cover_sheet": {
+                "full_legal_name": "Example User",
+                "prior_names": [],
+                "email": "example@example.com",
+                "date_of_birth": "(not provided)",
+                "state_of_residence_years": "2020-2025",
+                "note": "This connector prepares claim packs only. It never files claims and never sends your information anywhere."
+              },
+              "claim_summary": "Use the current state program website to review requirements, search, submit your own claim, and check status. The connector does not perform these actions.",
+              "last_verified": null,
+              "reference_review_required": true,
+              "user_message": "Here is your California guide: a link to the current state directory, general filing steps, example documents, and your cover sheet. Verify current requirements on the official state site and file the claim yourself."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/searches/{search_id}/billing/status": {
+    "get": {
+      "200": {
+        "description": "Billing is disabled. Official portal guides remain free.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "search_id": {
+                  "type": "string"
+                },
+                "billing_status": {
+                  "type": "string"
+                },
+                "card_state": {
+                  "type": "string"
+                },
+                "fee_disclosure": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "search_id": "a1b2c3d4e5f6",
+              "billing_status": "disabled",
+              "card_state": "unavailable",
+              "fee_disclosure": "Official state searches and claims are free. This connector currently provides free portal guides; paid recovery assistance is unavailable pending state-specific fee and agreement review.",
+              "user_message": "Official state searches and claims are free. This connector currently provides free portal guides; paid recovery assistance is unavailable pending state-specific fee and agreement review."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/searches/{search_id}/billing/setup": {
+    "post": {
+      "409": {
+        "description": "Paid assistance is unavailable. No customer setup or charge is performed.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "detail": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "detail": "Paid recovery assistance is not available. State-specific agreements and fee eligibility are pending review. Official portal links and claim guides remain free."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/searches/{search_id}/recovery-confirmed": {
+    "post": {
+      "409": {
+        "description": "Paid assistance is unavailable. No customer setup or charge is performed.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "detail": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "detail": "Paid recovery assistance is not available. State-specific agreements and fee eligibility are pending review. Official portal links and claim guides remain free."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/life-events": {
+    "post": {
+      "201": {
+        "description": "Creates a draft bound to the authenticated user; no cross-connector data sharing.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "search_id": {
+                  "type": "string"
+                },
+                "draft": {
+                  "type": "boolean"
+                },
+                "states": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "fanned_out_note": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "search_id": "a1b2c3d4e5f6",
+              "draft": true,
+              "states": [
+                "Texas",
+                "California"
+              ],
+              "fanned_out_note": "This event is stored only for the authenticated user in this connector.",
+              "user_message": "You just moved, and states often hold unclaimed money under old addresses. I can prepare a guide to help you search Texas and California. Reply with the name you want to use in the guide."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/data": {
+    "delete": {
+      "200": {
+        "description": "Deletes this user's operational records; discloses retained payment/accounting records and backup handling.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "deleted": {
+                  "type": "boolean"
+                },
+                "retained": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "deleted": true,
+              "retained": "Required payment/accounting records and processor records; backups follow the operator's retention policy.",
+              "user_message": "Your operational records for this connector were deleted. Required payment records are retained separately."
+            }
+          }
+        }
+      }
+    }
+  }
+}

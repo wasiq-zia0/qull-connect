@@ -11,12 +11,13 @@ explicit consent flag plus the date when the user opts in (some states require i
 at filing). No SSN is ever collected or stored.
 """
 import json
+import os
 import sqlite3
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent / "data" / "app.db"
+DB_PATH = Path(os.environ.get("DATA_DIR", str(Path(__file__).resolve().parents[0] / "data"))) / "app.db"
 
 STATUSES = ("not_started", "in_progress", "filed", "paid", "denied")
 
@@ -74,6 +75,9 @@ def init() -> None:
         cols = {r["name"] for r in conn.execute("PRAGMA table_info(searches)")}
         if "draft" not in cols:
             conn.execute("ALTER TABLE searches ADD COLUMN draft INTEGER NOT NULL DEFAULT 0")
+        for column in ("stripe_setup_intent_id", "checkout_session_id"):
+            if column not in cols:
+                conn.execute(f"ALTER TABLE searches ADD COLUMN {column} TEXT")
         # tenant-isolation migration: every user table gets owner_id + index
         for table in ("searches", "search_states", "recoveries"):
             _ensure_owner_column(conn, table)
@@ -115,29 +119,14 @@ def set_draft(search_id: str, draft: bool, owner_id: str) -> None:
                      (int(draft), search_id, owner_id))
 
 
-def adopt_search(search_id: str, owner_id: str) -> bool:
-    """Claim an ownerless (life-event draft) search for the first user who touches it."""
-    with _conn() as conn:
-        cur = conn.execute(
-            "UPDATE searches SET owner_id=? WHERE id=? AND owner_id IS NULL",
-            (owner_id, search_id))
-        conn.execute(
-            "UPDATE search_states SET owner_id=? WHERE search_id=? AND owner_id IS NULL",
-            (owner_id, search_id))
-        conn.execute(
-            "UPDATE recoveries SET owner_id=? WHERE search_id=? AND owner_id IS NULL",
-            (owner_id, search_id))
-    return cur.rowcount > 0
-
-
 def save_search_updates(search_id: str, rec: dict, owner_id: str) -> None:
     """Persist conversational updates from PATCH /api/searches/{id}."""
     with _conn() as conn:
         conn.execute(
             "UPDATE searches SET full_legal_name=?, prior_names=?, email=?, dob=?,"
-            " dob_consent=? WHERE id=? AND owner_id=?",
+            " dob_consent=?, states_of_residence=? WHERE id=? AND owner_id=?",
             (rec["full_legal_name"], json.dumps(rec["prior_names"]), rec["email"],
-             rec.get("dob"), int(rec["dob_consent"]), search_id, owner_id))
+             rec.get("dob"), int(rec["dob_consent"]), json.dumps(rec["states_of_residence"]), search_id, owner_id))
         current = {r["state_abbr"] for r in conn.execute(
             "SELECT state_abbr FROM search_states WHERE search_id=? AND owner_id=?",
             (search_id, owner_id))}
@@ -174,14 +163,6 @@ def get_search(search_id: str, owner_id: str) -> dict | None:
     return s
 
 
-def get_search_unscoped(search_id: str) -> dict | None:
-    """Unscoped read for the draft-adoption path only. Not for user responses."""
-    with _conn() as conn:
-        row = conn.execute("SELECT id, owner_id FROM searches WHERE id=?",
-                           (search_id,)).fetchone()
-    return dict(row) if row else None
-
-
 def set_state_status(search_id: str, abbr: str, status: str, owner_id: str) -> dict | None:
     if status not in STATUSES:
         raise ValueError(f"status must be one of {STATUSES}")
@@ -197,10 +178,10 @@ def set_state_status(search_id: str, abbr: str, status: str, owner_id: str) -> d
     return {"search_id": search_id, "state_abbr": abbr, "status": status, "updated_at": _now()}
 
 
-def set_stripe_customer(search_id: str, customer_id: str, owner_id: str) -> None:
+def set_stripe_customer(search_id: str, customer_id: str, owner_id: str, setup_intent_id: str | None = None, checkout_session_id: str | None = None) -> None:
     with _conn() as conn:
-        conn.execute("UPDATE searches SET stripe_customer_id=? WHERE id=? AND owner_id=?",
-                     (customer_id, search_id, owner_id))
+        conn.execute("UPDATE searches SET stripe_customer_id=?, stripe_setup_intent_id=?, checkout_session_id=? WHERE id=? AND owner_id=?",
+                     (customer_id, setup_intent_id, checkout_session_id, search_id, owner_id))
 
 
 def get_stripe_customer(search_id: str, owner_id: str) -> str | None:

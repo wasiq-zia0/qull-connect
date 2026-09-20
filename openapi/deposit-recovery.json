@@ -2,8 +2,18 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Deposit Recovery API",
-    "version": "0.2.0"
+    "description": "Qull Connect API. Supply a per-user API key in Authorization: Bearer <key>. Keys identify one customer; arbitrary platform/user-id headers are not accepted. Payment setup opens hosted Stripe Checkout and does not charge a service fee. Use the record's billing/status operation to verify setup, then explicitly authorize the applicable fee. See the linked guide for workflow and service limits.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Qull, Inc.",
+      "email": "wasiq@qull.io"
+    }
   },
+  "servers": [
+    {
+      "url": "https://5.78.152.6.nip.io/deposit-recovery"
+    }
+  ],
   "paths": {
     "/health": {
       "get": {
@@ -15,11 +25,15 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           }
-        }
+        },
+        "security": []
       }
     },
     "/api/state-laws": {
@@ -31,9 +45,21 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -58,7 +84,10 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           },
@@ -71,6 +100,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -91,10 +129,140 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "state": {
+                      "type": "string"
+                    },
+                    "statute": {
+                      "type": "string"
+                    },
+                    "deposit": {
+                      "type": "number"
+                    },
+                    "move_out": {
+                      "type": "string"
+                    },
+                    "deadline": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "deadline_days": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "basis_explanation": {
+                      "type": "string"
+                    },
+                    "statute_note": {
+                      "type": "string"
+                    },
+                    "official_source_url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "deadline_verified": {
+                      "type": "boolean"
+                    },
+                    "penalty_multiple": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "penalty_note": {
+                      "type": "string"
+                    },
+                    "estimated_fee_if_full_deposit_recovered_cents": {
+                      "type": "integer"
+                    },
+                    "days_remaining": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "headline": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "next_action": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "case_id": "694a5249956d4f708b79015c0f1addaa",
+                      "state": "California",
+                      "statute": "Cal. Civ. Code § 1950.5",
+                      "deposit": 1200.0,
+                      "move_out": "2026-01-01",
+                      "deadline": "2026-01-22",
+                      "deadline_days": 21,
+                      "basis_explanation": "21 days. Itemized statement of deductions required with any retained portion.",
+                      "statute_note": "Preliminary timing calculation for an ordinary residential tenancy. Deductions, estimates, exceptions and proof still need review.",
+                      "official_source_url": "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=1950.5.",
+                      "deadline_verified": true,
+                      "penalty_multiple": null,
+                      "penalty_note": "No penalty entitlement or amount has been determined.",
+                      "estimated_fee_if_full_deposit_recovered_cents": 30000,
+                      "days_remaining": -242,
+                      "status": "overdue",
+                      "headline": "Preliminary return/accounting deadline: 2026-01-22",
+                      "detail": "Preliminary timing calculation for an ordinary residential tenancy. Deductions, estimates, exceptions and proof still need review.",
+                      "next_action": "prepare_return_request",
+                      "user_message": "The preliminary deadline 2026-01-22 has passed. Review any deductions or notices received, then request a draft letter to send yourself."
+                    }
+                  },
+                  "example_2": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "case_id": "f8d18559bfc342c4b68c9bc5afd32f7f",
+                      "state": "Connecticut",
+                      "statute": "Conn. Gen. Stat. § 47a-21",
+                      "deposit": 1200.0,
+                      "move_out": "2026-01-01",
+                      "deadline": "2026-02-04",
+                      "deadline_days": 21,
+                      "basis_explanation": "Later of 21 calendar days after tenancy ends and 15 calendar days after written notification of the forwarding address.",
+                      "statute_note": "Preliminary timing calculation for an ordinary residential tenancy. Deductions, estimates, exceptions and proof still need review.",
+                      "official_source_url": "https://www.cga.ct.gov/current/pub/chap_831.htm#sec_47a-21",
+                      "deadline_verified": true,
+                      "penalty_multiple": null,
+                      "penalty_note": "No penalty entitlement or amount has been determined.",
+                      "estimated_fee_if_full_deposit_recovered_cents": 30000,
+                      "days_remaining": -229,
+                      "status": "overdue",
+                      "headline": "Preliminary return/accounting deadline: 2026-02-04",
+                      "detail": "Preliminary timing calculation for an ordinary residential tenancy. Deductions, estimates, exceptions and proof still need review.",
+                      "next_action": "prepare_return_request",
+                      "user_message": "The preliminary deadline 2026-02-04 has passed. Review any deductions or notices received, then request a draft letter to send yourself."
+                    }
+                  }
+                }
               }
             }
           },
@@ -107,6 +275,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -131,7 +308,10 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           },
@@ -144,6 +324,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -165,10 +354,57 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "filename": {
+                      "type": "string"
+                    },
+                    "pdf_base64": {
+                      "type": "string",
+                      "format": "byte",
+                      "description": "Complete PDF bytes encoded as base64. Decode this field to obtain the generated PDF; contents are omitted from the abbreviated example."
+                    },
+                    "letter_status": {
+                      "type": "string"
+                    },
+                    "letter_type": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Selected response fields; encoded PDF contents omitted",
+                    "value": {
+                      "case_id": "694a5249956d4f708b79015c0f1addaa",
+                      "filename": "demand-letter-694a5249956d4f708b79015c0f1addaa.pdf",
+                      "letter_status": "draft",
+                      "letter_type": "factual_return_request",
+                      "user_message": "Your return-and-accounting request is ready. Review the facts, then send it yourself. No liability or penalty entitlement is asserted."
+                    }
+                  },
+                  "example_2": {
+                    "summary": "Selected response fields; encoded PDF contents omitted",
+                    "value": {
+                      "case_id": "6be640eead84412eab9dfb88498821da",
+                      "filename": "demand-letter-6be640eead84412eab9dfb88498821da.pdf",
+                      "letter_status": "draft",
+                      "letter_type": "factual_return_request",
+                      "user_message": "Your return-and-accounting request is ready. Review the facts, then send it yourself. No liability or penalty entitlement is asserted."
+                    }
+                  }
+                }
               }
             }
           },
@@ -181,6 +417,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -188,7 +433,7 @@
     "/api/cases/{cid}/letter-status": {
       "post": {
         "summary": "Api Letter Status",
-        "description": "Record the user's review/send decision on the prepared demand letter.\n\nThe connector only ever *prepares* the letter \u2014 the user approves and\nsends it. Statuses: `approved` (reviewed, ready to send),\n`sent-confirmed-by-user` (the user confirms they sent it).",
+        "description": "Record the user's review/send decision on the prepared demand letter.\n\nThe connector only ever *prepares* the letter — the user approves and\nsends it. Statuses: `approved` (reviewed, ready to send),\n`sent-confirmed-by-user` (the user confirms they sent it).",
         "operationId": "api_letter_status_api_cases__cid__letter_status_post",
         "parameters": [
           {
@@ -213,10 +458,34 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "letter_status": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "case_id": "694a5249956d4f708b79015c0f1addaa",
+                      "letter_status": "sent-confirmed-by-user",
+                      "user_message": "Recorded that you sent the letter. Return here to report any recovery."
+                    }
+                  }
+                }
               }
             }
           },
@@ -229,6 +498,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -236,7 +514,7 @@
     "/api/cases/{cid}/billing/setup": {
       "post": {
         "summary": "Api Billing Setup",
-        "description": "Create the Stripe customer and a card-setup intent for the contingency fee.",
+        "description": "Open Stripe-hosted card setup after the user accepts the disclosed fee. No charge.",
         "operationId": "api_billing_setup_api_cases__cid__billing_setup_post",
         "parameters": [
           {
@@ -249,12 +527,72 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillingConsentIn"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "stripe_customer_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "setup_url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "checkout_session_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "setup_intent_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "fee_disclosure": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative hosted-setup response; example URL is not a usable payment session",
+                    "value": {
+                      "case_id": "694a5249956d4f708b79015c0f1addaa",
+                      "stripe_customer_id": "cus_owned",
+                      "setup_url": "https://checkout.stripe.com/example-not-a-live-session",
+                      "checkout_session_id": "cs_owned",
+                      "setup_intent_id": null,
+                      "fee_disclosure": "You will be charged 25% of the recovered deposit, only if you confirm the recovery. No charge otherwise. You can cancel any time before confirming; see TERMS.md.",
+                      "user_message": "You will be charged 25% of the recovered deposit, only if you confirm the recovery. No charge otherwise. You can cancel any time before confirming; see TERMS.md. Open setup_url to save a payment method securely with Stripe. Saving it does not charge a fee."
+                    }
+                  }
+                }
               }
             }
           },
@@ -267,6 +605,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -274,7 +621,7 @@
     "/api/cases/{cid}/billing/status": {
       "get": {
         "summary": "Api Billing Status",
-        "description": "Pollable card-save + billing state for a case.",
+        "description": "Verify saved-card setup with Stripe; a pending checkout is never a saved card.",
         "operationId": "api_billing_status_api_cases__cid__billing_status_get",
         "parameters": [
           {
@@ -289,10 +636,63 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "billing_status": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "card_state": {
+                      "type": "string"
+                    },
+                    "setup_status": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "fee_disclosure": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Card setup pending (illustrative provider fixture)",
+                    "value": {
+                      "case_id": "694a5249956d4f708b79015c0f1addaa",
+                      "billing_status": "card_pending",
+                      "card_state": "pending",
+                      "setup_status": "requires_confirmation",
+                      "fee_disclosure": "You will be charged 25% of the recovered deposit, only if you confirm the recovery. No charge otherwise. You can cancel any time before confirming; see TERMS.md.",
+                      "user_message": "Card setup has not been confirmed. Open the Stripe setup link and complete it."
+                    }
+                  },
+                  "example_2": {
+                    "summary": "Card setup ready (illustrative provider fixture)",
+                    "value": {
+                      "case_id": "694a5249956d4f708b79015c0f1addaa",
+                      "billing_status": "card_pending",
+                      "card_state": "ready",
+                      "setup_status": "succeeded",
+                      "fee_disclosure": "You will be charged 25% of the recovered deposit, only if you confirm the recovery. No charge otherwise. You can cancel any time before confirming; see TERMS.md.",
+                      "user_message": "Your payment method is saved. Review and explicitly approve the fee before payment."
+                    }
+                  }
+                }
               }
             }
           },
@@ -305,6 +705,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -337,10 +746,58 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "amount_recovered": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "fee_rate": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "fee_charged_cents": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "payment_intent_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "case_id": "694a5249956d4f708b79015c0f1addaa",
+                      "amount_recovered": 1200.0,
+                      "fee_rate": 0.25,
+                      "fee_charged_cents": 30000,
+                      "payment_intent_id": "pi_owned",
+                      "user_message": "Your $1,200.00 is back — congratulations. The 25% fee is $300.00, charged now that you've confirmed the recovery. Case closed."
+                    }
+                  }
+                }
               }
             }
           },
@@ -353,6 +810,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -360,7 +826,7 @@
     "/api/life-events": {
       "post": {
         "summary": "Api Life Events",
-        "description": "Receive a fan-out life event from the shared bus.\n\nService-key authenticated (see IdentityMiddleware) \u2014 there is no user\nowner here, so drafts/cases created from the bus store owner_id=NULL.\nThe promote endpoint stamps the caller's owner when the draft is claimed.\nCreates a real case when the payload is complete, otherwise a draft case\npre-filled with everything the payload provides. Always returns the\nproactive nudge in `user_message`.",
+        "description": "Receive a fan-out life event from the shared bus.\n\nThe caller's verified API key determines ownership. Client-supplied\nowner IDs and legacy records without an owner are never claimable.\nCreates a real case when the payload is complete, otherwise a draft case\npre-filled with everything the payload provides. Always returns the\nproactive nudge in `user_message`.",
         "operationId": "api_life_events_api_life_events_post",
         "requestBody": {
           "content": {
@@ -374,10 +840,57 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "draft_id": {
+                      "type": "string"
+                    },
+                    "draft": {
+                      "type": "boolean"
+                    },
+                    "missing": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "prefilled": {
+                      "type": "object",
+                      "properties": {
+                        "state": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": true
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "draft_id": "28eeecbaa89b4c3c8382587e7d1f4d44",
+                      "draft": true,
+                      "missing": [
+                        "tenant_name",
+                        "tenant_forwarding_address",
+                        "move_out"
+                      ],
+                      "prefilled": {
+                        "state": "CA"
+                      },
+                      "user_message": "I caught your move from California — let me get your deposit back on the radar. I still need your name, your forwarding address, your move-out date, your deposit amount, your landlord's name, your landlord's address and the rental address. What's your name?"
+                    }
+                  }
+                }
               }
             }
           },
@@ -390,6 +903,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -414,7 +936,10 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           },
@@ -427,6 +952,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -459,10 +993,119 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "draft": {
+                      "type": "boolean"
+                    },
+                    "state": {
+                      "type": "string"
+                    },
+                    "statute": {
+                      "type": "string"
+                    },
+                    "deposit": {
+                      "type": "number"
+                    },
+                    "move_out": {
+                      "type": "string"
+                    },
+                    "deadline": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "deadline_days": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "basis_explanation": {
+                      "type": "string"
+                    },
+                    "statute_note": {
+                      "type": "string"
+                    },
+                    "official_source_url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "deadline_verified": {
+                      "type": "boolean"
+                    },
+                    "penalty_multiple": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "penalty_note": {
+                      "type": "string"
+                    },
+                    "estimated_fee_if_full_deposit_recovered_cents": {
+                      "type": "integer"
+                    },
+                    "days_remaining": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "headline": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "next_action": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "case_id": "89d76febed97430a91b066bbc1adb919",
+                      "draft": false,
+                      "state": "California",
+                      "statute": "Cal. Civ. Code § 1950.5",
+                      "deposit": 1200.0,
+                      "move_out": "2026-01-01",
+                      "deadline": "2026-01-22",
+                      "deadline_days": 21,
+                      "basis_explanation": "21 days. Itemized statement of deductions required with any retained portion.",
+                      "statute_note": "Preliminary timing calculation for an ordinary residential tenancy. Deductions, estimates, exceptions and proof still need review.",
+                      "official_source_url": "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=1950.5.",
+                      "deadline_verified": true,
+                      "penalty_multiple": null,
+                      "penalty_note": "No penalty entitlement or amount has been determined.",
+                      "estimated_fee_if_full_deposit_recovered_cents": 30000,
+                      "days_remaining": -242,
+                      "status": "overdue",
+                      "headline": "Preliminary return/accounting deadline: 2026-01-22",
+                      "detail": "Preliminary timing calculation for an ordinary residential tenancy. Deductions, estimates, exceptions and proof still need review.",
+                      "next_action": "prepare_return_request",
+                      "user_message": "The preliminary deadline 2026-01-22 has passed. Review any deductions or notices received, then request a draft letter to send yourself."
+                    }
+                  }
+                }
               }
             }
           },
@@ -475,6 +1118,191 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
+          }
+        }
+      }
+    },
+    "/api/me/data": {
+      "get": {
+        "summary": "Export My Data",
+        "description": "Export only the authenticated caller's local records.",
+        "operationId": "export_my_data_api_me_data_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete My Data",
+        "description": "Delete local records and documents. Stripe/payment audit records remain separately retained.",
+        "operationId": "delete_my_data_api_me_data_delete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteDataIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
+          }
+        }
+      }
+    },
+    "/api/cases/{cid}/billing/quote": {
+      "post": {
+        "summary": "Quote Fee",
+        "description": "Show the exact rounded fee for review; no card setup, confirmation or payment occurs.",
+        "operationId": "quote_fee_api_cases__cid__billing_quote_post",
+        "parameters": [
+          {
+            "name": "cid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeeQuoteIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "currency": {
+                      "type": "string"
+                    },
+                    "recovery_amount": {
+                      "type": "number"
+                    },
+                    "fee_rate": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "fee_amount_cents": {
+                      "type": "integer"
+                    },
+                    "charged": {
+                      "type": "boolean"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "case_id": "694a5249956d4f708b79015c0f1addaa",
+                      "currency": "USD",
+                      "recovery_amount": 1200.0,
+                      "fee_rate": 0.25,
+                      "fee_amount_cents": 30000,
+                      "charged": false,
+                      "user_message": "The fee would be 300.00 USD. Review it, then explicitly approve this exact amount if you want to pay."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -482,6 +1310,22 @@
   },
   "components": {
     "schemas": {
+      "BillingConsentIn": {
+        "properties": {
+          "accept_fee_terms": {
+            "type": "boolean",
+            "const": true,
+            "title": "Accept Fee Terms",
+            "description": "The user accepted the disclosed fee terms before opening Stripe checkout."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "accept_fee_terms"
+        ],
+        "title": "BillingConsentIn"
+      },
       "CaseIn": {
         "properties": {
           "tenant_name": {
@@ -506,7 +1350,21 @@
           "move_out": {
             "type": "string",
             "format": "date",
-            "title": "Move Out"
+            "title": "Move Out",
+            "description": "Date you vacated and surrendered possession of the rental property."
+          },
+          "tenancy_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenancy End",
+            "description": "Date the tenancy legally ended; required for a Connecticut deadline estimate."
           },
           "forwarding_date": {
             "anyOf": [
@@ -518,7 +1376,8 @@
                 "type": "null"
               }
             ],
-            "title": "Forwarding Date"
+            "title": "Forwarding Date",
+            "description": "Date the landlord received your written forwarding address, not merely the date you sent it."
           },
           "deposit": {
             "type": "number",
@@ -545,6 +1404,7 @@
             "title": "Rental Address"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "tenant_name",
@@ -557,6 +1417,39 @@
           "rental_address"
         ],
         "title": "CaseIn"
+      },
+      "DeleteDataIn": {
+        "properties": {
+          "confirm_delete": {
+            "type": "boolean",
+            "const": true,
+            "title": "Confirm Delete",
+            "description": "The user explicitly confirms deleting their local records and generated documents."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "confirm_delete"
+        ],
+        "title": "DeleteDataIn"
+      },
+      "FeeQuoteIn": {
+        "properties": {
+          "amount_recovered": {
+            "type": "number",
+            "maximum": 1000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount Recovered",
+            "description": "The actual recovered amount to quote; this operation does not charge."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "amount_recovered"
+        ],
+        "title": "FeeQuoteIn"
       },
       "HTTPValidationError": {
         "properties": {
@@ -582,6 +1475,7 @@
             "title": "Status"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "status"
@@ -603,6 +1497,7 @@
             "title": "Payload"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "event_type"
@@ -659,6 +1554,18 @@
             ],
             "title": "Move Out"
           },
+          "tenancy_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenancy End"
+          },
           "forwarding_date": {
             "anyOf": [
               {
@@ -669,7 +1576,8 @@
                 "type": "null"
               }
             ],
-            "title": "Forwarding Date"
+            "title": "Forwarding Date",
+            "description": "Date the landlord received your written forwarding address, not merely the date you sent it."
           },
           "deposit": {
             "anyOf": [
@@ -721,12 +1629,26 @@
             "title": "Rental Address"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "title": "PromoteIn",
         "description": "Fields the agent collected conversationally to complete a draft."
       },
       "RecoveryIn": {
         "properties": {
+          "confirm_fee": {
+            "type": "boolean",
+            "const": true,
+            "title": "Confirm Fee",
+            "description": "The user explicitly approved this exact fee after reviewing it."
+          },
+          "fee_amount_cents": {
+            "type": "integer",
+            "maximum": 100000000.0,
+            "minimum": 1.0,
+            "title": "Fee Amount Cents",
+            "description": "The exact disclosed fee approved by the user, in cents."
+          },
           "amount_recovered": {
             "type": "number",
             "maximum": 100000000.0,
@@ -735,8 +1657,11 @@
             "description": "Deposit amount the tenant got back"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
+          "confirm_fee",
+          "fee_amount_cents",
           "amount_recovered"
         ],
         "title": "RecoveryIn"
@@ -781,11 +1706,19 @@
         ],
         "title": "ValidationError"
       }
+    },
+    "securitySchemes": {
+      "UserApiKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Qull per-user API key",
+        "description": "An operator-provisioned opaque API key belonging to one customer. Never use a Stripe secret key here."
+      }
     }
   },
-  "servers": [
+  "security": [
     {
-      "url": "https://5.78.152.6.nip.io/deposit-recovery/api"
+      "UserApiKey": []
     }
   ]
 }

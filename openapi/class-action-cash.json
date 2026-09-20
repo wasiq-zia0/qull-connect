@@ -2,9 +2,18 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Class Action Cash",
-    "description": "Matches Gmail receipts against open class-action settlements, prepares claim packs. 20% fee on confirmed payout only.",
-    "version": "0.1.0"
+    "description": "Qull Connect API. Supply a per-user API key in Authorization: Bearer <key>. Keys identify one customer; arbitrary platform/user-id headers are not accepted. Payment setup opens hosted Stripe Checkout and does not charge a service fee. Use the record's billing/status operation to verify setup, then explicitly authorize the applicable fee. See the linked guide for workflow and service limits.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Qull, Inc.",
+      "email": "wasiq@qull.io"
+    }
   },
+  "servers": [
+    {
+      "url": "https://5.78.152.6.nip.io/class-action-cash"
+    }
+  ],
   "paths": {
     "/health": {
       "get": {
@@ -15,11 +24,15 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           }
-        }
+        },
+        "security": []
       }
     },
     "/api/settlements": {
@@ -28,12 +41,138 @@
         "operationId": "settlements_api_settlements_get",
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "settlements": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "claim_deadline": {
+                            "type": "string"
+                          },
+                          "eligibility_summary": {
+                            "type": "string"
+                          },
+                          "last_verified": {
+                            "type": "string"
+                          },
+                          "match_keywords": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "official_claim_url": {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          "official_claim_url_verified": {
+                            "type": "boolean"
+                          },
+                          "source_url": {
+                            "type": "string"
+                          },
+                          "typical_payout_range": {
+                            "type": "string"
+                          },
+                          "review_status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    },
+                    "data_freshness": {
+                      "type": "object",
+                      "properties": {
+                        "active_verified_count": {
+                          "type": "integer"
+                        },
+                        "excluded_count": {
+                          "type": "integer"
+                        },
+                        "stale": {
+                          "type": "boolean"
+                        },
+                        "warning": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": true
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "settlements": [
+                        {
+                          "claim_deadline": "2026-12-21",
+                          "eligibility_summary": "Potential class members: US and territory residents who paid for qualifying insured prescriptions at Kroger-owned pharmacies between December 9, 2018 and August 23, 2026. Receipt keywords alone do not establish eligibility. Claim identification and proof requirements depend on administrator records and claimed spending; read the official notice before filing.",
+                          "last_verified": "2026-09-20",
+                          "match_keywords": [
+                            "kroger",
+                            "prescription receipt",
+                            "savings club"
+                          ],
+                          "name": "Kroger $17M Prescription Drug Pricing Settlement",
+                          "official_claim_url": "https://www.krogersavingsclubsettlement.com",
+                          "official_claim_url_verified": true,
+                          "source_url": "https://www.krogersavingsclubsettlement.com",
+                          "typical_payout_range": "Variable pro rata payment based on qualifying prescription spending, valid claims and court approval. No individual payout or timing is guaranteed.",
+                          "review_status": "official_administrator_verified"
+                        },
+                        {
+                          "claim_deadline": "2026-10-20",
+                          "eligibility_summary": "US purchasers of VSL#3 for personal use between June 1, 2016 and June 19, 2019. The official notice describes household limits, proof/notice-credential rules and exclusions. Receipt keywords alone do not establish eligibility.",
+                          "last_verified": "2026-09-20",
+                          "match_keywords": [
+                            "vsl#3",
+                            "vsl3",
+                            "vsl pharmaceuticals"
+                          ],
+                          "name": "VSL#3 Probiotic $20M False Advertising Settlement",
+                          "official_claim_url": "https://www.vsl3lawsuit.com",
+                          "official_claim_url_verified": true,
+                          "source_url": "https://www.vsl3lawsuit.com",
+                          "typical_payout_range": "$20 per qualifying unit before possible adjustments. No-proof household claims are generally limited to one unit; proof or notice credentials may support more units under the official notice, up to 40. Payments may increase or decrease based on available funds.",
+                          "review_status": "official_administrator_verified"
+                        }
+                      ],
+                      "data_freshness": {
+                        "active_verified_count": 2,
+                        "excluded_count": 8,
+                        "stale": false,
+                        "warning": "Deadlines and eligibility must be confirmed with each official administrator before filing. Unverified, expired and stale entries are excluded."
+                      },
+                      "user_message": "2 source-verified, unexpired settlement opportunities are available. Receipt matches identify candidates; they do not establish eligibility."
+                    }
+                  }
+                }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -54,10 +193,105 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "matches": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "settlement_name": {
+                            "type": "string"
+                          },
+                          "claim_deadline": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "matched_keyword": {
+                            "type": "string"
+                          },
+                          "evidence_json": {
+                            "type": "string"
+                          },
+                          "typical_payout_range": {
+                            "type": "string"
+                          },
+                          "official_claim_url": {
+                            "type": "string",
+                            "format": "uri"
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "demo": {
+                      "type": "boolean"
+                    },
+                    "events_emitted": {
+                      "type": "integer"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "matches": [
+                        {
+                          "id": "8c222f3942b41c3f606762ea3ef4eaf577656d928cad012b216e65d72a286ec4",
+                          "settlement_name": "Kroger $17M Prescription Drug Pricing Settlement",
+                          "claim_deadline": "2026-12-21",
+                          "status": "candidate",
+                          "matched_keyword": "kroger, prescription receipt",
+                          "typical_payout_range": "Variable pro rata payment based on qualifying prescription spending, valid claims and court approval. No individual payout or timing is guaranteed.",
+                          "official_claim_url": "https://www.krogersavingsclubsettlement.com"
+                        }
+                      ],
+                      "source": "receipts",
+                      "demo": false,
+                      "events_emitted": 0,
+                      "user_message": "Found 1 potential matches in the receipt excerpts you supplied. Review each class definition and confirm eligibility before requesting a filing pack. No claim has been filed."
+                    }
+                  },
+                  "example_2": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "matches": [
+                        {
+                          "id": "8c222f3942b41c3f606762ea3ef4eaf577656d928cad012b216e65d72a286ec4",
+                          "settlement_name": "Kroger $17M Prescription Drug Pricing Settlement",
+                          "claim_deadline": "2026-12-21",
+                          "status": "candidate",
+                          "matched_keyword": "kroger, prescription receipt",
+                          "typical_payout_range": "Variable pro rata payment based on qualifying prescription spending, valid claims and court approval. No individual payout or timing is guaranteed.",
+                          "official_claim_url": "https://www.krogersavingsclubsettlement.com",
+                          "created_at": "2026-09-20T19:29:10.755930+00:00",
+                          "updated_at": "2026-09-20T19:29:10.756578+00:00"
+                        }
+                      ],
+                      "source": "receipts",
+                      "demo": false,
+                      "events_emitted": 0,
+                      "user_message": "Found 1 potential matches in the receipt excerpts you supplied. Review each class definition and confirm eligibility before requesting a filing pack. No claim has been filed."
+                    }
+                  }
+                }
               }
             }
           },
@@ -70,6 +304,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -80,12 +323,93 @@
         "operationId": "matches_api_matches_get",
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "matches": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "settlement_name": {
+                            "type": "string"
+                          },
+                          "claim_deadline": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "matched_keyword": {
+                            "type": "string"
+                          },
+                          "evidence_json": {
+                            "type": "string"
+                          },
+                          "typical_payout_range": {
+                            "type": "string"
+                          },
+                          "official_claim_url": {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          "created_at": {
+                            "type": "string"
+                          },
+                          "updated_at": {
+                            "type": "string"
+                          },
+                          "owner_id": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "matches": [
+                        {
+                          "id": "8c222f3942b41c3f606762ea3ef4eaf577656d928cad012b216e65d72a286ec4",
+                          "settlement_name": "Kroger $17M Prescription Drug Pricing Settlement",
+                          "claim_deadline": "2026-12-21",
+                          "status": "candidate",
+                          "matched_keyword": "kroger, prescription receipt",
+                          "typical_payout_range": "Variable pro rata payment based on qualifying prescription spending, valid claims and court approval. No individual payout or timing is guaranteed.",
+                          "official_claim_url": "https://www.krogersavingsclubsettlement.com",
+                          "created_at": "2026-09-20T19:29:10.755930+00:00",
+                          "updated_at": "2026-09-20T19:29:10.756578+00:00"
+                        }
+                      ],
+                      "user_message": "You have 1 saved candidate matches. No monitoring or automatic filing is scheduled."
+                    }
+                  }
+                }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -106,25 +430,150 @@
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ClaimPackRequest",
-                "default": {
-                  "full_name": "",
-                  "email": "",
-                  "address": ""
-                }
+                "$ref": "#/components/schemas/ClaimPackRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "match_id": {
+                      "type": "string"
+                    },
+                    "settlement_name": {
+                      "type": "string"
+                    },
+                    "claim_deadline": {
+                      "type": "string"
+                    },
+                    "official_claim_url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "eligibility_summary": {
+                      "type": "string"
+                    },
+                    "prefilled_info_sheet": {
+                      "type": "object",
+                      "properties": {
+                        "full_name": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "mailing_address": {
+                          "type": "string"
+                        },
+                        "receipt_evidence": {
+                          "type": "object",
+                          "properties": {
+                            "receipts": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "snippet": {
+                                    "type": "string"
+                                  },
+                                  "from": {
+                                    "type": "string"
+                                  },
+                                  "subject": {
+                                    "type": "string"
+                                  },
+                                  "date": {
+                                    "type": "string"
+                                  },
+                                  "message_id": {
+                                    "type": "string"
+                                  },
+                                  "demo": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "additionalProperties": true
+                              }
+                            },
+                            "demo": {
+                              "type": "boolean"
+                            }
+                          },
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true
+                    },
+                    "filing_steps": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "important": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "match_id": "8c222f3942b41c3f606762ea3ef4eaf577656d928cad012b216e65d72a286ec4",
+                      "settlement_name": "Kroger $17M Prescription Drug Pricing Settlement",
+                      "claim_deadline": "2026-12-21",
+                      "official_claim_url": "https://www.krogersavingsclubsettlement.com",
+                      "eligibility_summary": "Potential class members: US and territory residents who paid for qualifying insured prescriptions at Kroger-owned pharmacies between December 9, 2018 and August 23, 2026. Receipt keywords alone do not establish eligibility. Claim identification and proof requirements depend on administrator records and claimed spending; read the official notice before filing.",
+                      "prefilled_info_sheet": {
+                        "full_name": "",
+                        "email": "",
+                        "mailing_address": "",
+                        "receipt_evidence": {
+                          "receipts": [
+                            {
+                              "snippet": "Kroger prescription receipt in 2020",
+                              "from": "Kroger",
+                              "subject": "Rx receipt",
+                              "date": "",
+                              "message_id": "r1",
+                              "demo": false
+                            },
+                            {
+                              "snippet": "Kroger pharmacy receipt",
+                              "from": "Kroger",
+                              "subject": "Second Rx",
+                              "date": "",
+                              "message_id": "r2",
+                              "demo": false
+                            }
+                          ],
+                          "demo": false
+                        }
+                      },
+                      "filing_steps": [
+                        "Read the official notice, exclusions and proof requirements.",
+                        "Open the official administrator site and use its claim form.",
+                        "Enter accurate details and provide the required evidence. Never invent purchases or attestations."
+                      ],
+                      "important": "This connector prepares information; it does not file claims or determine legal eligibility. Direct filing is free.",
+                      "user_message": "Your filing information is ready. Review the official notice and complete the administrator's form yourself. Nothing has been submitted."
+                    }
+                  }
+                }
               }
             }
           },
@@ -137,6 +586,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -169,10 +627,50 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "match_id": {
+                      "type": "string"
+                    },
+                    "setup_url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "checkout_session_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "fee_disclosure": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative hosted-setup response; example URL is not a usable payment session",
+                    "value": {
+                      "ok": true,
+                      "match_id": "8c222f3942b41c3f606762ea3ef4eaf577656d928cad012b216e65d72a286ec4",
+                      "setup_url": "https://checkout.stripe.com/example-not-a-live-session",
+                      "checkout_session_id": "cs_owned",
+                      "fee_disclosure": "The fee is 20% of a settlement payout you actually receive, in USD. No recovery means no fee. A fee is charged only after you explicitly approve its exact amount. You file your claim yourself; filing directly with the administrator is free.",
+                      "user_message": "The fee is 20% of a settlement payout you actually receive, in USD. No recovery means no fee. A fee is charged only after you explicitly approve its exact amount. You file your claim yourself; filing directly with the administrator is free. Open setup_url to save a payment method securely with Stripe. Nothing is charged now."
+                    }
+                  }
+                }
               }
             }
           },
@@ -185,6 +683,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -192,7 +699,7 @@
     "/api/matches/{match_id}/billing/status": {
       "get": {
         "summary": "Billing Status",
-        "description": "Pollable card-save status: billing status, derived card_state, and the\nfee disclosure \u2014 the agent's signal for whether a charge can be attempted.",
+        "description": "Pollable card-save status: billing status, derived card_state, and the\nfee disclosure — the agent's signal for whether a charge can be attempted.",
         "operationId": "billing_status_api_matches__match_id__billing_status_get",
         "parameters": [
           {
@@ -207,10 +714,84 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "match_id": {
+                      "type": "string"
+                    },
+                    "billing_status": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "card_state": {
+                      "type": "string"
+                    },
+                    "stripe_customer_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "fee_rate": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "fee_cents": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "fee_disclosure": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Card setup pending (illustrative provider fixture)",
+                    "value": {
+                      "ok": true,
+                      "match_id": "8c222f3942b41c3f606762ea3ef4eaf577656d928cad012b216e65d72a286ec4",
+                      "billing_status": "card_pending",
+                      "card_state": "pending",
+                      "stripe_customer_id": "cus_owned",
+                      "fee_rate": 0.2,
+                      "fee_cents": null,
+                      "fee_disclosure": "The fee is 20% of a settlement payout you actually receive, in USD. No recovery means no fee. A fee is charged only after you explicitly approve its exact amount. You file your claim yourself; filing directly with the administrator is free.",
+                      "user_message": "Billing status: card_pending. The fee is 20% of a settlement payout you actually receive, in USD. No recovery means no fee. A fee is charged only after you explicitly approve its exact amount. You file your claim yourself; filing directly with the administrator is free."
+                    }
+                  },
+                  "example_2": {
+                    "summary": "Card setup ready (illustrative provider fixture)",
+                    "value": {
+                      "ok": true,
+                      "match_id": "8c222f3942b41c3f606762ea3ef4eaf577656d928cad012b216e65d72a286ec4",
+                      "billing_status": "card_pending",
+                      "card_state": "ready",
+                      "stripe_customer_id": "cus_owned",
+                      "fee_rate": 0.2,
+                      "fee_cents": null,
+                      "fee_disclosure": "The fee is 20% of a settlement payout you actually receive, in USD. No recovery means no fee. A fee is charged only after you explicitly approve its exact amount. You file your claim yourself; filing directly with the administrator is free.",
+                      "user_message": "Your card is saved and ready — I'll only charge the 20% fee after you confirm the payout."
+                    }
+                  }
+                }
               }
             }
           },
@@ -223,6 +804,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -255,10 +845,60 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "match_id": {
+                      "type": "string"
+                    },
+                    "currency": {
+                      "type": "string"
+                    },
+                    "payout_amount": {
+                      "type": "number"
+                    },
+                    "fee_rate": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "fee_charged": {
+                      "type": "number"
+                    },
+                    "payment_intent_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "ok": true,
+                      "match_id": "8c222f3942b41c3f606762ea3ef4eaf577656d928cad012b216e65d72a286ec4",
+                      "currency": "USD",
+                      "payout_amount": 100.0,
+                      "fee_rate": 0.2,
+                      "fee_charged": 20.0,
+                      "payment_intent_id": "pi_owned",
+                      "user_message": "The fee of $20.00 was paid after your confirmation of a $100.00 payout."
+                    }
+                  }
+                }
               }
             }
           },
@@ -271,6 +911,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -295,7 +944,10 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           },
@@ -308,6 +960,191 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
+          }
+        }
+      }
+    },
+    "/api/me/data": {
+      "get": {
+        "summary": "Export My Data",
+        "description": "Export only the authenticated caller's local records.",
+        "operationId": "export_my_data_api_me_data_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete My Data",
+        "description": "Delete local records and documents. Stripe/payment audit records remain separately retained.",
+        "operationId": "delete_my_data_api_me_data_delete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteDataIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
+          }
+        }
+      }
+    },
+    "/api/matches/{match_id}/billing/quote": {
+      "post": {
+        "summary": "Quote Fee",
+        "description": "Show the exact rounded fee for review; no card setup, confirmation or payment occurs.",
+        "operationId": "quote_fee_api_matches__match_id__billing_quote_post",
+        "parameters": [
+          {
+            "name": "match_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Match Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeeQuoteIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "match_id": {
+                      "type": "string"
+                    },
+                    "currency": {
+                      "type": "string"
+                    },
+                    "recovery_amount": {
+                      "type": "number"
+                    },
+                    "fee_rate": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "fee_amount_cents": {
+                      "type": "integer"
+                    },
+                    "charged": {
+                      "type": "boolean"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "match_id": "8c222f3942b41c3f606762ea3ef4eaf577656d928cad012b216e65d72a286ec4",
+                      "currency": "USD",
+                      "recovery_amount": 100.0,
+                      "fee_rate": 0.2,
+                      "fee_amount_cents": 2000,
+                      "charged": false,
+                      "user_message": "The fee would be 20.00 USD. Review it, then explicitly approve this exact amount if you want to pay."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -317,6 +1154,12 @@
     "schemas": {
       "BillingSetupRequest": {
         "properties": {
+          "accept_fee_terms": {
+            "type": "boolean",
+            "const": true,
+            "title": "Accept Fee Terms",
+            "description": "The user accepted the disclosed fee terms before opening Stripe checkout."
+          },
           "name": {
             "type": "string",
             "maxLength": 200,
@@ -337,14 +1180,21 @@
             "default": ""
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
+          "accept_fee_terms",
           "name"
         ],
         "title": "BillingSetupRequest"
       },
       "ClaimPackRequest": {
         "properties": {
+          "eligibility_confirmed": {
+            "type": "boolean",
+            "const": true,
+            "title": "Eligibility Confirmed"
+          },
           "full_name": {
             "anyOf": [
               {
@@ -385,8 +1235,45 @@
             "default": ""
           }
         },
+        "additionalProperties": false,
         "type": "object",
+        "required": [
+          "eligibility_confirmed"
+        ],
         "title": "ClaimPackRequest"
+      },
+      "DeleteDataIn": {
+        "properties": {
+          "confirm_delete": {
+            "type": "boolean",
+            "const": true,
+            "title": "Confirm Delete",
+            "description": "The user explicitly confirms deleting their local records and generated documents."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "confirm_delete"
+        ],
+        "title": "DeleteDataIn"
+      },
+      "FeeQuoteIn": {
+        "properties": {
+          "amount": {
+            "type": "number",
+            "maximum": 1000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "The actual recovered amount to quote; this operation does not charge."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "amount"
+        ],
+        "title": "FeeQuoteIn"
       },
       "HTTPValidationError": {
         "properties": {
@@ -414,6 +1301,7 @@
             "title": "Payload"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "event_type"
@@ -422,35 +1310,103 @@
       },
       "PayoutConfirmRequest": {
         "properties": {
+          "confirm_fee": {
+            "type": "boolean",
+            "const": true,
+            "title": "Confirm Fee",
+            "description": "The user explicitly approved this exact fee after reviewing it."
+          },
+          "fee_amount_cents": {
+            "type": "integer",
+            "maximum": 100000000.0,
+            "minimum": 1.0,
+            "title": "Fee Amount Cents",
+            "description": "The exact disclosed fee approved by the user, in cents."
+          },
           "amount": {
             "type": "number",
+            "maximum": 1000000.0,
             "exclusiveMinimum": 0.0,
             "title": "Amount",
             "description": "Confirmed payout received, in dollars"
           },
           "currency": {
             "type": "string",
-            "maxLength": 3,
+            "const": "USD",
             "title": "Currency",
             "default": "USD"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
+          "confirm_fee",
+          "fee_amount_cents",
           "amount"
         ],
         "title": "PayoutConfirmRequest"
+      },
+      "ReceiptIn": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 120,
+            "title": "Id",
+            "default": ""
+          },
+          "sender": {
+            "type": "string",
+            "maxLength": 300,
+            "title": "Sender",
+            "default": ""
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Subject",
+            "default": ""
+          },
+          "date": {
+            "type": "string",
+            "maxLength": 40,
+            "title": "Date",
+            "default": ""
+          },
+          "snippet": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Snippet"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "snippet"
+        ],
+        "title": "ReceiptIn"
       },
       "ScanRequest": {
         "properties": {
           "source": {
             "type": "string",
-            "pattern": "^(gmail|fixtures)$",
+            "enum": [
+              "receipts",
+              "fixtures"
+            ],
             "title": "Source",
-            "description": "'gmail' scans the connected mailbox (read-only); 'fixtures' uses demo receipts",
-            "default": "gmail"
+            "default": "receipts"
+          },
+          "receipts": {
+            "items": {
+              "$ref": "#/components/schemas/ReceiptIn"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Receipts"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "title": "ScanRequest"
       },
@@ -494,11 +1450,19 @@
         ],
         "title": "ValidationError"
       }
+    },
+    "securitySchemes": {
+      "UserApiKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Qull per-user API key",
+        "description": "An operator-provisioned opaque API key belonging to one customer. Never use a Stripe secret key here."
+      }
     }
   },
-  "servers": [
+  "security": [
     {
-      "url": "https://5.78.152.6.nip.io/class-action-cash/api"
+      "UserApiKey": []
     }
   ]
 }

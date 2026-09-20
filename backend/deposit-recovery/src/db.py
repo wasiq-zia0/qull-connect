@@ -4,15 +4,16 @@ All values go through parameterized queries — user input never touches SQL
 structure (column names come from fixed whitelists only).
 
 Tenant isolation: every case and draft carries ``owner_id`` (the platform
-user id resolved by ``src.identity``). Rows created by the service bus
-(``POST /api/life-events``, service-key auth, no user) store ``owner_id=NULL``;
-the promote endpoint stamps the caller's owner on the new case.
+user id resolved by ``src.identity``). All new REST and MCP rows, including life-event drafts, require a verified
+owner. Legacy NULL-owner rows remain inaccessible until an operator can
+establish ownership outside the public API.
 """
 import json
 import sqlite3
+import os
 from pathlib import Path
 
-DB_PATH = Path(__file__).resolve().parent.parent / "data" / "app.db"
+DB_PATH = Path(os.environ.get("DATA_DIR", Path(__file__).resolve().parent.parent / "data")) / "app.db"
 
 _CASES_SCHEMA = """
 CREATE TABLE IF NOT EXISTS cases (
@@ -53,10 +54,11 @@ CREATE TABLE IF NOT EXISTS drafts (
 """
 
 _CASE_COLUMNS = (
-    "tenant_name", "tenant_forwarding_address", "state", "move_out",
+    "tenant_name", "tenant_forwarding_address", "state", "move_out", "tenancy_end",
     "forwarding_date", "deposit", "landlord_name", "landlord_address",
     "rental_address", "stripe_customer_id", "billing_status",
     "amount_recovered", "fee_charged_cents", "letter_status",
+    'checkout_session_id', 'fee_terms_accepted_at', 'fee_confirmed_at', 'setup_intent_id', 'payment_intent_id',
 )
 
 # owner_id is set at insert and on claim/promote only — never via update_case.
@@ -64,7 +66,7 @@ _CASE_INSERT_COLUMNS = _CASE_COLUMNS + ("owner_id",)
 
 _DRAFT_COLUMNS = (
     "event_type", "payload", "state", "tenant_name", "tenant_forwarding_address",
-    "move_out", "forwarding_date", "deposit", "landlord_name",
+    "move_out", "tenancy_end", "forwarding_date", "deposit", "landlord_name",
     "landlord_address", "rental_address",
 )
 
@@ -90,6 +92,14 @@ def init_db() -> None:
     with _connect() as conn:
         conn.execute(_CASES_SCHEMA)
         conn.execute(_DRAFTS_SCHEMA)
+        _ensure_column(conn, "cases", "tenancy_end", "TEXT")
+        _ensure_column(conn, "drafts", "tenancy_end", "TEXT")
+        _ensure_column(conn, "cases", "checkout_session_id", "TEXT")
+        _ensure_column(conn, "cases", "fee_terms_accepted_at", "TEXT")
+        _ensure_column(conn, "cases", "fee_confirmed_at", "TEXT")
+        _ensure_column(conn, "cases", "setup_intent_id", "TEXT")
+        _ensure_column(conn, "cases", "payment_intent_id", "TEXT")
+
         _ensure_column(conn, "cases", "owner_id", "TEXT")
         _ensure_column(conn, "cases", "letter_status", "TEXT")
         _ensure_column(conn, "drafts", "owner_id", "TEXT")
@@ -137,6 +147,8 @@ def update_case(case_id: str, fields: dict, owner_id: str | None = None) -> None
     if owner_id is not None:
         sql += " AND owner_id = ?"
         params.append(owner_id)
+    if fields.get("billing_status") and fields["billing_status"] != "fee_charged":
+        sql += " AND (billing_status IS NULL OR billing_status != 'fee_charged')"
     with _connect() as conn:
         conn.execute(sql, params)
         conn.commit()
@@ -156,12 +168,46 @@ def get_draft(draft_id: str) -> dict | None:
     return _get("drafts", draft_id)
 
 
-def delete_draft(draft_id: str) -> None:
+def delete_draft(draft_id: str, owner_id: str) -> None:
     with _connect() as conn:
-        conn.execute("DELETE FROM drafts WHERE id = ?", (draft_id,))
+        conn.execute("DELETE FROM drafts WHERE id = ? AND owner_id = ?", (draft_id, owner_id))
         conn.commit()
 
 
 def count_cases() -> int:
     with _connect() as conn:
         return conn.execute("SELECT COUNT(*) FROM cases").fetchone()[0]
+
+
+def export_owner(owner_id: str) -> dict:
+    if not owner_id:
+        raise ValueError("An owner is required")
+    with _connect() as conn:
+        return {table: [dict(row) for row in conn.execute(f"SELECT * FROM {table} WHERE owner_id = ?", (owner_id,)).fetchall()]
+                for table in ('cases', 'drafts')}
+
+
+def delete_owner(owner_id: str) -> dict:
+    if not owner_id:
+        raise ValueError("An owner is required")
+    with _connect() as conn:
+        rows = {table: [dict(row) for row in conn.execute(f"SELECT * FROM {table} WHERE owner_id = ?", (owner_id,)).fetchall()]
+                for table in ('cases', 'drafts')}
+        for table in ('drafts', 'cases'):
+            conn.execute(f"DELETE FROM {table} WHERE owner_id = ?", (owner_id,))
+        conn.commit()
+    return rows
+
+
+def promote_draft(draft_id: str, owner_id: str, case_id: str, fields: dict) -> bool:
+    """Consume an owned draft and create its case in one transaction."""
+    with _connect() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        if not conn.execute("SELECT id FROM drafts WHERE id = ? AND owner_id = ?", (draft_id, owner_id)).fetchone():
+            return False
+        columns = ("id", *_CASE_INSERT_COLUMNS)
+        row = {**fields, "id": case_id, "owner_id": owner_id}
+        conn.execute(f"INSERT INTO cases ({', '.join(columns)}) VALUES ({', '.join('?' for _ in columns)})", [row.get(k) for k in columns])
+        conn.execute("DELETE FROM drafts WHERE id = ? AND owner_id = ?", (draft_id, owner_id))
+        conn.commit()
+    return True

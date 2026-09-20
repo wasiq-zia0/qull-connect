@@ -1,51 +1,63 @@
-# Terms of Service — Final Paycheck
-> **Draft terms:** support email and governing law were filled with Qull defaults for the review build. Counsel must confirm before these are presented as final legal terms.
+# Terms of Service — Final Paycheck Recovery
 
-_Last updated: September 19, 2026_
+**Draft — pending legal and operational review.**
 
-## What this service does
+Updated September 20, 2026. Operated by Qull, Inc.
 
-Final Paycheck looks up your state's final-paycheck deadline, calculates how overdue the payment is, generates a formal demand letter, and tracks recovery.
-Everything happens in a chat conversation; there is no app to install.
+## Service and scope
 
-## What this service does NOT do
+Organize your separation and wage details, review a deadline estimate, and prepare a final-pay demand letter you can send yourself.
 
-- **We file a wage claim with a labor agency on your behalf.**
-- **We provide legal advice.**
-- **We act as your attorney.**
-- We do not store or view your payment card details — card handling is done by Stripe.
+U.S. final-paycheck document preparation. A limited reviewed Nevada discharge rule supports a deadline estimate; other state/separation scenarios require review and produce factual wage requests.
 
-## Fee
+- A case record with unpaid amount and job-separation details.
+- A deadline estimate only for the reviewed Nevada discharge scenario; other cases show that review is required.
+- A demand-letter PDF for you to check and send.
 
-- **25% of recovered wages.**
-- You are told, in plain language, **before** you save a card:
-  > "You will be charged 25% of recovered wages — charged once, after you confirm."
-- You pay 25% of the back wages and penalties you actually recover — nothing if nothing is recovered.
-- The charge happens **once**, only after you confirm. It is charged off-session to the card
-  you saved. Duplicate charges are prevented: an already-billed case can never be charged again.
+## Your responsibilities
 
-## Refund policy
+Use the service for records and information you are authorized to provide. Check dates, amounts, identity details, and statements before relying on a result or sending a document. Do not fabricate eligibility, recoveries, savings, receipts, or claims. You remain responsible for taking the action with the relevant organization and meeting its deadlines.
 
-- No fee unless you confirm recovery. Erroneous charges refunded in full within 30 days.
-- To request a refund, contact support (below).
+- Qull does not send letters, contact employers, file wage claims, represent you, or calculate every available penalty.
+- The compiled deadline data is not a complete legal analysis. Coverage depends on the employment facts and current law.
+- You can use government wage-claim channels or seek qualified advice without using Qull.
 
-## Support
+## Fees and authorization
 
-- Email: support@qull.io
-- We aim to respond within 2 business days.
+25% of the actual recovered wages you confirm. No recovery confirmation means no recovery fee.
 
-## Privacy
+If you confirm $2,000 in recovered wages, the fee is $500 and you keep $1,500.
 
-- We store your name, employer, employment dates, and wage details needed to build the demand letter.
-- Payment data is processed by Stripe under Stripe's privacy policy; we keep only
-  customer IDs and charge references.
-- We never sell your personal information.
+State and federal labor agencies may offer wage-claim information and filing channels without a Qull fee.
 
-## Governing law
+Saving a payment method does not by itself authorize a fee. Review the exact amount and currency before the final payment confirmation. Qull uses Stripe to process a separately authorized fee; a failed or incomplete card setup does not mean a charge succeeded. No automatic renewal is included in this release.
 
-These terms are governed by the laws of Ontario, Canada, without regard to its conflict-of-law principles.
+Any applicable tax treatment and final fee agreement must be disclosed before a live charge. Third-party fees, postage, filing costs, provider charges, and government fees are not included unless expressly stated.
 
-## Changes
+## Stopping, corrections, and refunds
 
-We may update these terms; material changes will be shown in chat before they apply to
-a new case. Continued use of the service after the effective date constitutes acceptance.
+You may stop using the service and decline a proposed payment before authorizing it. Stopping use or deleting a record does not automatically cancel a completed payment. Do not describe an outcome as recovered or saved unless it actually occurred.
+
+If a charge is duplicated, made without the agreed authorization, based on an incorrect amount, or the purchased pack cannot be delivered, contact Qull with the record and payment reference. Qull will investigate and correct confirmed errors. Final refund periods and procedures require approval before paid public launch. Nothing in this draft removes a refund or cancellation right that applicable law requires.
+
+## Limits of the service
+
+General information and document preparation; no legal advice or attorney–client relationship.
+
+A generated document, rule flag, match, estimate, or third-party link is not a verified outcome. Results depend on your information, the supported rules, and decisions by other organizations. Qull does not guarantee recovery, savings, eligibility, a successful claim, or acceptance of a document.
+
+## Privacy and acceptable use
+
+[Read the draft privacy policy](/connect/final-paycheck/privacy/) for the information used by this connector. Do not misuse credentials, access another user’s records, submit unnecessary sensitive information, or use the service to misrepresent facts. Access may be suspended to address abuse, a security issue, or a required operational restriction.
+
+## Availability, law, and changes
+
+This is a pre-launch draft, not a statement that the service is approved by Meta or available in Muse. Public access, final terms, legally permitted fee arrangements, and operational support must be confirmed before launch.
+
+The final agreement, governing-law provision, statutory rights, liability terms, and any sector-specific requirements need legal review. This draft does not assert that a percentage fee is lawful in every jurisdiction or waive mandatory consumer protections.
+
+Qull will publish the final terms and their effective date before general availability. A changed fee must be disclosed and agreed before a later charge; a page edit must not silently change an already accepted payment amount.
+
+## Contact
+
+Questions, account requests, billing errors, and refund requests: [wasiq@qull.io](mailto:wasiq@qull.io). Include the connector name and record/payment reference; never send full card details.

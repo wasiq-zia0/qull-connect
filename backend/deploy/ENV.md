@@ -1,104 +1,70 @@
-# Connector environment variables — production reference
+# Runtime configuration
 
-Inventory generated 2026-09-19 by grepping every connector's `*.py` (excluding
-venvs) for `os.environ` / `os.getenv` reads, plus the billing modules' Stripe
-wiring. Updated for the identity/tenant-isolation fix pass. Source of truth
-is the code; this file summarizes it.
+This reference describes the reviewed source. A live `/health` response does not prove these changes have been deployed. Keep secrets in server environment files or a secret manager, never in the repository, submission form, logs, or screenshots.
 
-## Shared variables (all 10 connectors)
-
-| Variable | Required in prod? | Notes |
+| Variable | Required configuration | Purpose |
 |---|---|---|
-| `ENV=production` | **Yes** | Disables `/docs`, `/redoc`, `/openapi.json` and dev-only static serving. Without it the full money-API schema is public. |
-| `SERVICE_API_KEY` | **Yes** | Bearer token required on `POST /api/life-events` (server-to-server). Generate with `openssl rand -hex 32`. Without it, life-event intake 401s. |
-| `PLATFORM_USER_HEADER` | No (default `X-Platform-User-Id`) | Header the Muse platform injects with the authenticated user's id. If Meta's review specifies a different propagation mechanism, change this (and see nginx note below). |
-| `ALLOW_DEV_IDENTITY=1` | **NEVER in prod** | Enables the `X-Dev-User-Id` fallback (anyone can impersonate any user). Dev/verification only. |
-| `STRIPE_SECRET_KEY` | **Yes** | Fresh restricted key (see Stripe section). Never reuse the key exposed on 2026-09-19. |
+| `ENV` | `production` on every live service | Disables development identity and development documentation/static routes. |
+| `QULL_API_KEYS_FILE` | Absolute path to a readable JSON registry | Resolves bearer-key hashes to server-assigned user IDs. An absent, malformed, permissive, or empty registry authenticates nobody. |
+| `DATA_DIR` | Absolute durable directory writable by the service | User databases and generated documents. Kept separate from packaged reference data in the application's `data/` directory. |
+| `BILLING_LEDGER_PATH` | Absolute durable SQLite path, normally `$DATA_DIR/billing.sqlite3` | Durable payment state and retries. Back this up with the connector's application database. |
+| `STRIPE_SECRET_KEY` | Restricted `rk_test_…`/`rk_live_…` or secret `sk_test_…`/`sk_live_…`; official CLI sandbox `rkcs_test_…` is accepted only in test mode | Stripe server credential. Grant the operations actually used by the shared payment client. Never expose it to browser code. |
+| `STRIPE_MODE` | `test` or explicitly `live`; default `test` | Must match the Stripe key mode. Mock success and CLI fallback are removed. |
+| `STRIPE_PUBLISHABLE_KEY` | `pk_test_…` or `pk_live_…` matching the secret key | Browser authentication when a payment requires an additional cardholder step. |
+| `PUBLIC_BASE_URL` | Full HTTPS connector base, e.g. `https://api.qull.io/deposit-recovery` | Stripe hosted Checkout return URL and payment-authentication link. No query, fragment, user info, or secret. |
+| `HOST` | `127.0.0.1` behind nginx; Docker sets `0.0.0.0` | Bind address for both REST and MCP. |
+| `REST_PORT`, `MCP_PORT` | Defaults in the table below | All ten supervisors support these variables. |
 
-### nginx edge (deploy-time, not connector code)
+`SERVICE_API_KEY`, `PLATFORM_USER_HEADER`, and `PLATFORM_TRUSTED_CIDRS` no longer grant access. All life-event calls need the affected user's scoped bearer key. The application ignores `X-Platform-User-Id`; nginx strips it as defense in depth. There is no assumed Meta identity header or implemented OAuth flow.
 
-| Variable | Where | Notes |
-|---|---|---|
-| `PLATFORM_TRUSTED_CIDRS` | env on the machine running `deploy.sh` | Space-separated CIDRs whose `X-Platform-User-Id` header nginx forwards upstream. **Default empty = the header is blanked for every client** (spoof-proof). Fill with Meta's published egress ranges once known; until then, reconcile with Meta's actual identity mechanism during review — the code choke point is `src/identity.py:resolve_owner()`. |
+`ALLOW_DEV_IDENTITY=1` works only when `ENV` is exactly `test` or `development`. Production configuration fails closed if this flag, `FINAL_PAYCHECK_STRIPE_MOCK`, `CLASS_ACTION_CASH_DRY_RUN`, or `FINAL_PAYCHECK_TODAY` is enabled. Never enable these on a public service.
 
-## Per-connector variables
+| Connector | REST | MCP |
+|---|---:|---:|
+| deposit-recovery | 8471 | 8571 |
+| eu261-flight-comp | 8472 | 8572 |
+| subscription-slayer | 8473 | 8573 |
+| bill-negotiator | 8474 | 8574 |
+| final-paycheck | 8475 | 8575 |
+| class-action-cash | 8476 | 8576 |
+| unclaimed-property | 8477 | 8577 |
+| moving-concierge | 8478 | 8578 |
+| 401k-match | 8479 | 8579 |
+| medical-bill-fighter | 8480 | 8580 |
 
-| Connector | Variable | Required in prod? | Notes |
-|---|---|---|---|
-| deposit-recovery | `DEPOSIT_HOST` | No (default `127.0.0.1`) | Only connector honoring a host override. Systemd unit pins it to `127.0.0.1` (nginx terminates TLS). Docker image overrides via `REST_PORT`/`MCP_PORT` instead (see below). |
-| deposit-recovery | `DEPOSIT_REST_PORT` | No (default `8471`) | |
-| deposit-recovery | `DEPOSIT_MCP_PORT` | No (default `8571`) | |
-| final-paycheck | `REST_PORT` | No (default `8475`) | |
-| final-paycheck | `MCP_PORT` | No (default `8575`) | |
-| final-paycheck | `FINAL_PAYCHECK_DB` | No (default `<dir>/data/app.db`) | Override only if you relocate sqlite storage. |
-| medical-bill-fighter | `MCP_PORT` | No (default `8580`) | Read by `mcp_server.py` standalone mode. |
-| eu261-flight-comp, subscription-slayer, bill-negotiator, class-action-cash, unclaimed-property, moving-concierge, 401k-match | — | — | No env vars read at all. Ports/hosts are hardcoded in `run.py` / `mcp_server.py`. |
+The Deposit supervisor retains `DEPOSIT_HOST`, `DEPOSIT_REST_PORT`, and `DEPOSIT_MCP_PORT` as fallbacks for older installations. `FINAL_PAYCHECK_DB` remains a legacy explicit database-path override; remove it when migrating to `DATA_DIR`, or separately back up the database it names.
 
-### Docker-only variables (not read by connector code)
+## User-key registry and provisioning
 
-The Dockerfiles set `REST_PORT` / `MCP_PORT` as image ENV, consumed by the
-generated `/app/start.py` entrypoint (which binds both servers to `0.0.0.0`).
-Only `final-paycheck` and `medical-bill-fighter` also read these names in
-their own code; for the other eight they are entrypoint-only. Overridable
-at `docker run -e REST_PORT=… -e MCP_PORT=…`.
+The deployment setup creates `/etc/connectors/user-keys.json` as `root:connectors`, mode `0640`. Each entry contains the SHA-256 hash of a cryptographically random API key and the immutable owner ID selected by the operator. No client may choose an owner with a request header.
 
-## DEV-ONLY flags — MUST be absent/unset in production
-
-These change money behavior. `deploy.sh` writes env files with them commented
-out; verify they are **not** present in `/etc/connectors/*.env` before going live:
-
-| Variable | Connector | What it does in dev | Prod risk if set |
-|---|---|---|---|
-| `CLASS_ACTION_CASH_DRY_RUN=1` | class-action-cash | Simulates billing without charging | Fake charges recorded as real; revenue silently lost |
-| `FINAL_PAYCHECK_STRIPE_MOCK=1` | final-paycheck | Stubs all Stripe CLI calls | No real money moves; fees never collected |
-| `FINAL_PAYCHECK_TODAY=YYYY-MM-DD` | final-paycheck | Overrides "today" for deadline math | Wrong legal deadlines computed |
-
-Check on the VPS any time with:
+```json
+{"version":1,"keys":[]}
 ```
-sudo grep -rE "DRY_RUN|MOCK|_TODAY" /etc/connectors/ || echo "clean"
+
+Create a separate key per user. Choose a stable internal user ID, not a name supplied by an unauthenticated request. Write the raw credential to a private file rather than terminal output:
+
+```bash
+sudo python3 backend/deploy/provision-key.py \
+  --registry /etc/connectors/user-keys.json create \
+  --owner user_123 --output /root/qull-user_123.key
 ```
-Expected output: `clean`.
 
-## Stripe / billing — production transport (rewired 2026-09-19)
+The CLI prints a nonsecret key ID and creates the delivery file with mode `0600`. Deliver that file through a secure credential channel and remove the delivery copy afterward. The CLI refuses to overwrite an existing file. Add `--expires-at 2026-12-31T00:00:00Z` for a time-limited review credential. A disabled or expired key authenticates nobody.
 
-Every connector's `billing.py` now routes Stripe calls through an internal
-transport (`_stripe()`):
+Revoke by the printed key ID:
 
-- **`STRIPE_SECRET_KEY` is set (production):** direct Stripe REST calls to
-  `https://api.stripe.com/v1` — `POST /v1/customers`, `POST /v1/setup_intents`,
-  `POST /v1/payment_intents` (off-session, confirmed, USD). Request shapes are
-  identical to the old CLI's. The key is read from the environment only and
-  is never logged, printed, or persisted.
-- **`STRIPE_SECRET_KEY` is unset (dev on the agent machine):** falls back to
-  the local skill CLI at `~/workspace/skills/stripe/bin/stripe`, which carries
-  the connected `custom.stripe-billing` credential. This keeps local
-  development and the existing verification flows working unchanged.
+```bash
+sudo python3 backend/deploy/provision-key.py \
+  --registry /etc/connectors/user-keys.json revoke --key-id KEY_ID
+```
 
-Mock/dry-run flags (`FINAL_PAYCHECK_STRIPE_MOCK=1`,
-`CLASS_ACTION_CASH_DRY_RUN=1`) still short-circuit **before** the transport
-choice, so test runs never touch the network even if a key is set. All fee
-math, fee-disclosure ordering, user-confirmed charge guards, and
-double-charge/`already_billed` guards are unchanged.
+The registry is reloaded for each request; revocation affects new requests immediately. An operation already authorized before revocation can finish. Rotation means creating a replacement for the same owner, delivering it securely, then revoking the old key.
 
-### `STRIPE_SECRET_KEY` — REQUIRED in production
+## Probes and limits
 
-| | |
-|---|---|
-| **Variable** | `STRIPE_SECRET_KEY` |
-| **Required in prod?** | **Yes — all 10 connectors.** Without it, billing silently falls back to the CLI path, which does not exist on the VPS, so every charge/setup call fails. |
-| **Value** | A **fresh** Stripe **restricted** secret key (`rk_live_…`), scoped to the minimum needed: Customers (write), SetupIntents (write), PaymentIntents (write). Read-only on nothing else; no other permissions. |
-| **Where** | `/etc/connectors/<slug>.env` on the VPS (mode `640`, loaded via `EnvironmentFile=`). The generated env files already contain a `#STRIPE_SECRET_KEY=` placeholder — uncomment and fill it, then `systemctl restart qull-<slug>`. |
-| **Rotation** | A restricted key was exposed in a screenshot on 2026-09-19. **Do NOT reuse that key** — create a brand-new restricted key in the Stripe Dashboard (Developers → API keys → Restricted keys) and revoke the exposed one. |
+`GET /health` is public process liveness. `GET /ready` returns `200` only when the registry, Stripe key modes, publishable key, HTTPS base URL, and writable absolute data directory are configured; otherwise it returns `503`. Readiness performs no Stripe call and cannot verify a key's permissions, card setup, payment collection, document accuracy, or Meta compatibility. It is a configuration gate, not approval evidence.
 
-No raw keys are stored anywhere in this repo — keep it that way.
+Other public routes are restricted to exact methods: `GET /billing/return`, `GET /billing/authenticate`, `GET /billing/authenticate.js`, and `POST /billing/authenticate/session`. The payment-session exchange independently validates its short-lived capability token. All personal-data API routes and MCP requests require bearer authentication.
 
-**Do not enable real charges** until: the fresh restricted key is in place,
-the dev-only flags above are confirmed absent, legal has reviewed the
-contingency-fee model, and one witnessed live charge+refund has succeeded.
-
-## Env file locations (VPS)
-
-- `/etc/connectors/<slug>.env` — owned by `connectors:connectors`, mode `640`.
-- Created with placeholders on first `deploy.sh` run; **never overwritten** after.
-- Systemd units load them via `EnvironmentFile=`; `systemctl restart qull-<slug>`
-  after any edit.
+The application rejects request bodies larger than 1,000,000 bytes, including chunked requests without `Content-Length`. It limits each socket client to 120 standard requests/minute and 20 payment/document requests/minute, returns `429` with `Retry-After`, and maintains separate in-memory budgets per REST/MCP process. The nginx edge adds a shared IP limit. Run one ASGI worker per connector. A multi-host deployment requires a shared rate-limit store; these counters are not a distributed quota.

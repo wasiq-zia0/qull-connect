@@ -1,55 +1,63 @@
-# Terms of Service — EU261 Flight Compensation
+# Terms of Service — FlightPay
 
-_Last updated: September 19, 2026_
+**Draft — pending legal and operational review.**
 
-## What this service does
+Updated September 20, 2026. Operated by Qull, Inc.
 
-EU261 Flight Compensation checks your flight against EU261 eligibility rules, builds a complete claim pack (airline-specific filing instructions, pre-filled claim letter, evidence checklist), and tracks the claim until payout.
-Everything happens in a chat conversation; there is no app to install.
+## Service and scope
 
-## What this service does NOT do
+Check a flight disruption against the supported EU261 rules and prepare a claim pack to send to the airline yourself.
 
-- **We file the claim with the airline on your behalf.**
-- **We provide legal advice.**
-- **We guarantee a payout.**
-- We do not store or view your payment card details — card handling is done by Stripe.
+Supported EU261 flight-disruption scenarios; coverage depends on route, operating carrier, timing, and circumstances.
 
-## Fee
+- An initial eligibility result based on the route, carrier, disruption, and facts you provide.
+- A claim-letter PDF and supporting checklist.
+- Claim and billing status linked to your case.
 
-- **30% of the payout you actually receive.**
-- You are told, in plain language, **before** you save a card:
-  > "You will be charged 30% of the payout you actually receive — charged once, after you confirm."
-- You pay 30% of the compensation the airline actually pays you — nothing if the claim fails or you never receive money.
-- The charge happens **once**, only after you confirm. It is charged off-session to the card
-  you saved. Duplicate charges are prevented: an already-billed case can never be charged again.
+## Your responsibilities
 
-## Refund policy
+Use the service for records and information you are authorized to provide. Check dates, amounts, identity details, and statements before relying on a result or sending a document. Do not fabricate eligibility, recoveries, savings, receipts, or claims. You remain responsible for taking the action with the relevant organization and meeting its deadlines.
 
-- No fee is ever charged unless you confirm you received a payout. If a charge was made in error, contact support for a full refund within 30 days.
-- To request a refund, contact support (below).
+- This is a preliminary rules-based assessment, not a legal determination or guaranteed compensation.
+- The connector does not monitor live flight data, submit claims to airlines, negotiate, or handle litigation.
+- The current rules focus on supported EU261 scenarios. Connecting itineraries, extraordinary circumstances, rerouting, and other regimes can require separate review.
 
-## Support
+## Fees and authorization
 
-- Email: support@qull.io
-- We aim to respond within 2 business days.
+30% of the actual compensation payout you confirm, billed in EUR. The fee is shown before you authorize payment.
 
-## Privacy
+If an airline pays €400 and you confirm it, the fee is €120 and you keep €280.
 
-- We store your passenger name, flight details, and booking information in order to build and track your claim.
-- Payment data is processed by Stripe under Stripe's privacy policy; we keep only
-  customer IDs and charge references.
-- We never sell your personal information.
+You can submit an EU261 claim directly to the airline without using Qull.
 
-## Governing law
+Saving a payment method does not by itself authorize a fee. Review the exact amount and currency before the final payment confirmation. Qull uses Stripe to process a separately authorized fee; a failed or incomplete card setup does not mean a charge succeeded. No automatic renewal is included in this release.
 
-These terms are governed by the laws of Ontario, Canada,
-without regard to its conflict-of-law principles.
+Any applicable tax treatment and final fee agreement must be disclosed before a live charge. Third-party fees, postage, filing costs, provider charges, and government fees are not included unless expressly stated.
 
-## Changes
+## Stopping, corrections, and refunds
 
-We may update these terms; material changes will be shown in chat before they apply to
-a new case. Continued use of the service after the effective date constitutes acceptance.
+You may stop using the service and decline a proposed payment before authorizing it. Stopping use or deleting a record does not automatically cancel a completed payment. Do not describe an outcome as recovered or saved unless it actually occurred.
 
-_Note: the support contact (support@qull.io) and governing law (Ontario,
-Canada) above were filled as placeholders — counsel must still confirm them.
-These are not final legal terms._
+If a charge is duplicated, made without the agreed authorization, based on an incorrect amount, or the purchased pack cannot be delivered, contact Qull with the record and payment reference. Qull will investigate and correct confirmed errors. Final refund periods and procedures require approval before paid public launch. Nothing in this draft removes a refund or cancellation right that applicable law requires.
+
+## Limits of the service
+
+General claim-preparation information; no legal advice or representation.
+
+A generated document, rule flag, match, estimate, or third-party link is not a verified outcome. Results depend on your information, the supported rules, and decisions by other organizations. Qull does not guarantee recovery, savings, eligibility, a successful claim, or acceptance of a document.
+
+## Privacy and acceptable use
+
+[Read the draft privacy policy](/connect/flightpay/privacy/) for the information used by this connector. Do not misuse credentials, access another user’s records, submit unnecessary sensitive information, or use the service to misrepresent facts. Access may be suspended to address abuse, a security issue, or a required operational restriction.
+
+## Availability, law, and changes
+
+This is a pre-launch draft, not a statement that the service is approved by Meta or available in Muse. Public access, final terms, legally permitted fee arrangements, and operational support must be confirmed before launch.
+
+The final agreement, governing-law provision, statutory rights, liability terms, and any sector-specific requirements need legal review. This draft does not assert that a percentage fee is lawful in every jurisdiction or waive mandatory consumer protections.
+
+Qull will publish the final terms and their effective date before general availability. A changed fee must be disclosed and agreed before a later charge; a page edit must not silently change an already accepted payment amount.
+
+## Contact
+
+Questions, account requests, billing errors, and refund requests: [wasiq@qull.io](mailto:wasiq@qull.io). Include the connector name and record/payment reference; never send full card details.

@@ -1,67 +1,63 @@
-# Bill Negotiator — Terms of Service
+# Terms of Service — BillCut
 
-**Provider:** Qull / Wasiq (placeholder business details)
-**Support:** support@qull.io
-**Governing law:** Ontario, Canada
+**Draft — pending legal and operational review.**
 
-These are plain-language draft terms, not legal advice. Counsel must confirm the support contact and governing law before launch.
+Updated September 20, 2026. Operated by Qull, Inc.
 
-## 1. What the service does
+## Service and scope
 
-Bill Negotiator helps you lower your internet, cable, or phone bill by giving you
-per-provider negotiation scripts: a call script, a chat script, and talking points
-(ask for the retention/loyalty department, mention competitor pricing, ask for
-promotions and fee waivers).
+Turn your current internet, cable, or phone bill into a practical call-and-chat script, then track a lower rate you negotiate yourself.
 
-**What it does NOT do:**
-- It never contacts your provider on your behalf. You make the call or chat yourself.
-- It cannot guarantee any savings. Providers decide what offers you get.
-- The scripts are negotiation guidance only — not legal advice and not financial advice.
+Internet, cable, and phone bills supported by the script library or generic fallback.
 
-## 2. Fees
+- Provider-specific call and chat scripts where available.
+- Talking points for asking about promotions, retention offers, and avoidable fees.
+- A savings calculation based on the outcome and rate duration you report.
 
-You pay **nothing** unless you save money.
+## Your responsibilities
 
-- Fee: **35% of your documented bill savings**, charged **only after you confirm**
-  the new lower bill through the connector.
-- Documented savings = (your old monthly bill − your new monthly bill) × the number
-  of months the new rate is locked (capped at 12).
-- Example: bill drops from $120/mo to $85/mo locked for 12 months → $420 documented
-  savings → fee $147.00.
-- If your negotiation produces no savings, you owe nothing. Reporting "no success"
-  is free.
+Use the service for records and information you are authorized to provide. Check dates, amounts, identity details, and statements before relying on a result or sending a document. Do not fabricate eligibility, recoveries, savings, receipts, or claims. You remain responsible for taking the action with the relevant organization and meeting its deadlines.
 
-The exact fee is shown to you in plain language before you save a payment card:
-*"You will be charged 35% of your documented bill savings, only if you confirm the
-new lower bill. No charge otherwise."*
+- Qull supplies scripts; it does not call providers, access your account, or negotiate on your behalf.
+- Savings are based on the figures you report, not an independent connection to provider billing.
+- A lower headline rate may come with taxes, equipment charges, termination fees, or a new contract. Check the full offer.
 
-## 3. Payment
+## Fees and authorization
 
-- A payment card is saved through a Stripe SetupIntent before you negotiate, so the
-  fee can be charged later.
-- The fee is charged off-session to the saved card **only** when you confirm
-  documented savings.
-- Charges appear from the merchant name configured in Stripe (placeholder — set
-  before launch).
+35% of the documented savings you confirm: (old monthly bill − new monthly bill) × agreed months, capped at 12 months. No positive confirmed savings means no fee.
 
-## 4. Cancellation and refunds
+A bill reduced from $120 to $85 for 12 months saves $420. The fee is $147 and the remaining savings are $273.
 
-- You can cancel at any time before a charge: just don't confirm savings, or close
-  your case. No card charge happens without your confirmed outcome.
-- If a charge was made in error (e.g., you reported the wrong new bill and the
-  savings never materialized), contact support within 30 days and we will review
-  and refund the fee if the savings were not real.
-- Disputing the underlying provider bill is between you and your provider.
+You can ask your provider for a lower rate directly without paying Qull.
 
-## 5. Your data
+Saving a payment method does not by itself authorize a fee. Review the exact amount and currency before the final payment confirmation. Qull uses Stripe to process a separately authorized fee; a failed or incomplete card setup does not mean a charge succeeded. No automatic renewal is included in this release.
 
-We store your case details (provider, bill amounts, tenure) and outcome, plus the
-Stripe customer ID needed for billing. We never store full card numbers. We do not
-sell your data.
+Any applicable tax treatment and final fee agreement must be disclosed before a live charge. Third-party fees, postage, filing costs, provider charges, and government fees are not included unless expressly stated.
 
-## 6. Changes
+## Stopping, corrections, and refunds
 
-We may update these terms; material changes to fees will be disclosed before they
-take effect for new cases.
+You may stop using the service and decline a proposed payment before authorizing it. Stopping use or deleting a record does not automatically cancel a completed payment. Do not describe an outcome as recovered or saved unless it actually occurred.
 
-Last updated: 2026-09-19.
+If a charge is duplicated, made without the agreed authorization, based on an incorrect amount, or the purchased pack cannot be delivered, contact Qull with the record and payment reference. Qull will investigate and correct confirmed errors. Final refund periods and procedures require approval before paid public launch. Nothing in this draft removes a refund or cancellation right that applicable law requires.
+
+## Limits of the service
+
+Negotiation guidance; no guaranteed rate or saving.
+
+A generated document, rule flag, match, estimate, or third-party link is not a verified outcome. Results depend on your information, the supported rules, and decisions by other organizations. Qull does not guarantee recovery, savings, eligibility, a successful claim, or acceptance of a document.
+
+## Privacy and acceptable use
+
+[Read the draft privacy policy](/connect/billcut/privacy/) for the information used by this connector. Do not misuse credentials, access another user’s records, submit unnecessary sensitive information, or use the service to misrepresent facts. Access may be suspended to address abuse, a security issue, or a required operational restriction.
+
+## Availability, law, and changes
+
+This is a pre-launch draft, not a statement that the service is approved by Meta or available in Muse. Public access, final terms, legally permitted fee arrangements, and operational support must be confirmed before launch.
+
+The final agreement, governing-law provision, statutory rights, liability terms, and any sector-specific requirements need legal review. This draft does not assert that a percentage fee is lawful in every jurisdiction or waive mandatory consumer protections.
+
+Qull will publish the final terms and their effective date before general availability. A changed fee must be disclosed and agreed before a later charge; a page edit must not silently change an already accepted payment amount.
+
+## Contact
+
+Questions, account requests, billing errors, and refund requests: [wasiq@qull.io](mailto:wasiq@qull.io). Include the connector name and record/payment reference; never send full card details.

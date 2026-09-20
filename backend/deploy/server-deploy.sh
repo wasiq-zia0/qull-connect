@@ -1,262 +1,162 @@
 #!/usr/bin/env bash
-# server-deploy.sh — all-in-one deploy for the 10 Qull connectors.
-# Runs ON the VPS as root. No SSH needed.
-#
-# Usage (paste into the Hetzner web console as root):
-#   curl -sSL <bundle-url> -o /tmp/qull.tar.gz \
-#     && mkdir -p /tmp/qull && tar -xzf /tmp/qull.tar.gz -C /tmp/qull \
-#     && bash /tmp/qull/server-deploy.sh
-#
-# Env overrides:
-#   DOMAIN      public domain for nginx+certbot (default: 5.78.152.6.nip.io)
-#   CERT_EMAIL  certbot contact email            (default: admin@qull.io)
-#
-# Idempotent: safe to re-run. Never deletes /srv/connectors/*/data,
-# never overwrites an existing env file.
+# Run from a reviewed repository backend/deploy/ on Ubuntu 24.04 as root.
+# MODE=prepare installs a release/config templates without starting it.
+# MODE=activate validates config, snapshots data, restarts services, and reloads nginx.
 set -euo pipefail
-
-if [ "$(id -u)" -ne 0 ]; then echo "ERROR: run as root." >&2; exit 1; fi
-
-DOMAIN="${DOMAIN:-5.78.152.6.nip.io}"
-CERT_EMAIL="${CERT_EMAIL:-admin@qull.io}"
-BUNDLE="$(cd "$(dirname "$0")" && pwd)"
-CODE="$BUNDLE/code"
-
-SLUGS="deposit-recovery eu261-flight-comp subscription-slayer bill-negotiator final-paycheck class-action-cash unclaimed-property moving-concierge 401k-match medical-bill-fighter"
-
-rest_port() { case "$1" in
-  deposit-recovery) echo 8471;; eu261-flight-comp) echo 8472;;
-  subscription-slayer) echo 8473;; bill-negotiator) echo 8474;;
-  final-paycheck) echo 8475;; class-action-cash) echo 8476;;
-  unclaimed-property) echo 8477;; moving-concierge) echo 8478;;
-  401k-match) echo 8479;; medical-bill-fighter) echo 8480;; esac; }
-mcp_port() { case "$1" in
-  deposit-recovery) echo 8571;; eu261-flight-comp) echo 8572;;
-  subscription-slayer) echo 8573;; bill-negotiator) echo 8574;;
-  final-paycheck) echo 8575;; class-action-cash) echo 8576;;
-  unclaimed-property) echo 8577;; moving-concierge) echo 8578;;
-  401k-match) echo 8579;; medical-bill-fighter) echo 8580;; esac; }
-
-# Per-connector env-file body. SERVICE_API_KEY is generated below.
-env_body() {
-  case "$1" in
-    deposit-recovery) cat <<'EOF'
-# Deposit Recovery — production env.
-DEPOSIT_HOST=127.0.0.1
-#DEPOSIT_REST_PORT=8471
-#DEPOSIT_MCP_PORT=8571
-EOF
-      ;;
-    final-paycheck) cat <<'EOF'
-# Final Paycheck — production env.
-#REST_PORT=8475
-#MCP_PORT=8575
-# DEV-ONLY — MUST be absent/unset in production:
-#FINAL_PAYCHECK_STRIPE_MOCK=1
-#FINAL_PAYCHECK_TODAY=2026-01-15
-EOF
-      ;;
-    class-action-cash) cat <<'EOF'
-# Class Action Cash — production env.
-# DEV-ONLY — MUST be absent/unset in production:
-#CLASS_ACTION_CASH_DRY_RUN=1
-EOF
-      ;;
-    medical-bill-fighter) cat <<'EOF'
-# Medical Bill Fighter — production env.
-#MCP_PORT=8580
-EOF
-      ;;
-    *) echo "# $1 — production env. No connector-specific vars today." ;;
-  esac
-  cat <<EOF
-# ---- Identity / auth ----
-# SERVICE_API_KEY: required Bearer token for POST /api/life-events (server-to-server).
-SERVICE_API_KEY=$SERVICE_API_KEY
-# ENV=production: disables /docs, /redoc, /openapi.json and the dev static site.
-ENV=production
-# PLATFORM_USER_HEADER: header the Muse platform injects with the user id (default X-Platform-User-Id).
-#PLATFORM_USER_HEADER=X-Platform-User-Id
-# ALLOW_DEV_IDENTITY: NEVER set to 1 in production (enables X-Dev-User-Id spoofing).
-#ALLOW_DEV_IDENTITY=
-# ---- Stripe / billing ----
-# Production transport: direct Stripe REST via this key (restricted key, payments scope only).
-# Billing stays INERT until this is set. Add it only when ready for the live charge test.
-#STRIPE_SECRET_KEY=
-EOF
-}
-
-echo "==> [1/7] base packages"
-export DEBIAN_FRONTEND=noninteractive
-apt-get update -y
-apt-get install -y --no-install-recommends \
-  python3.12 python3.12-venv python3.12-dev python3-pip \
-  build-essential nginx certbot python3-certbot-nginx \
-  curl ca-certificates openssl
-
-echo "==> [2/7] service user + layout"
-id connectors >/dev/null 2>&1 || useradd -r -m -s /bin/bash connectors
-mkdir -p /etc/connectors
-for slug in $SLUGS; do mkdir -p "/srv/connectors/$slug"; done
-
-echo "==> [3/7] copy code"
-for slug in $SLUGS; do
-  if [ ! -d "$CODE/$slug" ]; then echo "ERROR: bundle missing code/$slug" >&2; exit 1; fi
-  cp -a "$CODE/$slug/." "/srv/connectors/$slug/"
+if [[ "$(id -u)" -ne 0 ]]; then echo 'Run as root.' >&2; exit 1; fi
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+DOMAIN="${DOMAIN:-api.qull.io}"
+MODE="${MODE:-prepare}"
+if [[ ! "$MODE" =~ ^(prepare|activate)$ ]]; then echo 'MODE must be prepare or activate' >&2; exit 1; fi
+python3 "$ROOT/deploy/render-nginx.py" --domain "$DOMAIN" >/dev/null
+SLUGS=(deposit-recovery eu261-flight-comp subscription-slayer bill-negotiator final-paycheck class-action-cash unclaimed-property moving-concierge 401k-match medical-bill-fighter)
+for slug in "${SLUGS[@]}"; do
+  test -f "$ROOT/$slug/app.py"
+  test -f "$ROOT/$slug/requirements.txt"
 done
-chown -R connectors:connectors /srv/connectors
-
-echo "==> [4/7] venvs + requirements (this is the slow part, ~10 min)"
-for slug in $SLUGS; do
-  echo "  - $slug"
-  cd "/srv/connectors/$slug"
-  [ -x .venv/bin/python ] || python3.12 -m venv .venv
-  .venv/bin/pip install -q --no-input -r requirements.txt
-done
-chown -R connectors:connectors /srv/connectors
-
-echo "==> [5/7] env files (created once, never overwritten)"
-SERVICE_API_KEY="$(openssl rand -hex 32)"
-for slug in $SLUGS; do
+test -d "$ROOT/api_support"
+test -d "$ROOT/payment_support"
+# Package installation is explicit and only required on a new server.
+if ! getent group connectors >/dev/null || ! command -v nginx >/dev/null; then
+  echo 'Run backend/deploy/vps-setup.sh first.' >&2; exit 1
+fi
+for slug in "${SLUGS[@]}"; do
+  user="qull-$slug"
+  id "$user" >/dev/null 2>&1 || useradd --system --user-group --no-create-home --shell /usr/sbin/nologin "$user"
+  usermod -a -G connectors "$user"
+  if [[ ! -d "/srv/connectors/$slug" ]]; then install -d -o root -g "$user" -m 0750 "/srv/connectors/$slug"; fi
+  install -d -o "$user" -g "$user" -m 0700 "/var/lib/qull/$slug"
   envf="/etc/connectors/$slug.env"
-  if [ ! -s "$envf" ]; then
-    install -o connectors -g connectors -m 640 /dev/null "$envf"
-    env_body "$slug" > "$envf"
-    chown connectors:connectors "$envf"; chmod 640 "$envf"
+  if [[ ! -f "$envf" ]]; then
+    install -o root -g "$user" -m 0640 /dev/null "$envf"
+    cat > "$envf" <<EOF
+# Configure privately. No raw user API keys belong here.
+STRIPE_MODE=test
+STRIPE_SECRET_KEY=
+STRIPE_PUBLISHABLE_KEY=
+EOF
   fi
+  if [[ "$MODE" == activate ]]; then chown root:"$user" "$envf"; chmod 0640 "$envf"; fi
+  # Nonsecret managed values are separated from existing operator secrets.
+  cat > "/etc/connectors/$slug.managed.env" <<EOF
+ENV=production
+HOST=127.0.0.1
+DATA_DIR=/var/lib/qull/$slug
+BILLING_LEDGER_PATH=/var/lib/qull/$slug/billing.sqlite3
+QULL_API_KEYS_FILE=/etc/connectors/user-keys.json
+PUBLIC_BASE_URL=https://$DOMAIN/$slug
+EOF
+  chown root:"$user" "/etc/connectors/$slug.managed.env"
+  chmod 0640 "/etc/connectors/$slug.managed.env"
+  # Stage separately so prepare mode cannot alter a running service's code.
+  staged="/srv/connectors/.staged-$slug"
+  install -d -o root -g "$user" -m 0750 "$staged"
+  rsync -a --delete-delay --exclude '.venv' --exclude '__pycache__' --exclude '*.db*' \
+    --exclude '*.sqlite*' --exclude '.env*' --exclude '*.env' --exclude 'letters_out' --exclude 'packs_out' \
+    "$ROOT/$slug/" "$staged/"
+  rsync -a --delete "$ROOT/payment_support/" "$staged/payment_support/"
+  rsync -a --delete "$ROOT/api_support/" "$staged/api_support/"
+  test -x "$staged/.venv/bin/python" || python3.12 -m venv "$staged/.venv"
+  "$staged/.venv/bin/pip" install --quiet --no-input -r "$staged/requirements.txt"
+  chown -R root:"$user" "$staged"
+  chmod -R g+rX,o-rwx "$staged"
 done
-
-echo "==> [6/7] systemd units"
-for slug in $SLUGS; do
+if [[ "$MODE" == prepare ]]; then
+  echo 'Prepared all ten releases. Configure Stripe keys and user API-key registry, then use MODE=activate.'
+  exit 0
+fi
+# Check certificate prerequisites before any service is stopped.
+test -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" || { echo "Missing TLS certificate for $DOMAIN." >&2; exit 1; }
+test -f "/etc/letsencrypt/live/$DOMAIN/privkey.pem"
+# Preflight the staged release as its service identity without shell-sourcing secrets.
+for slug in "${SLUGS[@]}"; do
+  systemd-run --quiet --wait --pipe --collect -p "User=qull-$slug" \
+    -p "WorkingDirectory=/srv/connectors/.staged-$slug" \
+    -p "EnvironmentFile=/etc/connectors/$slug.env" \
+    -p "EnvironmentFile=/etc/connectors/$slug.managed.env" \
+    /srv/connectors/.staged-"$slug"/.venv/bin/python -c \
+    "import importlib.util,pathlib,sys,os; legacy=os.environ.get('FINAL_PAYCHECK_DB'); expected=str(pathlib.Path(os.environ['DATA_DIR'])/'app.db'); assert not legacy or legacy == expected, 'Migrate custom FINAL_PAYCHECK_DB before activation'; p=pathlib.Path('src/identity.py'); p=p if p.exists() else pathlib.Path('identity.py'); s=importlib.util.spec_from_file_location('identity_check',p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); ready,_=m.readiness(); print('configuration ready' if ready else 'configuration incomplete'); sys.exit(0 if ready else 1)"
+done
+stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+install -d -m 0700 "/var/backups/qull/$stamp"
+for slug in "${SLUGS[@]}"; do
+  if [[ -f "/etc/systemd/system/qull-$slug.service" ]]; then
+    cp -a "/etc/systemd/system/qull-$slug.service" "/var/backups/qull/$stamp/$slug.service"
+  fi
+  if systemctl cat "qull-$slug.service" >/dev/null 2>&1; then systemctl stop "qull-$slug.service"; fi
+  # Snapshot source and data before migration. Preserve originals for rollback.
+  tar -czf "/var/backups/qull/$stamp/$slug-code.tar.gz" -C /srv/connectors "$slug"
+  tar -czf "/var/backups/qull/$stamp/$slug-data.tar.gz" -C /var/lib/qull "$slug"
+  if [[ -f "/srv/connectors/$slug/data/app.db" && ! -f "/var/lib/qull/$slug/app.db" ]]; then
+    python3 - "$slug" <<'PY'
+import sqlite3,sys
+slug=sys.argv[1]
+with sqlite3.connect(f'/srv/connectors/{slug}/data/app.db') as source:
+    with sqlite3.connect(f'/var/lib/qull/{slug}/app.db') as destination:
+        source.backup(destination)
+PY
+  fi
+  for dir in letters_out packs_out claim_packs; do
+    if [[ -d "/srv/connectors/$slug/$dir" ]]; then
+      target="$dir"
+      if [[ "$dir" == letters_out ]]; then target=letters; fi
+      if [[ "$slug" == eu261-flight-comp ]]; then target=claim_packs; fi
+      mkdir -p "/var/lib/qull/$slug/$target"
+      rsync -a --ignore-existing "/srv/connectors/$slug/$dir/" "/var/lib/qull/$slug/$target/"
+    fi
+  done
+  rsync -a --delete-delay --exclude 'data/*.db*' --exclude '*.sqlite*' --exclude 'letters_out' --exclude 'packs_out' \
+    "/srv/connectors/.staged-$slug/" "/srv/connectors/$slug/"
+  chown -R root:"qull-$slug" "/srv/connectors/$slug"
+  chown -R "qull-$slug:qull-$slug" "/var/lib/qull/$slug"
   cat > "/etc/systemd/system/qull-$slug.service" <<EOF
 [Unit]
-Description=Qull Muse connector: $slug (REST+MCP)
-After=network.target
-
+Description=Qull connector $slug REST and MCP
+After=network-online.target
+Wants=network-online.target
 [Service]
 Type=simple
-User=connectors
+User=qull-$slug
+Group=qull-$slug
+SupplementaryGroups=connectors
 WorkingDirectory=/srv/connectors/$slug
 EnvironmentFile=/etc/connectors/$slug.env
+EnvironmentFile=/etc/connectors/$slug.managed.env
 ExecStart=/srv/connectors/$slug/.venv/bin/python run.py
-Restart=always
+Restart=on-failure
 RestartSec=5
-
+TimeoutStopSec=20
+KillMode=control-group
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/qull/$slug
 [Install]
 WantedBy=multi-user.target
 EOF
 done
 systemctl daemon-reload
-for slug in $SLUGS; do systemctl enable --now "qull-$slug.service"; done
-
-echo "==> [7/7] nginx vhost + TLS for $DOMAIN"
-VHOST="$(mktemp)"
-{
-cat <<'NGINX'
-# Generated by qull server-deploy.sh — safe to regenerate.
-# geo/map/limit_req_zone live in the http context (sites-available is
-# included inside http on Ubuntu nginx).
-
-# Platform identity gating: X-Platform-User-Id is forwarded upstream ONLY when
-# the request comes from a trusted platform CIDR. Every other client gets the
-# header blanked, so a direct caller cannot spoof another user's identity.
-geo $platform_trusted {
-    default 0;
-}
-map $platform_trusted $forwarded_platform_user {
-    1 $http_x_platform_user_id;
-    0 "";
-}
-
-limit_req_zone $binary_remote_addr zone=qull_std:10m rate=120r/m;
-limit_req_zone $binary_remote_addr zone=qull_money:10m rate=20r/m;
-
-server {
-    listen 80;
-NGINX
-  echo "    server_name $DOMAIN;"
-  cat <<'NGINX'
-
-    # Defense in depth: cap request bodies at the edge (app also enforces 1MB).
-    client_max_body_size 1m;
-NGINX
-  for slug in $SLUGS; do
-    r="$(rest_port "$slug")"; m="$(mcp_port "$slug")"
-    cat <<NGINX
-    # ---- $slug ----
-    location = /$slug { return 301 /$slug/; }
-    location /$slug/api/ {
-        limit_req zone=qull_std burst=40 nodelay;
-        proxy_pass http://127.0.0.1:$r/api/;
-        proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_set_header X-Platform-User-Id \$forwarded_platform_user;
-    }
-    location = /$slug/health {
-        proxy_pass http://127.0.0.1:$r/health;
-        proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
-    location = /$slug/mcp {
-        limit_req zone=qull_money burst=20 nodelay;
-        proxy_pass http://127.0.0.1:$m/mcp;
-        proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_set_header X-Platform-User-Id \$forwarded_platform_user;
-        proxy_buffering off;
-        proxy_read_timeout 3600s;
-        proxy_send_timeout 3600s;
-    }
-    location /$slug/mcp/ {
-        limit_req zone=qull_money burst=20 nodelay;
-        proxy_pass http://127.0.0.1:$m/mcp/;
-        proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_set_header X-Platform-User-Id \$forwarded_platform_user;
-        proxy_buffering off;
-        proxy_read_timeout 3600s;
-        proxy_send_timeout 3600s;
-    }
-NGINX
+for index in "${!SLUGS[@]}"; do
+  slug="${SLUGS[$index]}"
+  systemctl enable --now "qull-$slug.service"
+  ok=0
+  for attempt in {1..20}; do
+    if curl --fail --silent --max-time 2 "http://127.0.0.1:$((8471+index))/ready" >/dev/null; then ok=1; break; fi
+    sleep 1
   done
-  echo "}"
-} > "$VHOST"
-cp "$VHOST" /etc/nginx/sites-available/qull-connectors
-rm -f "$VHOST"
-ln -sf /etc/nginx/sites-available/qull-connectors /etc/nginx/sites-enabled/qull-connectors
-nginx -t && systemctl reload nginx
-
-if [ ! -d "/etc/letsencrypt/live/$DOMAIN" ]; then
-  certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos -m "$CERT_EMAIL" --redirect
-else
-  echo "cert exists for $DOMAIN, skipping certbot"
-fi
-
-echo ""
-echo "================ SERVICE STATUS ================"
-for slug in $SLUGS; do
-  r="$(rest_port "$slug")"
-  active="$(systemctl is-active "qull-$slug.service" || true)"
-  if [ "$slug" = "deposit-recovery" ]; then
-    health="n/a (no /health route)"
-  else
-    if curl -sf -m 5 "http://127.0.0.1:$r/health" >/dev/null 2>&1; then health="healthy"; else health="NOT RESPONDING"; fi
-  fi
-  printf "%-22s %-8s %s\n" "$slug" "$active" "$health"
+  if [[ "$ok" != 1 ]]; then echo "$slug did not become ready. Prior snapshot: /var/backups/qull/$stamp" >&2; exit 1; fi
 done
-echo "================================================"
-echo "Public surface:"
-echo "  REST: https://$DOMAIN/<slug>/api/..."
-echo "  MCP:  https://$DOMAIN/<slug>/mcp"
-echo "Billing is INERT until STRIPE_SECRET_KEY is set in /etc/connectors/<slug>.env"
-echo "DONE."
+# Preserve TLS on every redeploy. Initial certificate issuance is a separate action.
+test -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" || { echo 'Issue the domain TLS certificate before activating nginx.' >&2; exit 1; }
+vhost=/etc/nginx/sites-available/qull-connectors
+if [[ -f "$vhost" ]]; then cp -a "$vhost" "/var/backups/qull/$stamp/nginx.conf"; fi
+python3 "$ROOT/deploy/render-nginx.py" --domain "$DOMAIN" --tls > "$vhost"
+ln -sfn "$vhost" /etc/nginx/sites-enabled/qull-connectors
+if ! nginx -t; then
+  if [[ -f "/var/backups/qull/$stamp/nginx.conf" ]]; then cp -a "/var/backups/qull/$stamp/nginx.conf" "$vhost"; fi
+  echo 'nginx validation failed; existing running nginx was not reloaded.' >&2; exit 1
+fi
+systemctl reload nginx
+echo "Activated all ten. Complete authenticated end-to-end tests against https://$DOMAIN before submission."

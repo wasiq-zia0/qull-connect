@@ -1,110 +1,73 @@
-# Deploying the 10 Qull connectors — production runbook
+# Deploying the reviewed connectors
 
-Everything in `~/workspace/connectors/deploy/`:
+The repository contains application code, shared payment/API packages, reference data, and deployment tooling. These scripts are prepared for Ubuntu 24.04 with nginx and systemd. They have not been run against the production VPS during this review. Docker builds and production migrations still require an operator acceptance run.
 
-| File | What it is |
-|---|---|
-| `vps-setup.sh` | One-time VPS provisioning (Ubuntu 24.04): Python 3.12, nginx, certbot, `connectors` service user, `/srv/connectors` layout |
-| `deploy.sh` | Full deploy/redeploy: rsyncs code, builds venvs, writes systemd units + env files, writes the `api.qull.io` nginx vhost, runs certbot |
-| `ENV.md` | Every env var each connector reads; dev-only flags that must NOT be set in prod; the Stripe production-billing blocker |
-| `DEPLOY.md` | This file |
+## Release layout
 
-Plus, inside each connector directory: `Dockerfile` + `requirements.txt`
-(frozen from its own verified `.venv`).
+Each connector runs as its own `qull-<slug>` system user. Application files live at `/srv/connectors/<slug>` and are owned by root. Durable databases and generated documents live at `/var/lib/qull/<slug>` with owner-only access. The application cannot change its own code or another connector's data. Secrets live in `/etc/connectors/<slug>.env`; nonsecret generated settings live in `<slug>.managed.env`. A read-only group-accessible user-key hash registry is shared by the ten services.
 
-## What Wasiq needs to do (2 steps, ~15 minutes)
+The supervisor uses the active Python interpreter, starts REST and MCP, and terminates both if either process exits. It handles SIGTERM and waits for children before exiting. Systemd restarts a failed pair. Services bind to loopback; only nginx is exposed publicly. Restrict the host firewall to your administrative SSH sources plus HTTPS and HTTP certificate validation. Never expose ports 8471–8480 or 8571–8580 directly.
 
-**Step 1 — Create the VPS and point DNS at it.**
-- Hetzner Cloud → new server: **CX22** (2 vCPU / 4 GB RAM — plenty for 10 small
-  Python services), **Ubuntu 24.04**, pick the region closest to you
-  (Toronto → `ash` Ashburn or `hil` Hillsboro).
-- Cost: roughly **€4–5/month** (~CAD 6–7).
-- In your DNS (wherever `qull.io` is managed): add an **A record**
-  `api.qull.io → <the VPS IP>`.
-- Wait a few minutes for DNS to propagate.
+## Prepare and configure
 
-**Step 2 — Give the agent SSH access.**
-- In Hetzner, add the agent's SSH public key to the server (or paste a
-  root password over a secure channel — key is better).
-- Tell the agent the VPS IP / hostname.
+Review the code, tests, environment reference, and generated nginx before using it. Clone the reviewed commit on the server or use the SSH uploader. The uploader requires an already verified `known_hosts` entry and will not accept an unknown server key automatically.
 
-**Then the agent runs** (no action needed from you):
+On a new Ubuntu 24.04 server, run:
+
 ```bash
-./vps-setup.sh          # on the VPS, once — installs everything
-VPS_HOST=root@<ip> ./deploy.sh   # from the agent machine — deploys all 10
+sudo bash backend/deploy/vps-setup.sh
+sudo DOMAIN=api.qull.io MODE=prepare bash backend/deploy/server-deploy.sh
 ```
-After that, the public surface is live:
-- REST: `https://api.qull.io/<slug>/api/...` (health: `https://api.qull.io/<slug>/health`)
-- MCP: `https://api.qull.io/<slug>/mcp` ← this is the URL Muse / Meta connects to
 
-## What is still NOT done after deploy (blockers before real money)
+From a workstation, the equivalent uploader is:
 
-1. **Production billing is not wired.** Billing code calls the agent's Stripe
-   skill CLI, which doesn't exist on the VPS. Real charges must stay OFF until
-   a `STRIPE_SECRET_KEY`-based path is built (see `ENV.md`). The deploy
-   scripts deliberately leave billing inert.
-2. **Legal review of the fee models** (25–35% of recovery/savings) — especially
-   deposit, final-paycheck, medical-bill, class-action, unclaimed-property.
-3. **Meta submission** of deposit-recovery (first), then the rest.
-4. **Witnessed live Stripe charge + refund test.**
-5. **Confirm the exposed `rk_live_…` Stripe key was rotated.**
+```bash
+VPS_HOST=your-verified-ssh-alias DOMAIN=api.qull.io MODE=prepare \
+  bash backend/deploy/deploy.sh
+```
 
-Deploy ≠ launch. Deploy makes the product reachable; the five items above
-make it legal and payable.
+`prepare` installs isolated staged releases and dependency environments. It does not replace running application code or start the new release. It retains packaged JSON/CSV reference data; the old scripts incorrectly excluded the entire `data/` directory.
 
-## Railway / Fly alternative (instead of a VPS)
+Configure the Stripe test secret and publishable keys privately in each existing `/etc/connectors/<slug>.env`. No existing secret file is overwritten. Provision separate user/reviewer API keys following [ENV.md](ENV.md). The generated managed settings select production identity, durable paths, and each connector's public HTTPS base URL.
 
-If you'd rather not manage a server: each connector dir has a working
-`Dockerfile` (Python 3.12-slim, both ports, `/health` check on 9/10).
-Per connector: **one service** from its Dockerfile, set a persistent
-**volume mounted at `/app/data`** (sqlite lives there — without a volume,
-cases vanish on every redeploy), expose the MCP port publicly. Roughly
-$5–10/month per connector on either platform, so ~10× the VPS cost —
-the VPS is the economical choice.
+For an existing deployment, inspect `FINAL_PAYCHECK_DB` and any custom storage locations before activation. The migration recognizes the standard legacy `data/app.db`; custom paths must be backed up and deliberately migrated by the operator. Existing ownerless records are not automatically assigned to a new user. Resolve their ownership from trustworthy account records before making them accessible.
 
-## Architecture notes (for the agent / future deploys)
+Point the hostname's DNS to the server and obtain its TLS certificate before activation. For an existing site, keep its current certificate. For a new hostname, create an HTTP nginx vhost using `render-nginx.py --domain HOSTNAME`, validate it with `nginx -t`, then issue a certificate with the installed certbot nginx plugin using your monitored administrative address. Review legacy vhost symlinks: do not leave two connector vhosts defining the same hostname or `qull_std`/`qull_money` zones enabled.
 
-- Systemd runs `run.py` **bound to 127.0.0.1** exactly as verified locally;
-  nginx terminates TLS and reverse-proxies. `run.py` needed no changes.
-- Only `deposit-recovery` (`DEPOSIT_HOST/DEPOSIT_REST_PORT/DEPOSIT_MCP_PORT`)
-  and `final-paycheck` (`REST_PORT`/`MCP_PORT`) honor env overrides in
-  `run.py` — the other eight hardcode `127.0.0.1` and their ports. The
-  Dockerfiles work around this with a generated `/app/start.py` entrypoint
-  (uvicorn on `0.0.0.0` + `mcp_server.server.run(host='0.0.0.0', …)`),
-  so **no connector source was modified** for containerization.
-- MCP streamable-HTTP goes through nginx with `proxy_buffering off` and
-  1-hour timeouts (streaming responses).
-- sqlite files are created on first boot (`CREATE TABLE IF NOT EXISTS`);
-  `deploy.sh` excludes `data/` and `*.db` from rsync, so redeploys never
-  touch production data.
-- Env files at `/etc/connectors/<slug>.env` are created once with
-  placeholders and never overwritten by redeploys.
+## Activate
 
-## Validation checklist
+```bash
+sudo DOMAIN=api.qull.io MODE=activate bash backend/deploy/server-deploy.sh
+```
 
-What was verified while building this package (2026-09-19):
+Activation checks all ten staged configurations as their service users before stopping services. It creates private timestamped code and data backups, migrates the standard legacy SQLite database using SQLite's backup API, preserves generated documents, installs reviewed code and systemd units, restarts the services, and waits for `/ready`. A failed step exits with an error; the timestamped snapshot is retained for operator rollback. There is no claim of atomic all-ten deployment.
 
-- [x] `requirements.txt` frozen from each connector's own `.venv` (all 10
-      venvs present; 30–36 pinned packages each)
-- [x] No `file://`, editable, or VCS refs in any `requirements.txt`
-- [x] Every PDF import used in source (`fpdf`, `reportlab`) resolves to an
-      installed package in that connector's venv
-- [x] All 10 Dockerfiles: `FROM python:3.12-slim`, per-connector `REST_PORT` /
-      `MCP_PORT` ENV, matching `EXPOSE`, `COPY --exclude` skips `.venv` /
-      `__pycache__` / `data` / `*.db`
-- [x] Embedded `start.py` in every Dockerfile compiles (`py_compile`)
-- [x] HEALTHCHECK present on the 9 connectors with `/health`; omitted for
-      deposit-recovery (it has no `/health` route)
-- [x] `vps-setup.sh` + `deploy.sh` pass `bash -n`; nginx location-block
-      generation tested (variable expansion verified)
-- [x] Env inventory grepped from source (not guessed); dev-only flags
-      documented as must-be-absent in prod
-- [ ] **Dockerfiles not build-tested** — `docker` is not installed in this
-      environment. Build at least 2 images on the VPS or locally before
-      relying on the Railway/Fly path.
-- [ ] **Scripts not run end-to-end** — no VPS exists yet. First `deploy.sh`
-      run should be watched; expect minor environment-specific fixes.
-- [ ] **certbot email** defaults to `admin@qull.io` — confirm it's a real
-      monitored inbox (override with `CERT_EMAIL=`).
-- [ ] **nginx streamable-HTTP behavior** (long-lived MCP sessions through
-      the proxy) verified only by config review, not a live session.
+The nginx configuration routes `/<slug>/api/...` to the REST application's `/api/...` path and `/<slug>/mcp` to MCP. It also routes health, readiness, and payment return/authentication pages. It forwards the bearer credential, strips untrusted identity headers, sets an exact 1,000,000-byte body cap, and limits requests by client IP. TLS directives are included on every deployment so an existing certificate is not accidentally removed from the vhost. `nginx -t` must pass before reload; a failed generated vhost restores the previous saved configuration when available.
+
+After activation, perform authenticated end-to-end acceptance tests using separate users and Stripe test mode:
+
+1. Create a case, read it as its owner, and verify another user cannot read or mutate it.
+2. Produce the actual letter, checklist, calculation, or other documented deliverable; verify its contents and limitations.
+3. Complete hosted Stripe card setup and test the explicit fee-confirmation flow. Exercise declines, additional cardholder authentication, repeated requests, and a process restart without duplicate charging.
+4. Verify the live schema, API documentation, privacy/terms pages, support address, directory copy, and pricing agree with that behavior.
+5. Test the exact Muse credential handoff and request flow with reviewer credentials. A Qull API-key implementation does not by itself establish Muse compatibility.
+
+Moving from test mode to live requires matching live secret/publishable keys, `STRIPE_MODE=live`, an approved fee/product policy, and completed operator acceptance. Do not use real customer charges as a software test. This repository does not authorize a live charge or refund.
+
+## Backups and rollback
+
+Activation snapshots are under `/var/backups/qull/<UTC timestamp>/`. Each connector has separate `-code.tar.gz` and `-data.tar.gz` archives; treat both as sensitive. The preexisting nginx file is saved separately. These are release snapshots, not a scheduled backup system. Establish encrypted off-host backups, retention, and restore drills before relying on the service commercially.
+
+For rollback, stop the affected service, restore its code and data from the same snapshot into their respective parent directories, restore service-unit/configuration changes where needed, set the recorded service ownership, then restart and verify readiness. Preserve the failed release for investigation. Restoring an older payment ledger after a real payment can lose local payment history: reconcile Stripe and the ledger before allowing further charges. Never erase a database to fix startup.
+
+## Containers
+
+Build from the shared `backend/` context so payment and API packages are included:
+
+```bash
+docker build -f backend/deposit-recovery/Dockerfile -t qull/deposit-recovery backend
+```
+
+Each image runs as UID 10001, uses the same supervisor, includes packaged reference assets, and declares `/var/lib/qull` as its durable volume. Mount the hash registry read-only with owner/group permissions that UID 10001 can read (without world-readable access), and supply configuration through your orchestrator's secret mechanism. A volume mounted over `/app/data` would hide packaged laws/catalogs and is no longer the prescribed layout. Expose only the application port behind your authenticated HTTPS ingress; configure MCP routing separately. The image health check is liveness only; poll `/ready` and run acceptance tests separately.
+
+The repository does not contain production SSH credentials. Actual deployment, TLS issuance, rollback, Docker builds, backup recovery, and a real Muse review have not been demonstrated by local syntax/unit checks.

@@ -1,0 +1,568 @@
+{
+  "checked_at": "2026-09-20T19:34:24.633753+00:00",
+  "deployment_id": "6ab034d1987f7a66c90b29fc",
+  "pages_and_assets": [
+    {
+      "path": "connect/assets/api-docs.css",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "40604874efcf08b41833909116716433679198c2b2a9855d78da7bedead6d466"
+    },
+    {
+      "path": "connect/assets/api-docs.js",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "4c0d5b42622bdec099bf31fda423c394bbcb3877d399fd813a286b4ca5bfae5a"
+    },
+    {
+      "path": "connect/assets/connect.css",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "b3ab9615cf190e24011fc4835c87d7961ef853f6de8addf565caa35303aa88d0"
+    },
+    {
+      "path": "connect/assets/connect.js",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "cfe7623ad0446e3c38346f4dc5e3bb9a7e6affa6c819b09f200e89cdaf7ae80f"
+    },
+    {
+      "path": "connect/billcut/api-docs/bill-negotiator.json",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "cc5e12aeb608753ae39135994d41e1c16da7f11b27dded915f2feccb134fe9c0"
+    },
+    {
+      "path": "connect/billcut/api-docs/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "e45eb36421e4accdd0b936164ea415e25f4f30feef59858f46b0e13b9dc978f1"
+    },
+    {
+      "path": "connect/billcut/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "55edc4679907a22c76297253cb8c40eefcd1c410792f785ca2934302a1a69a01"
+    },
+    {
+      "path": "connect/billcut/privacy/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "92cc987c87adbb1c1e4c9a274e8c23c4609f2f36cd5e04882a5831615392bb11"
+    },
+    {
+      "path": "connect/billcut/terms/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "2c29e13fb127eec9a6e2a01a50b8deb83970bbf1de82ee28ff7d4218c7315269"
+    },
+    {
+      "path": "connect/billcut/website/privacy.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "92cc987c87adbb1c1e4c9a274e8c23c4609f2f36cd5e04882a5831615392bb11"
+    },
+    {
+      "path": "connect/billcut/website/terms.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "2c29e13fb127eec9a6e2a01a50b8deb83970bbf1de82ee28ff7d4218c7315269"
+    },
+    {
+      "path": "connect/class-action-cash/api-docs/class-action-cash.json",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "62c6758b4970507393d88a32192b593e6678abc680dde256be4e824d10855365"
+    },
+    {
+      "path": "connect/class-action-cash/api-docs/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "ab8c4c736ccb9f49f47ac0342d616ae376fc54f9aefe43cd65cd9dd0639b8708"
+    },
+    {
+      "path": "connect/class-action-cash/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "2caa9845351d460b768a7349f5dc6b2cd2dc33b183a8205015dad98c463f58e4"
+    },
+    {
+      "path": "connect/class-action-cash/privacy/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "800e63252cc81422d39062f6915666a894d282266e699568f33e49a769ea5d7a"
+    },
+    {
+      "path": "connect/class-action-cash/terms/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "107ad13bc3966230c3e12b30673ae3cfbd753746b3c6c7a5af6cca9664d68a08"
+    },
+    {
+      "path": "connect/class-action-cash/website/privacy.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "800e63252cc81422d39062f6915666a894d282266e699568f33e49a769ea5d7a"
+    },
+    {
+      "path": "connect/class-action-cash/website/terms.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "107ad13bc3966230c3e12b30673ae3cfbd753746b3c6c7a5af6cca9664d68a08"
+    },
+    {
+      "path": "connect/deposit-recovery/api-docs/deposit-recovery.json",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "830c5b55f86c25f218fda9e48b41d53d2a82e819a5e8f6688e088f4f30da3dc2"
+    },
+    {
+      "path": "connect/deposit-recovery/api-docs/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "8eff986d2f05b93446dfa8f540d891b968d9862a9ef7276a6300c639c35a1d1a"
+    },
+    {
+      "path": "connect/deposit-recovery/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "704f1ee99e3e0c56819978dd8eebd2a2bd65227dde6d917b4804739397bd0577"
+    },
+    {
+      "path": "connect/deposit-recovery/privacy/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "717762e8d71ba04331a83b952da46b1968bcd177b07b751bcd26fe188261d4a2"
+    },
+    {
+      "path": "connect/deposit-recovery/terms/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "0da6105fc48d7a0b2d1bfc0c6c737388eeb5040ab768ba1401a54073ac51e12e"
+    },
+    {
+      "path": "connect/deposit-recovery/website/privacy.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "717762e8d71ba04331a83b952da46b1968bcd177b07b751bcd26fe188261d4a2"
+    },
+    {
+      "path": "connect/deposit-recovery/website/terms.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "0da6105fc48d7a0b2d1bfc0c6c737388eeb5040ab768ba1401a54073ac51e12e"
+    },
+    {
+      "path": "connect/final-paycheck/api-docs/final-paycheck.json",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "d8090f9649733d0fb29819a4c6f5b123e9808d5a93f5b93bf15c8e8e83c03fe9"
+    },
+    {
+      "path": "connect/final-paycheck/api-docs/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "26410f44587c79cb16f55e76666fedccf816e9884fdfedadc78fccfd64d65ffd"
+    },
+    {
+      "path": "connect/final-paycheck/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "be7ea393407003a89dc41dd2692942a990850058ab12978d86e8240eed4cbead"
+    },
+    {
+      "path": "connect/final-paycheck/privacy/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "3338b590bbf273390c7ae6728ec8e8c5282353981771d7d4926ca22acb303edc"
+    },
+    {
+      "path": "connect/final-paycheck/terms/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "5da3cfc1876d3cf664ad5de6c766164faafbdfc9c099b65ecb1c4e75e14676b4"
+    },
+    {
+      "path": "connect/final-paycheck/website/privacy.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "3338b590bbf273390c7ae6728ec8e8c5282353981771d7d4926ca22acb303edc"
+    },
+    {
+      "path": "connect/final-paycheck/website/terms.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "5da3cfc1876d3cf664ad5de6c766164faafbdfc9c099b65ecb1c4e75e14676b4"
+    },
+    {
+      "path": "connect/flightpay/api-docs/eu261-flight-comp.json",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "baa96d221f4914e3712df6785a6beb723e203440248c858e43dd15cacf088204"
+    },
+    {
+      "path": "connect/flightpay/api-docs/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "fca0f12da5611bdafa9e7e7fa9828e00b0916824df5ac4ef107907d346048cd2"
+    },
+    {
+      "path": "connect/flightpay/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "4cf81b6ee84743d60aa3abe9df0b2242dc6699f91147c27584d2c7dbb4c23792"
+    },
+    {
+      "path": "connect/flightpay/privacy/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "51400e5b4113f9562429d04bb4570fe1cb2eb3c7bd69484d79574694588253f4"
+    },
+    {
+      "path": "connect/flightpay/terms/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "0ab79726de8bb67c3e1a9432030ad39b9b840470875746f7e42b881949e5577a"
+    },
+    {
+      "path": "connect/flightpay/website/privacy.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "51400e5b4113f9562429d04bb4570fe1cb2eb3c7bd69484d79574694588253f4"
+    },
+    {
+      "path": "connect/flightpay/website/terms.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "0ab79726de8bb67c3e1a9432030ad39b9b840470875746f7e42b881949e5577a"
+    },
+    {
+      "path": "connect/found-money/api-docs/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "6d1de0772dfe7c9fe4857befc1d6fc01c24f8fe20640cb36b09210ced1543d19"
+    },
+    {
+      "path": "connect/found-money/api-docs/unclaimed-property.json",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "496f50073a905fd9b58a2cabd3aede0f0f885dd59c8715314cecca49aaeafbf9"
+    },
+    {
+      "path": "connect/found-money/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "eedba9aa7477063d3649423b5e42d8d59a3178714386145ec04d3da5e181a707"
+    },
+    {
+      "path": "connect/found-money/privacy/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "84630a471db1ab28448bfa01feb42e388783ab3132d0f9c65c68c1f53224e4ef"
+    },
+    {
+      "path": "connect/found-money/terms/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "d9249e78d8bfc383aa9c23b03782f549642a6f27c48b6d3a8eeaaba714b1c8af"
+    },
+    {
+      "path": "connect/found-money/website/privacy.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "84630a471db1ab28448bfa01feb42e388783ab3132d0f9c65c68c1f53224e4ef"
+    },
+    {
+      "path": "connect/found-money/website/terms.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "d9249e78d8bfc383aa9c23b03782f549642a6f27c48b6d3a8eeaaba714b1c8af"
+    },
+    {
+      "path": "connect/index.html",
+      "status": 200,
+      "matches_release_bytes": false,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "911ec88c3be6e3e07973c8ceca93ae98d460901a06dd71eec854e0b5abbb3924"
+    },
+    {
+      "path": "connect/matchmax/api-docs/401k-match.json",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "bec57c4ab9b1784864088310f7b41f515060423eb7cb75ca5beaa6734b0fb563"
+    },
+    {
+      "path": "connect/matchmax/api-docs/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "f6d154c41f73b35d85563b766467fd739787d9f8b3264fab85e13d3f6b09d20d"
+    },
+    {
+      "path": "connect/matchmax/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "c18e7481d76beb182d074175cb2965c7a263d88eb30ed06e64cbe8e4f82bdd50"
+    },
+    {
+      "path": "connect/matchmax/privacy/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "fa1903f347049389d4c40d8c91072f831848e5b4c13dcecbabf4b010fbf13e01"
+    },
+    {
+      "path": "connect/matchmax/terms/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "3789136b29ec74964a746ab2317849dcdb8bd8bbda1174a6f113807ab7d20a95"
+    },
+    {
+      "path": "connect/matchmax/website/privacy.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "fa1903f347049389d4c40d8c91072f831848e5b4c13dcecbabf4b010fbf13e01"
+    },
+    {
+      "path": "connect/matchmax/website/terms.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "3789136b29ec74964a746ab2317849dcdb8bd8bbda1174a6f113807ab7d20a95"
+    },
+    {
+      "path": "connect/medical-bill-fighter/api-docs/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "12457fa540d938882c0addcd5bf41494d69171d761107132307604c3857533bf"
+    },
+    {
+      "path": "connect/medical-bill-fighter/api-docs/medical-bill-fighter.json",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "69b1805bdde2fe307eaa4af0653dc2b9e6453ac10c93857d97fc1780d871792a"
+    },
+    {
+      "path": "connect/medical-bill-fighter/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "803462cac6b2591ac09d463ce6cd9ab9ce4a71f0cd7412f1ed2a05eb89c966a0"
+    },
+    {
+      "path": "connect/medical-bill-fighter/privacy/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "58000a5b0bc057fa64379389b1b4538c8ac2059ad8127273d2d4a765ac903616"
+    },
+    {
+      "path": "connect/medical-bill-fighter/terms/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "d0a6dbc5b83cc8dd6ee3f77b36024e5b1ebae51368e912d7c67dc5cad01b7146"
+    },
+    {
+      "path": "connect/medical-bill-fighter/website/privacy.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "58000a5b0bc057fa64379389b1b4538c8ac2059ad8127273d2d4a765ac903616"
+    },
+    {
+      "path": "connect/medical-bill-fighter/website/terms.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "d0a6dbc5b83cc8dd6ee3f77b36024e5b1ebae51368e912d7c67dc5cad01b7146"
+    },
+    {
+      "path": "connect/moving-concierge/api-docs/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "679361bbac75cfcd1b74367d276d5834e610a66ac3b43207d76e8c3cdc7eff23"
+    },
+    {
+      "path": "connect/moving-concierge/api-docs/moving-concierge.json",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "16ec6a6a59ba264540d2cf3e9d607907625e6a4f009e28ae203a38243fe67b4c"
+    },
+    {
+      "path": "connect/moving-concierge/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "3dc7a5753536a77c8862bcfc9a8bb6074ca6742c5a059cc60cbea7050092366f"
+    },
+    {
+      "path": "connect/moving-concierge/privacy/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "5fae97957c377973d08962c87b1d83d6929bd4ea25ff484cf4d6dbb0d00a2cb5"
+    },
+    {
+      "path": "connect/moving-concierge/terms/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "f535aedfab09aad329e008e794492030a8daea3ef39c51e1abd4d7fae225b811"
+    },
+    {
+      "path": "connect/moving-concierge/website/privacy.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "5fae97957c377973d08962c87b1d83d6929bd4ea25ff484cf4d6dbb0d00a2cb5"
+    },
+    {
+      "path": "connect/moving-concierge/website/terms.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "f535aedfab09aad329e008e794492030a8daea3ef39c51e1abd4d7fae225b811"
+    },
+    {
+      "path": "connect/subscription-slayer/api-docs/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "a61e1f37d6858e48022973000c7748eee031a5808f593e7e979f74a059996b35"
+    },
+    {
+      "path": "connect/subscription-slayer/api-docs/subscription-slayer.json",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "4b60b10884ac56e43443b08f67c991ecd8b9b365388e0cd0c2c3ee50d042e18d"
+    },
+    {
+      "path": "connect/subscription-slayer/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "b7ebf20ff7ceecc3867e1a8d9a622d6288187696dcb52f5a51fb8fde71152837"
+    },
+    {
+      "path": "connect/subscription-slayer/privacy/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "f5b965971fd4d706358e113e6fada1fba28816a7ea2827c0e284c1dc9994e186"
+    },
+    {
+      "path": "connect/subscription-slayer/terms/index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "33f904d6e40d5f626ef34ed4d9c22edfdfe048c4305a7ecad5287f9dddc6cecf"
+    },
+    {
+      "path": "connect/subscription-slayer/website/privacy.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "f5b965971fd4d706358e113e6fada1fba28816a7ea2827c0e284c1dc9994e186"
+    },
+    {
+      "path": "connect/subscription-slayer/website/terms.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "33f904d6e40d5f626ef34ed4d9c22edfdfe048c4305a7ecad5287f9dddc6cecf"
+    },
+    {
+      "path": "connect/website/privacy.html",
+      "status": 200,
+      "matches_release_bytes": false,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "505b782ef0df49cacfb5456d9f528431dade06b8b20534903b8121e1b50f437c"
+    },
+    {
+      "path": "connect/website/terms.html",
+      "status": 200,
+      "matches_release_bytes": false,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "6890e7925b436bf0af6d6913c343b770b6bed0eba7ff785fa49e528f52eb8aff"
+    },
+    {
+      "path": "index.html",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "5f93d0f1ad6b5979c6706c443c7511f976cde3dc20a27742b37b405b44e257ef"
+    },
+    {
+      "path": "assets/qull-2026s.css",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "893c87ec39d556717ee648032d7ddfa7ec2ed23d786e8025dfe91a5ba8f2991c"
+    },
+    {
+      "path": "assets/qull-2026j.js",
+      "status": 200,
+      "matches_release_bytes": true,
+      "matches_content_allowing_pretty_url_rewrite": true,
+      "sha256": "a00de1b2c23c69a5f049f9ee8edf4faf65bc9b565c24e6f2989f3ccc441da555"
+    }
+  ],
+  "backend_deployed": false,
+  "normalization": "For HTML only, normalize internal href quotes and Netlify .html suffix removal; all other content must match exactly."
+}

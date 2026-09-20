@@ -29,5 +29,6 @@ typing-inspection==0.4.4
 typing_extensions==4.16.0
 uvicorn==0.53.0
 
-# Stripe REST transport (billing._stripe_rest) - production
+# Stripe SDK transport and HTTP runtime
 requests==2.34.2
+stripe==15.6.1

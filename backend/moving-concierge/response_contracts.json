@@ -1,0 +1,500 @@
+{
+  "/health": {
+    "get": {
+      "200": {
+        "description": "Public process-liveness response; does not establish payment or launch readiness.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ok": {
+                  "type": "boolean"
+                },
+                "service": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "ok": true,
+              "service": "moving-concierge",
+              "user_message": "Moving Concierge is up and ready to pack."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/moves": {
+    "post": {
+      "200": {
+        "description": "Creates a locked address-change checklist; no forms are submitted.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "move_id": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string"
+                },
+                "dmv_deadline": {
+                  "type": "string"
+                },
+                "checklist": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer"
+                    },
+                    "done": {
+                      "type": "integer"
+                    },
+                    "remaining": {
+                      "type": "integer"
+                    },
+                    "percent": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "fanned_out_to": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "move_id": "a1b2c3d4e5f6",
+              "status": "ready",
+              "state": "California",
+              "dmv_deadline": "after confirming the applicable deadline with the state DMV",
+              "checklist": {
+                "total": 19,
+                "done": 0,
+                "remaining": 19,
+                "percent": 0
+              },
+              "fanned_out_to": [],
+              "user_message": "Got it, Example — your address-change pack for the move to 2 Example St is built: 19 stops including USPS mail forwarding, your California driver's license (due after confirming the applicable deadline with the state DMV), and voter registration. It's a flat $49 for the whole pack, charged once after you confirm. Want me to unlock it? One tap."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/moves/{move_id}": {
+    "get": {
+      "200": {
+        "description": "Move and progress summary. Before payment, pack_locked is true and items is empty.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "move_id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "old_address": {
+                  "type": "string"
+                },
+                "new_address": {
+                  "type": "string"
+                },
+                "move_date": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "billing_status": {
+                  "type": "string"
+                },
+                "paid_at": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "checklist": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer"
+                    },
+                    "done": {
+                      "type": "integer"
+                    },
+                    "remaining": {
+                      "type": "integer"
+                    },
+                    "percent": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "pack_locked": {
+                  "type": "boolean"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "move_id": "a1b2c3d4e5f6",
+              "name": "Example User",
+              "email": "example@example.com",
+              "old_address": "1 Example St",
+              "new_address": "2 Example St",
+              "move_date": "2026-10-01",
+              "state": "CA",
+              "status": "ready",
+              "billing_status": "none",
+              "paid_at": null,
+              "checklist": {
+                "total": 19,
+                "done": 0,
+                "remaining": 19,
+                "percent": 0
+              },
+              "items": [],
+              "pack_locked": true,
+              "user_message": "Your move to 2 Example St: 0 of 19 stops done. Next up: File your USPS Change of Address."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/moves/{move_id}/billing/setup": {
+    "post": {
+      "200": {
+        "description": "Returns a hosted card-save URL and one-time $49 fee disclosure. Processor URL/IDs are illustrative.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "move_id": {
+                  "type": "string"
+                },
+                "stripe_customer_id": {
+                  "type": "string"
+                },
+                "client_secret": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "setup_url": {
+                  "type": "string"
+                },
+                "checkout_session_id": {
+                  "type": "string"
+                },
+                "fee": {
+                  "type": "string"
+                },
+                "fee_amount_cents": {
+                  "type": "integer"
+                },
+                "currency": {
+                  "type": "string"
+                },
+                "fee_disclosure": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "move_id": "a1b2c3d4e5f6",
+              "stripe_customer_id": "cus_example",
+              "client_secret": null,
+              "setup_url": "https://checkout.stripe.com/example",
+              "checkout_session_id": "cs_example",
+              "fee": "$49.00",
+              "fee_amount_cents": 4900,
+              "currency": "usd",
+              "fee_disclosure": "A one-time $49 fee for this moving preparation pack, charged only after you explicitly confirm.",
+              "user_message": "Your pack is ready. A one-time $49 fee for this moving preparation pack, charged only after you explicitly confirm. Save your card now — nothing is charged until you say the word."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/moves/{move_id}/billing/status": {
+    "get": {
+      "200": {
+        "description": "Verified payment-method state and exact one-time fee in USD cents.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "move_id": {
+                  "type": "string"
+                },
+                "billing_status": {
+                  "type": "string"
+                },
+                "card_state": {
+                  "type": "string"
+                },
+                "fee": {
+                  "type": "string"
+                },
+                "fee_amount_cents": {
+                  "type": "integer"
+                },
+                "currency": {
+                  "type": "string"
+                },
+                "fee_disclosure": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "move_id": "a1b2c3d4e5f6",
+              "billing_status": "card_ready",
+              "card_state": "ready",
+              "fee": "$49.00",
+              "fee_amount_cents": 4900,
+              "currency": "usd",
+              "fee_disclosure": "A one-time $49 fee for this moving preparation pack, charged only after you explicitly confirm.",
+              "user_message": "Your payment method is ready; the $49 fee requires your confirmation."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/moves/{move_id}/pay": {
+    "post": {
+      "200": {
+        "description": "Example successful one-time payment with the unlocked checklist.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "move_id": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "charged": {
+                  "type": "string"
+                },
+                "payment_intent_id": {
+                  "type": "string"
+                },
+                "fee_disclosure": {
+                  "type": "string"
+                },
+                "pack_markdown": {
+                  "type": "string"
+                },
+                "pdf_url": {
+                  "type": "string"
+                },
+                "checklist": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer"
+                    },
+                    "done": {
+                      "type": "integer"
+                    },
+                    "remaining": {
+                      "type": "integer"
+                    },
+                    "percent": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "move_id": "a1b2c3d4e5f6",
+              "status": "paid",
+              "charged": "$49.00",
+              "payment_intent_id": "pi_example",
+              "fee_disclosure": "A one-time $49 fee for this moving preparation pack, charged only after you explicitly confirm.",
+              "pack_markdown": "# Your Moving Concierge Pack\n\n**Example User** — moving **2026-10-01**\nFrom: 1 Example St\nTo: 2 Example St\n\n## ⏰ Time-sensitive — do these first\n\n- **Driver's license (California)**: update it after confirming the applicable deadline with the state DMV — https://www.dmv.ca.gov/\n- **Voter registration**: https://registertovote.ca.gov/\n- **USPS mail forwarding**: check current options and processing times — https://www.usps.com/move/\n\n## ✅ Checklist\n\n### Mail\n\n- [ ] **File your USPS Change of Address** — Forward mail from the old place to 2 Example St for 12 months. Check USPS for its current identity-verification fee, forwarding exclusions, and any service charges; beware copycat sites charging more. — https://www.usps.com/move/\n### Driver's license & car\n\n- [ ] **Update your California driver's license / ID** — Check California Department of Motor Vehicles for deadlines and documents for your move type. Moving between states can require an in-person visit. — https://www.dmv.ca.gov/\n- [ ] **Update your vehicle registration** — Separate record from your license — skip it and renewal notices keep going to the old address. — https://www.dmv.ca.gov/\n### Vote\n\n- [ ] **Update your voter registration** — Check the official election office for registration deadlines, eligibility, and available application methods. — https://registertovote.ca.gov/\n### Money\n\n- [ ] **Update banks \\& credit cards** — Checking, savings, credit cards — new address on file; order new debit cards if needed.\n- [ ] **Update loans \\& investments** — Mortgage servicer, auto loan, student loans, brokerage — statements and tax forms follow the address.\n### Work\n\n- [ ] **Tell your employer / payroll** — W-2s and any paper checks go to the right place; confirm direct deposit details if your bank changed.\n### Tax\n\n- [ ] **Notify the IRS** — File Form 8822 \\(free\\) so refunds and notices find you. Also update your state tax agency. — https://www.irs.gov/forms-pubs/about-form-8822\n### Insurance\n\n- [ ] **Update auto insurance** — Rates are based on where the car sleeps — update on day one to avoid claim headaches.\n- [ ] **Update renters / homeowners insurance** — New address, new coverage needs — don't leave a gap.\n- [ ] **Update health insurance \\& providers** — New address on the plan; find in-network doctors, dentist, and pharmacy near the new place.\n### Home\n\n- [ ] **Set up / transfer utilities** — Electric, gas, water, trash — schedule the shutoff at the old place and turn-on at the new one.\n- [ ] **Set up internet \\& TV** — Book the install appointment before move-in day if you can.\n### Deliveries\n\n- [ ] **Update subscriptions \\& deliveries** — Amazon, meal kits, magazines, anything that ships to you on a schedule.\n### Phone\n\n- [ ] **Update your phone carrier** — Billing address, and check coverage at the new address.\n### Health\n\n- [ ] **Transfer prescriptions \\& records** — Move prescriptions to a nearby pharmacy; request records from doctor, dentist, and vet.\n### Family\n\n- [ ] **Update schools \\& childcare** — Enroll the kids, transfer records, update emergency contacts.\n### Pets\n\n- [ ] **Update pet microchip \\& vet** — Update the microchip registry with the new address and find a new vet.\n### Memberships\n\n- [ ] **Update memberships** — Gym, clubs, library card, loyalty programs — the small ones everyone forgets.\n\n---\n_Generated by Moving Concierge. This pack gives you the steps and official links — you complete each change yourself. We never file anything on your behalf._",
+              "pdf_url": "/api/moves/a1b2c3d4e5f6/pack?format=pdf",
+              "checklist": {
+                "total": 19,
+                "done": 0,
+                "remaining": 19,
+                "percent": 0
+              },
+              "user_message": "Done, Example — $49.00 charged, once. Your pack is live: 19 stops, starting with USPS mail forwarding and your California driver's license, due after confirming the applicable deadline with the state DMV. Use the checklist to complete each address change yourself; no forms have been filed for you."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/moves/{move_id}/pack": {
+    "get": {
+      "200": {
+        "description": "The paid checklist as a JSON object when format=md, or a binary PDF when format=pdf.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "move_id": {
+                  "type": "string"
+                },
+                "format": {
+                  "type": "string"
+                },
+                "markdown": {
+                  "type": "string"
+                },
+                "checklist": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer"
+                    },
+                    "done": {
+                      "type": "integer"
+                    },
+                    "remaining": {
+                      "type": "integer"
+                    },
+                    "percent": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "pdf_url": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "move_id": "a1b2c3d4e5f6",
+              "format": "markdown",
+              "markdown": "# Your Moving Concierge Pack\n\n**Example User** — moving **2026-10-01**\nFrom: 1 Example St\nTo: 2 Example St\n\n## ⏰ Time-sensitive — do these first\n\n- **Driver's license (California)**: update it after confirming the applicable deadline with the state DMV — https://www.dmv.ca.gov/\n- **Voter registration**: https://registertovote.ca.gov/\n- **USPS mail forwarding**: check current options and processing times — https://www.usps.com/move/\n\n## ✅ Checklist\n\n### Mail\n\n- [ ] **File your USPS Change of Address** — Forward mail from the old place to 2 Example St for 12 months. Check USPS for its current identity-verification fee, forwarding exclusions, and any service charges; beware copycat sites charging more. — https://www.usps.com/move/\n### Driver's license & car\n\n- [ ] **Update your California driver's license / ID** — Check California Department of Motor Vehicles for deadlines and documents for your move type. Moving between states can require an in-person visit. — https://www.dmv.ca.gov/\n- [ ] **Update your vehicle registration** — Separate record from your license — skip it and renewal notices keep going to the old address. — https://www.dmv.ca.gov/\n### Vote\n\n- [ ] **Update your voter registration** — Check the official election office for registration deadlines, eligibility, and available application methods. — https://registertovote.ca.gov/\n### Money\n\n- [ ] **Update banks \\& credit cards** — Checking, savings, credit cards — new address on file; order new debit cards if needed.\n- [ ] **Update loans \\& investments** — Mortgage servicer, auto loan, student loans, brokerage — statements and tax forms follow the address.\n### Work\n\n- [ ] **Tell your employer / payroll** — W-2s and any paper checks go to the right place; confirm direct deposit details if your bank changed.\n### Tax\n\n- [ ] **Notify the IRS** — File Form 8822 \\(free\\) so refunds and notices find you. Also update your state tax agency. — https://www.irs.gov/forms-pubs/about-form-8822\n### Insurance\n\n- [ ] **Update auto insurance** — Rates are based on where the car sleeps — update on day one to avoid claim headaches.\n- [ ] **Update renters / homeowners insurance** — New address, new coverage needs — don't leave a gap.\n- [ ] **Update health insurance \\& providers** — New address on the plan; find in-network doctors, dentist, and pharmacy near the new place.\n### Home\n\n- [ ] **Set up / transfer utilities** — Electric, gas, water, trash — schedule the shutoff at the old place and turn-on at the new one.\n- [ ] **Set up internet \\& TV** — Book the install appointment before move-in day if you can.\n### Deliveries\n\n- [ ] **Update subscriptions \\& deliveries** — Amazon, meal kits, magazines, anything that ships to you on a schedule.\n### Phone\n\n- [ ] **Update your phone carrier** — Billing address, and check coverage at the new address.\n### Health\n\n- [ ] **Transfer prescriptions \\& records** — Move prescriptions to a nearby pharmacy; request records from doctor, dentist, and vet.\n### Family\n\n- [ ] **Update schools \\& childcare** — Enroll the kids, transfer records, update emergency contacts.\n### Pets\n\n- [ ] **Update pet microchip \\& vet** — Update the microchip registry with the new address and find a new vet.\n### Memberships\n\n- [ ] **Update memberships** — Gym, clubs, library card, loyalty programs — the small ones everyone forgets.\n\n---\n_Generated by Moving Concierge. This pack gives you the steps and official links — you complete each change yourself. We never file anything on your behalf._",
+              "checklist": {
+                "total": 19,
+                "done": 0,
+                "remaining": 19,
+                "percent": 0
+              },
+              "pdf_url": "/api/moves/a1b2c3d4e5f6/pack?format=pdf",
+              "user_message": "Here's your pack, Example — 19 stops, starting with USPS mail forwarding and your California driver's license, due after confirming the applicable deadline with the state DMV. There's a printable PDF too. You've got this. 💪"
+            }
+          },
+          "application/pdf": {
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/data": {
+    "delete": {
+      "200": {
+        "description": "Deletes this user's operational records; discloses retained payment/accounting records and backup handling.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "deleted": {
+                  "type": "boolean"
+                },
+                "retained": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "deleted": true,
+              "retained": "Required payment/accounting records and processor records; backups follow the operator's retention policy.",
+              "user_message": "Your operational records for this connector were deleted. Required payment records are retained separately."
+            }
+          }
+        }
+      }
+    }
+  }
+}

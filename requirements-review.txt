@@ -1,0 +1,4 @@
+# Install alongside all backend/*/requirements.txt for local/CI validation.
+pytest==9.1.1
+pytest-asyncio==1.4.0
+openapi-spec-validator==0.9.0

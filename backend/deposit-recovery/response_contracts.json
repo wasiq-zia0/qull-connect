@@ -1,0 +1,661 @@
+{
+  "/api/cases": {
+    "post": {
+      "200": {
+        "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "case_id": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string"
+                },
+                "statute": {
+                  "type": "string"
+                },
+                "deposit": {
+                  "type": "number"
+                },
+                "move_out": {
+                  "type": "string"
+                },
+                "deadline": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "deadline_days": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "basis_explanation": {
+                  "type": "string"
+                },
+                "statute_note": {
+                  "type": "string"
+                },
+                "official_source_url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "deadline_verified": {
+                  "type": "boolean"
+                },
+                "penalty_multiple": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "penalty_note": {
+                  "type": "string"
+                },
+                "estimated_fee_if_full_deposit_recovered_cents": {
+                  "type": "integer"
+                },
+                "days_remaining": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "status": {
+                  "type": "string"
+                },
+                "headline": {
+                  "type": "string"
+                },
+                "detail": {
+                  "type": "string"
+                },
+                "next_action": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "examples": {
+              "example_1": {
+                "summary": "Illustrative local test response",
+                "value": {
+                  "case_id": "694a5249956d4f708b79015c0f1addaa",
+                  "state": "California",
+                  "statute": "Cal. Civ. Code § 1950.5",
+                  "deposit": 1200.0,
+                  "move_out": "2026-01-01",
+                  "deadline": "2026-01-22",
+                  "deadline_days": 21,
+                  "basis_explanation": "21 days. Itemized statement of deductions required with any retained portion.",
+                  "statute_note": "Preliminary timing calculation for an ordinary residential tenancy. Deductions, estimates, exceptions and proof still need review.",
+                  "official_source_url": "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=1950.5.",
+                  "deadline_verified": true,
+                  "penalty_multiple": null,
+                  "penalty_note": "No penalty entitlement or amount has been determined.",
+                  "estimated_fee_if_full_deposit_recovered_cents": 30000,
+                  "days_remaining": -242,
+                  "status": "overdue",
+                  "headline": "Preliminary return/accounting deadline: 2026-01-22",
+                  "detail": "Preliminary timing calculation for an ordinary residential tenancy. Deductions, estimates, exceptions and proof still need review.",
+                  "next_action": "prepare_return_request",
+                  "user_message": "The preliminary deadline 2026-01-22 has passed. Review any deductions or notices received, then request a draft letter to send yourself."
+                }
+              },
+              "example_2": {
+                "summary": "Illustrative local test response",
+                "value": {
+                  "case_id": "f8d18559bfc342c4b68c9bc5afd32f7f",
+                  "state": "Connecticut",
+                  "statute": "Conn. Gen. Stat. § 47a-21",
+                  "deposit": 1200.0,
+                  "move_out": "2026-01-01",
+                  "deadline": "2026-02-04",
+                  "deadline_days": 21,
+                  "basis_explanation": "Later of 21 calendar days after tenancy ends and 15 calendar days after written notification of the forwarding address.",
+                  "statute_note": "Preliminary timing calculation for an ordinary residential tenancy. Deductions, estimates, exceptions and proof still need review.",
+                  "official_source_url": "https://www.cga.ct.gov/current/pub/chap_831.htm#sec_47a-21",
+                  "deadline_verified": true,
+                  "penalty_multiple": null,
+                  "penalty_note": "No penalty entitlement or amount has been determined.",
+                  "estimated_fee_if_full_deposit_recovered_cents": 30000,
+                  "days_remaining": -229,
+                  "status": "overdue",
+                  "headline": "Preliminary return/accounting deadline: 2026-02-04",
+                  "detail": "Preliminary timing calculation for an ordinary residential tenancy. Deductions, estimates, exceptions and proof still need review.",
+                  "next_action": "prepare_return_request",
+                  "user_message": "The preliminary deadline 2026-02-04 has passed. Review any deductions or notices received, then request a draft letter to send yourself."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cases/{cid}/demand-letter": {
+    "post": {
+      "200": {
+        "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "case_id": {
+                  "type": "string"
+                },
+                "filename": {
+                  "type": "string"
+                },
+                "pdf_base64": {
+                  "type": "string",
+                  "format": "byte",
+                  "description": "Complete PDF bytes encoded as base64. Decode this field to obtain the generated PDF; contents are omitted from the abbreviated example."
+                },
+                "letter_status": {
+                  "type": "string"
+                },
+                "letter_type": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "examples": {
+              "example_1": {
+                "summary": "Selected response fields; encoded PDF contents omitted",
+                "value": {
+                  "case_id": "694a5249956d4f708b79015c0f1addaa",
+                  "filename": "demand-letter-694a5249956d4f708b79015c0f1addaa.pdf",
+                  "letter_status": "draft",
+                  "letter_type": "factual_return_request",
+                  "user_message": "Your return-and-accounting request is ready. Review the facts, then send it yourself. No liability or penalty entitlement is asserted."
+                }
+              },
+              "example_2": {
+                "summary": "Selected response fields; encoded PDF contents omitted",
+                "value": {
+                  "case_id": "6be640eead84412eab9dfb88498821da",
+                  "filename": "demand-letter-6be640eead84412eab9dfb88498821da.pdf",
+                  "letter_status": "draft",
+                  "letter_type": "factual_return_request",
+                  "user_message": "Your return-and-accounting request is ready. Review the facts, then send it yourself. No liability or penalty entitlement is asserted."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cases/{cid}/letter-status": {
+    "post": {
+      "200": {
+        "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "case_id": {
+                  "type": "string"
+                },
+                "letter_status": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "examples": {
+              "example_1": {
+                "summary": "Illustrative local test response",
+                "value": {
+                  "case_id": "694a5249956d4f708b79015c0f1addaa",
+                  "letter_status": "sent-confirmed-by-user",
+                  "user_message": "Recorded that you sent the letter. Return here to report any recovery."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/life-events": {
+    "post": {
+      "200": {
+        "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "draft_id": {
+                  "type": "string"
+                },
+                "draft": {
+                  "type": "boolean"
+                },
+                "missing": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "prefilled": {
+                  "type": "object",
+                  "properties": {
+                    "state": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "examples": {
+              "example_1": {
+                "summary": "Illustrative local test response",
+                "value": {
+                  "draft_id": "28eeecbaa89b4c3c8382587e7d1f4d44",
+                  "draft": true,
+                  "missing": [
+                    "tenant_name",
+                    "tenant_forwarding_address",
+                    "move_out"
+                  ],
+                  "prefilled": {
+                    "state": "CA"
+                  },
+                  "user_message": "I caught your move from California — let me get your deposit back on the radar. I still need your name, your forwarding address, your move-out date, your deposit amount, your landlord's name, your landlord's address and the rental address. What's your name?"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/drafts/{draft_id}/promote": {
+    "post": {
+      "200": {
+        "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "case_id": {
+                  "type": "string"
+                },
+                "draft": {
+                  "type": "boolean"
+                },
+                "state": {
+                  "type": "string"
+                },
+                "statute": {
+                  "type": "string"
+                },
+                "deposit": {
+                  "type": "number"
+                },
+                "move_out": {
+                  "type": "string"
+                },
+                "deadline": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "deadline_days": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "basis_explanation": {
+                  "type": "string"
+                },
+                "statute_note": {
+                  "type": "string"
+                },
+                "official_source_url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "deadline_verified": {
+                  "type": "boolean"
+                },
+                "penalty_multiple": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "penalty_note": {
+                  "type": "string"
+                },
+                "estimated_fee_if_full_deposit_recovered_cents": {
+                  "type": "integer"
+                },
+                "days_remaining": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "status": {
+                  "type": "string"
+                },
+                "headline": {
+                  "type": "string"
+                },
+                "detail": {
+                  "type": "string"
+                },
+                "next_action": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "examples": {
+              "example_1": {
+                "summary": "Illustrative local test response",
+                "value": {
+                  "case_id": "89d76febed97430a91b066bbc1adb919",
+                  "draft": false,
+                  "state": "California",
+                  "statute": "Cal. Civ. Code § 1950.5",
+                  "deposit": 1200.0,
+                  "move_out": "2026-01-01",
+                  "deadline": "2026-01-22",
+                  "deadline_days": 21,
+                  "basis_explanation": "21 days. Itemized statement of deductions required with any retained portion.",
+                  "statute_note": "Preliminary timing calculation for an ordinary residential tenancy. Deductions, estimates, exceptions and proof still need review.",
+                  "official_source_url": "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=1950.5.",
+                  "deadline_verified": true,
+                  "penalty_multiple": null,
+                  "penalty_note": "No penalty entitlement or amount has been determined.",
+                  "estimated_fee_if_full_deposit_recovered_cents": 30000,
+                  "days_remaining": -242,
+                  "status": "overdue",
+                  "headline": "Preliminary return/accounting deadline: 2026-01-22",
+                  "detail": "Preliminary timing calculation for an ordinary residential tenancy. Deductions, estimates, exceptions and proof still need review.",
+                  "next_action": "prepare_return_request",
+                  "user_message": "The preliminary deadline 2026-01-22 has passed. Review any deductions or notices received, then request a draft letter to send yourself."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cases/{cid}/billing/setup": {
+    "post": {
+      "200": {
+        "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "case_id": {
+                  "type": "string"
+                },
+                "stripe_customer_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "setup_url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "checkout_session_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "setup_intent_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "fee_disclosure": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "examples": {
+              "example_1": {
+                "summary": "Illustrative hosted-setup response; example URL is not a usable payment session",
+                "value": {
+                  "case_id": "694a5249956d4f708b79015c0f1addaa",
+                  "stripe_customer_id": "cus_owned",
+                  "setup_url": "https://checkout.stripe.com/example-not-a-live-session",
+                  "checkout_session_id": "cs_owned",
+                  "setup_intent_id": null,
+                  "fee_disclosure": "You will be charged 25% of the recovered deposit, only if you confirm the recovery. No charge otherwise. You can cancel any time before confirming; see TERMS.md.",
+                  "user_message": "You will be charged 25% of the recovered deposit, only if you confirm the recovery. No charge otherwise. You can cancel any time before confirming; see TERMS.md. Open setup_url to save a payment method securely with Stripe. Saving it does not charge a fee."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cases/{cid}/billing/status": {
+    "get": {
+      "200": {
+        "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "case_id": {
+                  "type": "string"
+                },
+                "billing_status": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "card_state": {
+                  "type": "string"
+                },
+                "setup_status": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "fee_disclosure": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "examples": {
+              "example_1": {
+                "summary": "Card setup pending (illustrative provider fixture)",
+                "value": {
+                  "case_id": "694a5249956d4f708b79015c0f1addaa",
+                  "billing_status": "card_pending",
+                  "card_state": "pending",
+                  "setup_status": "requires_confirmation",
+                  "fee_disclosure": "You will be charged 25% of the recovered deposit, only if you confirm the recovery. No charge otherwise. You can cancel any time before confirming; see TERMS.md.",
+                  "user_message": "Card setup has not been confirmed. Open the Stripe setup link and complete it."
+                }
+              },
+              "example_2": {
+                "summary": "Card setup ready (illustrative provider fixture)",
+                "value": {
+                  "case_id": "694a5249956d4f708b79015c0f1addaa",
+                  "billing_status": "card_pending",
+                  "card_state": "ready",
+                  "setup_status": "succeeded",
+                  "fee_disclosure": "You will be charged 25% of the recovered deposit, only if you confirm the recovery. No charge otherwise. You can cancel any time before confirming; see TERMS.md.",
+                  "user_message": "Your payment method is saved. Review and explicitly approve the fee before payment."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cases/{cid}/billing/quote": {
+    "post": {
+      "200": {
+        "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "case_id": {
+                  "type": "string"
+                },
+                "currency": {
+                  "type": "string"
+                },
+                "recovery_amount": {
+                  "type": "number"
+                },
+                "fee_rate": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "fee_amount_cents": {
+                  "type": "integer"
+                },
+                "charged": {
+                  "type": "boolean"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "examples": {
+              "example_1": {
+                "summary": "Illustrative local test response",
+                "value": {
+                  "case_id": "694a5249956d4f708b79015c0f1addaa",
+                  "currency": "USD",
+                  "recovery_amount": 1200.0,
+                  "fee_rate": 0.25,
+                  "fee_amount_cents": 30000,
+                  "charged": false,
+                  "user_message": "The fee would be 300.00 USD. Review it, then explicitly approve this exact amount if you want to pay."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/cases/{cid}/recovery-confirmed": {
+    "post": {
+      "200": {
+        "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "case_id": {
+                  "type": "string"
+                },
+                "amount_recovered": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "fee_rate": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "fee_charged_cents": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "payment_intent_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "examples": {
+              "example_1": {
+                "summary": "Illustrative local test response",
+                "value": {
+                  "case_id": "694a5249956d4f708b79015c0f1addaa",
+                  "amount_recovered": 1200.0,
+                  "fee_rate": 0.25,
+                  "fee_charged_cents": 30000,
+                  "payment_intent_id": "pi_owned",
+                  "user_message": "Your $1,200.00 is back — congratulations. The 25% fee is $300.00, charged now that you've confirmed the recovery. Case closed."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

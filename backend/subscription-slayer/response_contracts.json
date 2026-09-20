@@ -1,0 +1,782 @@
+{
+  "/health": {
+    "get": {
+      "200": {
+        "description": "Public process-liveness response; does not establish payment or launch readiness.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ok": {
+                  "type": "boolean"
+                },
+                "service": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "ok": true,
+              "service": "subscription-slayer",
+              "version": "0.2.0",
+              "user_message": "Subscription Slayer is awake and ready to hunt down your recurring charges."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/subscriptions": {
+    "post": {
+      "201": {
+        "description": "The user-provided subscription is tracked; no merchant cancellation is performed.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "subscription": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "owner_id": {
+                      "type": "string"
+                    },
+                    "merchant": {
+                      "type": "string"
+                    },
+                    "merchant_key": {
+                      "type": "string"
+                    },
+                    "amount": {
+                      "type": "number"
+                    },
+                    "currency": {
+                      "type": "string"
+                    },
+                    "frequency": {
+                      "type": "string"
+                    },
+                    "confidence": {
+                      "type": "number"
+                    },
+                    "first_seen": {
+                      "type": "string"
+                    },
+                    "last_seen": {
+                      "type": "string"
+                    },
+                    "occurrences": {
+                      "type": "integer"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "savings_monthly": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "savings_confirmed": {
+                      "type": "boolean"
+                    },
+                    "notes": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string"
+                    },
+                    "updated_at": {
+                      "type": "string"
+                    },
+                    "confirmation_batch": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "subscription": {
+                "id": 1,
+                "owner_id": "example-user",
+                "merchant": "Netflix",
+                "merchant_key": "netflix_usd",
+                "amount": 15.99,
+                "currency": "USD",
+                "frequency": "monthly",
+                "confidence": 1.0,
+                "first_seen": "2026-09-21",
+                "last_seen": "2026-09-21",
+                "occurrences": 1,
+                "status": "new",
+                "savings_monthly": null,
+                "savings_confirmed": false,
+                "notes": "",
+                "created_at": "2026-09-20T12:00:00+00:00",
+                "updated_at": "2026-09-20T12:00:00+00:00",
+                "confirmation_batch": null
+              },
+              "user_message": "Subscription tracked. Use its cancellation guide and confirm with the merchant before recording a cancellation."
+            }
+          }
+        }
+      }
+    },
+    "get": {
+      "200": {
+        "description": "Tracked subscriptions and separate annual estimates by currency.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "subscriptions": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "owner_id": {
+                        "type": "string"
+                      },
+                      "merchant": {
+                        "type": "string"
+                      },
+                      "merchant_key": {
+                        "type": "string"
+                      },
+                      "amount": {
+                        "type": "number"
+                      },
+                      "currency": {
+                        "type": "string"
+                      },
+                      "frequency": {
+                        "type": "string"
+                      },
+                      "confidence": {
+                        "type": "number"
+                      },
+                      "first_seen": {
+                        "type": "string"
+                      },
+                      "last_seen": {
+                        "type": "string"
+                      },
+                      "occurrences": {
+                        "type": "integer"
+                      },
+                      "status": {
+                        "type": "string"
+                      },
+                      "savings_monthly": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "savings_confirmed": {
+                        "type": "boolean"
+                      },
+                      "notes": {
+                        "type": "string"
+                      },
+                      "created_at": {
+                        "type": "string"
+                      },
+                      "updated_at": {
+                        "type": "string"
+                      },
+                      "confirmation_batch": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "additionalProperties": true
+                  }
+                },
+                "count": {
+                  "type": "integer"
+                },
+                "estimated_annual_cost_by_currency": {
+                  "type": "object",
+                  "properties": {
+                    "USD": {
+                      "type": "number"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "subscriptions": [
+                {
+                  "id": 1,
+                  "owner_id": "example-user",
+                  "merchant": "Netflix",
+                  "merchant_key": "netflix_usd",
+                  "amount": 15.99,
+                  "currency": "USD",
+                  "frequency": "monthly",
+                  "confidence": 1.0,
+                  "first_seen": "2026-09-21",
+                  "last_seen": "2026-09-21",
+                  "occurrences": 1,
+                  "status": "new",
+                  "savings_monthly": null,
+                  "savings_confirmed": false,
+                  "notes": "",
+                  "created_at": "2026-09-20T12:00:00+00:00",
+                  "updated_at": "2026-09-20T12:00:00+00:00",
+                  "confirmation_batch": null
+                }
+              ],
+              "count": 1,
+              "estimated_annual_cost_by_currency": {
+                "USD": 191.88
+              },
+              "user_message": "You are tracking 1 subscriptions. Review the list and choose a cancellation guide."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/subscriptions/{sub_id}/cancel-pack": {
+    "get": {
+      "200": {
+        "description": "Cancellation instructions for the user to carry out.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "cancel_pack": {
+                  "type": "object",
+                  "properties": {
+                    "merchant": {
+                      "type": "string"
+                    },
+                    "curated": {
+                      "type": "boolean"
+                    },
+                    "cancel_url": {
+                      "type": "string"
+                    },
+                    "steps": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "difficulty": {
+                      "type": "string"
+                    },
+                    "notes": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "cancel_pack": {
+                "merchant": "Netflix",
+                "curated": true,
+                "cancel_url": "https://www.netflix.com/cancelplan",
+                "steps": [
+                  "Go to netflix.com/cancelplan and sign in.",
+                  "Click Cancel Membership.",
+                  "Click Finish Cancellation and confirm.",
+                  "Save the confirmation email; you keep access until the end of the billing period."
+                ],
+                "difficulty": "easy",
+                "notes": "If billed via Apple/Google Play, cancel in that platform's subscription settings instead."
+              },
+              "user_message": "Here's how to cancel Netflix: Step 1: Go to netflix.com/cancelplan and sign in. Step 2: Click Cancel Membership. Open this link to jump straight there: https://www.netflix.com/cancelplan Once it's done, tell me the monthly amount you were paying and I'll log your savings."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/subscriptions/{sub_id}": {
+    "patch": {
+      "200": {
+        "description": "Records a cancellation reported by the user; does not contact the merchant.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "subscription": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "owner_id": {
+                      "type": "string"
+                    },
+                    "merchant": {
+                      "type": "string"
+                    },
+                    "merchant_key": {
+                      "type": "string"
+                    },
+                    "amount": {
+                      "type": "number"
+                    },
+                    "currency": {
+                      "type": "string"
+                    },
+                    "frequency": {
+                      "type": "string"
+                    },
+                    "confidence": {
+                      "type": "number"
+                    },
+                    "first_seen": {
+                      "type": "string"
+                    },
+                    "last_seen": {
+                      "type": "string"
+                    },
+                    "occurrences": {
+                      "type": "integer"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "savings_monthly": {
+                      "type": "number"
+                    },
+                    "savings_confirmed": {
+                      "type": "boolean"
+                    },
+                    "notes": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string"
+                    },
+                    "updated_at": {
+                      "type": "string"
+                    },
+                    "confirmation_batch": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "subscription": {
+                "id": 1,
+                "owner_id": "example-user",
+                "merchant": "Netflix",
+                "merchant_key": "netflix_usd",
+                "amount": 15.99,
+                "currency": "USD",
+                "frequency": "monthly",
+                "confidence": 1.0,
+                "first_seen": "2026-09-21",
+                "last_seen": "2026-09-21",
+                "occurrences": 1,
+                "status": "cancelled",
+                "savings_monthly": 15.99,
+                "savings_confirmed": false,
+                "notes": "",
+                "created_at": "2026-09-20T12:00:00+00:00",
+                "updated_at": "2026-09-20T12:00:00+00:00",
+                "confirmation_batch": null
+              },
+              "user_message": "Done — Netflix is marked cancelled, saving you $15.99 a month. Say 'confirm my savings' and I'll tally everything up (my $10-per-cancellation fee only applies if you confirm)."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/savings/fee-quote": {
+    "post": {
+      "200": {
+        "description": "Exact USD fee for this batch; no reservation or charge.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "subscription_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                "fee_amount_cents": {
+                  "type": "integer"
+                },
+                "currency": {
+                  "type": "string"
+                },
+                "fee_disclosure": {
+                  "type": "string"
+                },
+                "requires_confirmation": {
+                  "type": "boolean"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "subscription_ids": [
+                1
+              ],
+              "fee_amount_cents": 1000,
+              "currency": "usd",
+              "fee_disclosure": "$10 for each completed cancellation you explicitly confirm. No completed cancellation, no fee.",
+              "requires_confirmation": true,
+              "user_message": "The fee for these 1 completed cancellation(s) is $10.00 USD. Confirm this exact amount only if you agree to pay it."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/billing/setup": {
+    "post": {
+      "200": {
+        "description": "Hosted payment-method setup. The example processor URL and IDs are illustrative; use the actual returned setup_url.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "customer_id": {
+                  "type": "string"
+                },
+                "client_secret": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "setup_url": {
+                  "type": "string"
+                },
+                "checkout_session_id": {
+                  "type": "string"
+                },
+                "setup_intent_id": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "fee_disclosure": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "customer_id": "cus_example",
+              "client_secret": null,
+              "setup_url": "https://checkout.stripe.com/example",
+              "checkout_session_id": "cs_example",
+              "setup_intent_id": null,
+              "fee_disclosure": "$10 for each completed cancellation you explicitly confirm. No completed cancellation, no fee.",
+              "user_message": "Your card is ready to be saved — but listen first: $10 for each completed cancellation you explicitly confirm. No completed cancellation, no fee. Saving a card charges you nothing today."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/billing/status": {
+    "get": {
+      "200": {
+        "description": "Payment-method state verified against the stored setup; no fee is charged.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "billing_status": {
+                  "type": "string"
+                },
+                "card_state": {
+                  "type": "string"
+                },
+                "fee_disclosure": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "billing_status": "card_ready",
+              "card_state": "ready",
+              "fee_disclosure": "$10 for each completed cancellation you explicitly confirm. No completed cancellation, no fee.",
+              "user_message": "Your payment method is saved; fees require your explicit confirmation."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/savings/confirmed": {
+    "post": {
+      "200": {
+        "description": "Example completed fee payment. Actual success requires Stripe status succeeded; other states use documented error responses.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "first_year_savings_usd": {
+                  "type": "number"
+                },
+                "cancellations_confirmed": {
+                  "type": "integer"
+                },
+                "fee_per_cancellation_usd": {
+                  "type": "number"
+                },
+                "fee_charged": {
+                  "type": "number"
+                },
+                "payment_intent_id": {
+                  "type": "string"
+                },
+                "subscription_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "first_year_savings_usd": 191.88,
+              "cancellations_confirmed": 1,
+              "fee_per_cancellation_usd": 10.0,
+              "fee_charged": 10.0,
+              "payment_intent_id": "pi_example",
+              "subscription_ids": [
+                1
+              ],
+              "user_message": "You confirmed 1 completed cancellation(s). The one-time USD fee of $10.00 is paid. Keep the merchant's cancellation confirmation and check your next statement."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/receipts": {
+    "post": {
+      "201": {
+        "description": "Recurring-charge candidates inferred from user-supplied receipts; raw receipts are not retained.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "detected": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "merchant": {
+                        "type": "string"
+                      },
+                      "merchant_key": {
+                        "type": "string"
+                      },
+                      "amount": {
+                        "type": "number"
+                      },
+                      "currency": {
+                        "type": "string"
+                      },
+                      "frequency": {
+                        "type": "string"
+                      },
+                      "occurrences": {
+                        "type": "integer"
+                      },
+                      "first_seen": {
+                        "type": "string"
+                      },
+                      "last_seen": {
+                        "type": "string"
+                      },
+                      "recurring": {
+                        "type": "boolean"
+                      },
+                      "confidence": {
+                        "type": "number"
+                      },
+                      "subscription_id": {
+                        "type": "integer"
+                      }
+                    },
+                    "additionalProperties": true
+                  }
+                },
+                "demo": {
+                  "type": "boolean"
+                },
+                "recurring_count": {
+                  "type": "integer"
+                },
+                "estimated_annual_cost_by_currency": {
+                  "type": "object",
+                  "properties": {
+                    "USD": {
+                      "type": "number"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "detected": [
+                {
+                  "merchant": "Spotify",
+                  "merchant_key": "spotify_usd",
+                  "amount": 10.0,
+                  "currency": "USD",
+                  "frequency": "monthly",
+                  "occurrences": 2,
+                  "first_seen": "2026-08-01",
+                  "last_seen": "2026-09-01",
+                  "recurring": true,
+                  "confidence": 0.8,
+                  "subscription_id": 2
+                }
+              ],
+              "demo": false,
+              "recurring_count": 1,
+              "estimated_annual_cost_by_currency": {
+                "USD": 120.0
+              },
+              "user_message": "Possible recurring charges were added to your tracker. Review each result before using its cancellation guide."
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/data": {
+    "delete": {
+      "200": {
+        "description": "Deletes this user's operational records; discloses retained payment/accounting records and backup handling.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "deleted": {
+                  "type": "boolean"
+                },
+                "retained": {
+                  "type": "string"
+                },
+                "user_message": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "example": {
+              "deleted": true,
+              "retained": "Required payment/accounting records and processor records; backups follow the operator's retention policy.",
+              "user_message": "Your operational records for this connector were deleted. Required payment records are retained separately."
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -2,8 +2,18 @@
   "openapi": "3.1.0",
   "info": {
     "title": "final-paycheck",
-    "version": "0.2.0"
+    "description": "Qull Connect API. Supply a per-user API key in Authorization: Bearer <key>. Keys identify one customer; arbitrary platform/user-id headers are not accepted. Payment setup opens hosted Stripe Checkout and does not charge a service fee. Use the record's billing/status operation to verify setup, then explicitly authorize the applicable fee. See the linked guide for workflow and service limits.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Qull, Inc.",
+      "email": "wasiq@qull.io"
+    }
   },
+  "servers": [
+    {
+      "url": "https://5.78.152.6.nip.io/final-paycheck"
+    }
+  ],
   "paths": {
     "/health": {
       "get": {
@@ -14,11 +24,15 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           }
-        }
+        },
+        "security": []
       }
     },
     "/api/state-laws": {
@@ -30,9 +44,21 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -57,7 +83,10 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           },
@@ -70,6 +99,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -90,10 +128,182 @@
         },
         "responses": {
           "201": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string"
+                    },
+                    "draft": {
+                      "type": "boolean"
+                    },
+                    "employee_name": {
+                      "type": "string"
+                    },
+                    "employer_name": {
+                      "type": "string"
+                    },
+                    "state": {
+                      "type": "string"
+                    },
+                    "state_name": {
+                      "type": "string"
+                    },
+                    "last_day_worked": {
+                      "type": "string"
+                    },
+                    "termination_type": {
+                      "type": "string"
+                    },
+                    "wages_owed": {
+                      "type": "number"
+                    },
+                    "pay_period": {
+                      "type": "string"
+                    },
+                    "next_payday": {},
+                    "deadline": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "days_overdue": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "days_remaining": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "statute": {
+                      "type": "string"
+                    },
+                    "penalty_note": {
+                      "type": "string"
+                    },
+                    "note": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "flags": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "missing": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "stripe_customer_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "fee_status": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "recovered_amount": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "demand_letter_generated": {
+                      "type": "boolean"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "id": "f20cb25800744dc8a8f5213ddfbda1f4",
+                      "created_at": "2026-09-20T19:29:09.717400+00:00",
+                      "draft": false,
+                      "employee_name": "Alice",
+                      "employer_name": "Employer",
+                      "state": "NV",
+                      "state_name": "Nevada",
+                      "last_day_worked": "2026-01-01",
+                      "termination_type": "fired",
+                      "wages_owed": 1000.0,
+                      "pay_period": "",
+                      "next_payday": null,
+                      "deadline": "2026-01-01",
+                      "status": "overdue",
+                      "days_overdue": 262,
+                      "days_remaining": 0,
+                      "statute": "NRS 608.020-608.050",
+                      "penalty_note": "Payment penalties have additional prerequisites; this tool does not calculate them.",
+                      "note": "",
+                      "flags": [],
+                      "missing": null,
+                      "stripe_customer_id": null,
+                      "fee_status": "none",
+                      "recovered_amount": null,
+                      "demand_letter_generated": false,
+                      "user_message": "Got it — I'm watching your $1,000.00 final paycheck from Employer. Nevada law says it was due 2026-01-01. I'll draft the demand letter after you request it and the verified deadline has passed."
+                    }
+                  },
+                  "example_2": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "id": "82a789a344164d27baa6c4a9bdd476e9",
+                      "created_at": "2026-09-20T19:29:09.728046+00:00",
+                      "draft": false,
+                      "employee_name": "Alice",
+                      "employer_name": "Employer",
+                      "state": "CA",
+                      "state_name": "California",
+                      "last_day_worked": "2026-01-01",
+                      "termination_type": "fired",
+                      "wages_owed": 1000.0,
+                      "pay_period": "",
+                      "next_payday": null,
+                      "deadline": null,
+                      "status": "needs_review",
+                      "days_overdue": 0,
+                      "days_remaining": null,
+                      "statute": "Cal. Lab. Code §§ 201-203",
+                      "penalty_note": "No penalty determination.",
+                      "note": "This deadline requires review. A factual unpaid-wages request can be prepared for you to send.",
+                      "flags": [
+                        "unverified_rule"
+                      ],
+                      "missing": null,
+                      "stripe_customer_id": null,
+                      "fee_status": "none",
+                      "recovered_amount": null,
+                      "demand_letter_generated": false,
+                      "user_message": "Got it — I'm watching your $1,000.00 final paycheck from Employer. California law says it was due no fixed state deadline. I'll draft the demand letter after you request it and the verified deadline has passed."
+                    }
+                  }
+                }
               }
             }
           },
@@ -106,6 +316,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -130,7 +349,10 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           },
@@ -143,6 +365,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -175,10 +406,149 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string"
+                    },
+                    "draft": {
+                      "type": "boolean"
+                    },
+                    "employee_name": {
+                      "type": "string"
+                    },
+                    "employer_name": {
+                      "type": "string"
+                    },
+                    "state": {
+                      "type": "string"
+                    },
+                    "state_name": {
+                      "type": "string"
+                    },
+                    "last_day_worked": {
+                      "type": "string"
+                    },
+                    "termination_type": {
+                      "type": "string"
+                    },
+                    "wages_owed": {
+                      "type": "number"
+                    },
+                    "pay_period": {
+                      "type": "string"
+                    },
+                    "next_payday": {},
+                    "deadline": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "days_overdue": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "days_remaining": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "statute": {
+                      "type": "string"
+                    },
+                    "penalty_note": {
+                      "type": "string"
+                    },
+                    "note": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "flags": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "missing": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "stripe_customer_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "fee_status": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "recovered_amount": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "demand_letter_generated": {
+                      "type": "boolean"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "id": "e92ec0696590473397bc05e4141a4a5a",
+                      "created_at": "2026-09-20T19:29:09.735938+00:00",
+                      "draft": false,
+                      "employee_name": "Alice",
+                      "employer_name": "Employer",
+                      "state": "NV",
+                      "state_name": "Nevada",
+                      "last_day_worked": "2026-01-01",
+                      "termination_type": "fired",
+                      "wages_owed": 1000.0,
+                      "pay_period": "",
+                      "next_payday": null,
+                      "deadline": "2026-01-01",
+                      "status": "overdue",
+                      "days_overdue": 262,
+                      "days_remaining": 0,
+                      "statute": "NRS 608.020-608.050",
+                      "penalty_note": "Payment penalties have additional prerequisites; this tool does not calculate them.",
+                      "note": "",
+                      "flags": [],
+                      "missing": null,
+                      "stripe_customer_id": null,
+                      "fee_status": "none",
+                      "recovered_amount": null,
+                      "demand_letter_generated": false,
+                      "user_message": "You're in — I'm now tracking $1,000.00 from Employer. Your $1,000.00 final paycheck from Employer is 262 days past due under Nevada law. I can draft your demand letter now — one tap."
+                    }
+                  }
+                }
               }
             }
           },
@@ -191,6 +561,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -212,10 +591,13 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Generated factual wage-request PDF for the authenticated owner to review and send.",
             "content": {
-              "application/json": {
-                "schema": {}
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
               }
             }
           },
@@ -228,6 +610,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -235,7 +626,7 @@
     "/api/cases/{case_id}/billing/setup": {
       "post": {
         "summary": "Billing Setup",
-        "description": "Create a Stripe customer + SetupIntent so the employee can save a card\nfor the later 25% contingency charge. Never invoked by automated tests.",
+        "description": "Open Stripe-hosted card setup after the user accepts the disclosed fee. No charge.",
         "operationId": "billing_setup_api_cases__case_id__billing_setup_post",
         "parameters": [
           {
@@ -248,12 +639,72 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillingConsentIn"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "stripe_customer_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "setup_url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "checkout_session_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "setup_intent_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "fee_disclosure": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative hosted-setup response; example URL is not a usable payment session",
+                    "value": {
+                      "case_id": "f20cb25800744dc8a8f5213ddfbda1f4",
+                      "stripe_customer_id": "cus_owned",
+                      "setup_url": "https://checkout.stripe.com/example-not-a-live-session",
+                      "checkout_session_id": "cs_owned",
+                      "setup_intent_id": null,
+                      "fee_disclosure": "You will be charged 25% of the recovered wages, only if you confirm the recovery. No charge otherwise. You can cancel at any time before a charge — simply do not confirm a recovery, or ask support to close your case.",
+                      "user_message": "You will be charged 25% of the recovered wages, only if you confirm the recovery. No charge otherwise. You can cancel at any time before a charge — simply do not confirm a recovery, or ask support to close your case. Open setup_url to save a payment method securely with Stripe. Saving it does not charge a fee."
+                    }
+                  }
+                }
               }
             }
           },
@@ -266,6 +717,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -273,7 +733,7 @@
     "/api/cases/{case_id}/billing/status": {
       "get": {
         "summary": "Billing Status",
-        "description": "Pollable card-save status: billing state, derived card_state, and the\nfee disclosure \u2014 the agent's signal for whether a charge can be attempted.",
+        "description": "Verify saved-card setup with Stripe; a pending checkout is never a saved card.",
         "operationId": "billing_status_api_cases__case_id__billing_status_get",
         "parameters": [
           {
@@ -288,10 +748,63 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "billing_status": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "card_state": {
+                      "type": "string"
+                    },
+                    "setup_status": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "fee_disclosure": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Card setup pending (illustrative provider fixture)",
+                    "value": {
+                      "case_id": "f20cb25800744dc8a8f5213ddfbda1f4",
+                      "billing_status": "card_pending",
+                      "card_state": "pending",
+                      "setup_status": "requires_confirmation",
+                      "fee_disclosure": "You will be charged 25% of the recovered wages, only if you confirm the recovery. No charge otherwise. You can cancel at any time before a charge — simply do not confirm a recovery, or ask support to close your case.",
+                      "user_message": "Card setup has not been confirmed. Open the Stripe setup link and complete it."
+                    }
+                  },
+                  "example_2": {
+                    "summary": "Card setup ready (illustrative provider fixture)",
+                    "value": {
+                      "case_id": "f20cb25800744dc8a8f5213ddfbda1f4",
+                      "billing_status": "card_pending",
+                      "card_state": "ready",
+                      "setup_status": "succeeded",
+                      "fee_disclosure": "You will be charged 25% of the recovered wages, only if you confirm the recovery. No charge otherwise. You can cancel at any time before a charge — simply do not confirm a recovery, or ask support to close your case.",
+                      "user_message": "Your payment method is saved. Review and explicitly approve the fee before payment."
+                    }
+                  }
+                }
               }
             }
           },
@@ -304,6 +817,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -311,7 +833,7 @@
     "/api/cases/{case_id}/recovery-confirmed": {
       "post": {
         "summary": "Recovery Confirmed",
-        "description": "User confirms wages were recovered; charge the 25% contingency fee\noff-session against the saved card.\n\nThe charge always goes to the case's STORED stripe_customer_id \u2014 the\nrequest carries only the recovered amount, never card details. The fee is\n25% of the asserted recovery, sanity-bounded at 2x the wages owed stored\non the case: a larger assertion is rejected (400) rather than charged.",
+        "description": "User confirms wages were recovered; charge the 25% contingency fee\noff-session against the saved card.\n\nThe charge always goes to the case's STORED stripe_customer_id — the\nrequest carries only the recovered amount, never card details. The fee is\n25% of the actual received wages, bounded at the wages owed stored\non the case: a larger assertion is rejected (400) rather than charged.",
         "operationId": "recovery_confirmed_api_cases__case_id__recovery_confirmed_post",
         "parameters": [
           {
@@ -336,10 +858,59 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "recovered_amount": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "fee_rate": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "fee_charged": {
+                      "type": "number"
+                    },
+                    "payment_intent_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "case_id": "f20cb25800744dc8a8f5213ddfbda1f4",
+                      "recovered_amount": 1000.0,
+                      "fee_rate": 0.25,
+                      "fee_charged": 250.0,
+                      "payment_intent_id": "pi_owned",
+                      "status": "succeeded",
+                      "user_message": "Done — $250.00 fee charged on your $1,000.00 recovery. You kept $750.00. Congratulations!"
+                    }
+                  }
+                }
               }
             }
           },
@@ -352,6 +923,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -373,10 +953,53 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "draft": {
+                      "type": "boolean"
+                    },
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "missing_fields": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "rule": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "ok": true,
+                      "draft": true,
+                      "case_id": "e92ec0696590473397bc05e4141a4a5a",
+                      "missing_fields": [
+                        "employer_name",
+                        "last_day_worked",
+                        "wages_owed"
+                      ],
+                      "rule": "due on your last day",
+                      "user_message": "You left your former employer and your final paycheck hasn't arrived. Nevada law says it was due on your last day. Want me to draft the demand letter? One tap."
+                    }
+                  }
+                }
               }
             }
           },
@@ -389,6 +1012,191 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
+          }
+        }
+      }
+    },
+    "/api/me/data": {
+      "get": {
+        "summary": "Export My Data",
+        "description": "Export only the authenticated caller's local records.",
+        "operationId": "export_my_data_api_me_data_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete My Data",
+        "description": "Delete local records and documents. Stripe/payment audit records remain separately retained.",
+        "operationId": "delete_my_data_api_me_data_delete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteDataIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/billing/quote": {
+      "post": {
+        "summary": "Quote Fee",
+        "description": "Show the exact rounded fee for review; no card setup, confirmation or payment occurs.",
+        "operationId": "quote_fee_api_cases__case_id__billing_quote_post",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeeQuoteIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "currency": {
+                      "type": "string"
+                    },
+                    "recovery_amount": {
+                      "type": "number"
+                    },
+                    "fee_rate": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "fee_amount_cents": {
+                      "type": "integer"
+                    },
+                    "charged": {
+                      "type": "boolean"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "case_id": "f20cb25800744dc8a8f5213ddfbda1f4",
+                      "currency": "USD",
+                      "recovery_amount": 1000.0,
+                      "fee_rate": 0.25,
+                      "fee_amount_cents": 25000,
+                      "charged": false,
+                      "user_message": "The fee would be 250.00 USD. Review it, then explicitly approve this exact amount if you want to pay."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -396,6 +1204,22 @@
   },
   "components": {
     "schemas": {
+      "BillingConsentIn": {
+        "properties": {
+          "accept_fee_terms": {
+            "type": "boolean",
+            "const": true,
+            "title": "Accept Fee Terms",
+            "description": "The user accepted the disclosed fee terms before opening Stripe checkout."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "accept_fee_terms"
+        ],
+        "title": "BillingConsentIn"
+      },
       "ConfirmDraft": {
         "properties": {
           "employee_name": {
@@ -496,9 +1320,43 @@
             "title": "Forwarding Address"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "title": "ConfirmDraft",
         "description": "One-tap activation of a draft case; fill any fields still missing."
+      },
+      "DeleteDataIn": {
+        "properties": {
+          "confirm_delete": {
+            "type": "boolean",
+            "const": true,
+            "title": "Confirm Delete",
+            "description": "The user explicitly confirms deleting their local records and generated documents."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "confirm_delete"
+        ],
+        "title": "DeleteDataIn"
+      },
+      "FeeQuoteIn": {
+        "properties": {
+          "amount": {
+            "type": "number",
+            "maximum": 1000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "The actual recovered amount to quote; this operation does not charge."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "amount"
+        ],
+        "title": "FeeQuoteIn"
       },
       "HTTPValidationError": {
         "properties": {
@@ -585,6 +1443,7 @@
             "default": ""
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "employee_name",
@@ -608,6 +1467,7 @@
             "title": "Payload"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "event_type"
@@ -616,6 +1476,19 @@
       },
       "RecoveryConfirmed": {
         "properties": {
+          "confirm_fee": {
+            "type": "boolean",
+            "const": true,
+            "title": "Confirm Fee",
+            "description": "The user explicitly approved this exact fee after reviewing it."
+          },
+          "fee_amount_cents": {
+            "type": "integer",
+            "maximum": 100000000.0,
+            "minimum": 1.0,
+            "title": "Fee Amount Cents",
+            "description": "The exact disclosed fee approved by the user, in cents."
+          },
           "amount": {
             "type": "number",
             "exclusiveMaximum": 10000000.0,
@@ -623,8 +1496,11 @@
             "title": "Amount"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
+          "confirm_fee",
+          "fee_amount_cents",
           "amount"
         ],
         "title": "RecoveryConfirmed"
@@ -669,11 +1545,19 @@
         ],
         "title": "ValidationError"
       }
+    },
+    "securitySchemes": {
+      "UserApiKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Qull per-user API key",
+        "description": "An operator-provisioned opaque API key belonging to one customer. Never use a Stripe secret key here."
+      }
     }
   },
-  "servers": [
+  "security": [
     {
-      "url": "https://5.78.152.6.nip.io/final-paycheck/api"
+      "UserApiKey": []
     }
   ]
 }

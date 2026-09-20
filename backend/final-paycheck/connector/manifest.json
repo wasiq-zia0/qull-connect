@@ -1,178 +1,310 @@
 {
- "actions_on_install": "none",
- "auth": {
-  "type": "oauth2_user",
-  "why": "To act on the user's tenancy: manage their final-paycheck cases, generate demand letters, and collect the 25% contingency fee via Stripe."
- },
- "description": "Recovers unpaid final wages. Watches for job changes, diaries each state's legal deadline, drafts the statute-citing demand letter once overdue, and charges 25% only on user-confirmed recoveries.",
- "display_name": "Final Paycheck Recovery",
- "proactive_triggers": [
-  {
-   "action": "create_case",
-   "description": "Job separation email or final-pay dispute detected",
-   "event": "user appears to have left a job with unpaid wages",
-   "needs_user_confirmation": true
-  }
- ],
- "tools": [
-  {
-   "description": "Open a final-paycheck recovery case",
-   "input_schema": {
-    "properties": {
-     "employee_email": {
-      "type": "string"
-     },
-     "employee_name": {
-      "type": "string"
-     },
-     "employer_address": {
-      "type": "string"
-     },
-     "employer_name": {
-      "type": "string"
-     },
-     "forwarding_address": {
-      "type": "string"
-     },
-     "last_day_worked": {
-      "format": "date",
-      "type": "string"
-     },
-     "next_payday": {
-      "format": "date",
-      "type": "string"
-     },
-     "pay_period": {
-      "type": "string"
-     },
-     "state": {
-      "maxLength": 2,
-      "minLength": 2,
-      "type": "string"
-     },
-     "termination_type": {
-      "enum": [
-       "fired",
-       "laid_off",
-       "quit"
-      ],
-      "type": "string"
-     },
-     "wages_owed": {
-      "type": "number"
-     }
-    },
-    "required": [
-     "employee_name",
-     "state",
-     "last_day_worked",
-     "termination_type",
-     "wages_owed",
-     "employer_name"
-    ],
-    "type": "object"
-   },
-   "name": "create_case"
+  "actions_on_install": "none",
+  "auth": {
+    "type": "api_key",
+    "header": "Authorization",
+    "scheme": "Bearer",
+    "description": "Operator-provisioned opaque key for one user. No OAuth or confirmed Muse identity exchange is implemented."
   },
-  {
-   "description": "Current status: deadline, days remaining/overdue, statute, billing state",
-   "input_schema": {
-    "properties": {
-     "case_id": {
-      "type": "string"
-     }
+  "description": "Organize your separation and wage details, review a deadline estimate, and prepare a final-pay demand letter you can send yourself. 25% of the actual recovered wages you confirm. No recovery confirmation means no recovery fee.",
+  "display_name": "Final Paycheck Recovery",
+  "proactive_triggers": [],
+  "tools": [
+    {
+      "name": "get_state_law",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "get_state_lawArguments",
+        "type": "object"
+      }
     },
-    "required": [
-     "case_id"
-    ],
-    "type": "object"
-   },
-   "name": "get_case_status"
-  },
-  {
-   "name": "confirm_case",
-   "description": "One-tap activation of a draft case created from a job_change life event",
-   "input_schema": {
-    "type": "object",
-    "properties": {
-     "case_id": {
-      "type": "string"
-     }
+    {
+      "name": "create_case",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "employee_name": {
+            "title": "Employee Name",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "last_day_worked": {
+            "title": "Last Day Worked",
+            "type": "string"
+          },
+          "termination_type": {
+            "title": "Termination Type",
+            "type": "string"
+          },
+          "wages_owed": {
+            "title": "Wages Owed",
+            "type": "number"
+          },
+          "employer_name": {
+            "title": "Employer Name",
+            "type": "string"
+          },
+          "employee_email": {
+            "default": "",
+            "title": "Employee Email",
+            "type": "string"
+          },
+          "employer_address": {
+            "default": "",
+            "title": "Employer Address",
+            "type": "string"
+          },
+          "pay_period": {
+            "default": "",
+            "title": "Pay Period",
+            "type": "string"
+          },
+          "next_payday": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Next Payday"
+          },
+          "forwarding_address": {
+            "default": "",
+            "title": "Forwarding Address",
+            "type": "string"
+          }
+        },
+        "required": [
+          "employee_name",
+          "state",
+          "last_day_worked",
+          "termination_type",
+          "wages_owed",
+          "employer_name"
+        ],
+        "title": "create_caseArguments",
+        "type": "object"
+      }
     },
-    "required": [
-     "case_id"
-    ]
-   }
-  },
-  {
-   "description": "Generate the statute-citing demand letter PDF (only once the deadline has passed; never sent by the service \u2014 user sends it)",
-   "input_schema": {
-    "properties": {
-     "case_id": {
-      "type": "string"
-     }
+    {
+      "name": "confirm_case",
+      "description": "Complete missing draft intake before activating the case.",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "fields": {
+            "additionalProperties": true,
+            "title": "Fields",
+            "type": "object"
+          }
+        },
+        "required": [
+          "case_id",
+          "fields"
+        ],
+        "title": "confirm_caseArguments",
+        "type": "object"
+      }
     },
-    "required": [
-     "case_id"
-    ],
-    "type": "object"
-   },
-   "name": "generate_demand_letter"
-  },
-  {
-   "description": "Look up a state's final-paycheck deadline rule, statute, and penalty note",
-   "input_schema": {
-    "properties": {
-     "state": {
-      "maxLength": 2,
-      "minLength": 2,
-      "type": "string"
-     }
+    {
+      "name": "get_case_status",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id"
+        ],
+        "title": "get_case_statusArguments",
+        "type": "object"
+      }
     },
-    "required": [
-     "state"
-    ],
-    "type": "object"
-   },
-   "name": "get_state_law"
-  },
-  {
-   "description": "Set up Stripe billing: customer + card SetupIntent for the later 25% contingency charge",
-   "input_schema": {
-    "properties": {
-     "case_id": {
-      "type": "string"
-     }
+    {
+      "name": "generate_demand_letter",
+      "description": "Generate factual wage-request PDF bytes for the user to review and send.",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id"
+        ],
+        "title": "generate_demand_letterArguments",
+        "type": "object"
+      }
     },
-    "required": [
-     "case_id"
-    ],
-    "type": "object"
-   },
-   "name": "setup_billing"
-  },
-  {
-   "description": "User confirms wages recovered; charge the 25% contingency fee off-session",
-   "input_schema": {
-    "properties": {
-     "amount": {
-      "type": "number"
-     },
-     "case_id": {
-      "type": "string"
-     }
+    {
+      "name": "setup_billing",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "accept_fee_terms": {
+            "title": "Accept Fee Terms",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "case_id",
+          "accept_fee_terms"
+        ],
+        "title": "setup_billingArguments",
+        "type": "object"
+      }
     },
-    "required": [
-     "case_id",
-     "amount"
-    ],
-    "type": "object"
-   },
-   "name": "confirm_recovery"
-  }
- ],
- "version": "0.2.0",
- "webhooks": {
-  "case_deadline_passed": "Fired when a tracked case's legal deadline passes; agent generates the demand letter PDF for user approval."
- }
+    {
+      "name": "billing_status",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id"
+        ],
+        "title": "billing_statusArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "confirm_recovery",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "amount": {
+            "title": "Amount",
+            "type": "number"
+          },
+          "confirm_fee": {
+            "title": "Confirm Fee",
+            "type": "boolean"
+          },
+          "fee_amount_cents": {
+            "title": "Fee Amount Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "case_id",
+          "amount",
+          "confirm_fee",
+          "fee_amount_cents"
+        ],
+        "title": "confirm_recoveryArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "receive_life_event",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          }
+        },
+        "required": [
+          "event_type",
+          "payload"
+        ],
+        "title": "receive_life_eventArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "export_my_data",
+      "description": "Export the caller's local service records.",
+      "input_schema": {
+        "properties": {},
+        "title": "export_my_dataArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "delete_my_data",
+      "description": "Delete the caller's local cases and generated documents after explicit confirmation. Financial records may be retained by Stripe and the payment ledger.",
+      "input_schema": {
+        "properties": {
+          "confirm_delete": {
+            "title": "Confirm Delete",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "confirm_delete"
+        ],
+        "title": "delete_my_dataArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "quote_fee",
+      "description": "Calculate the exact fee without charging, for the user to review.",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "amount": {
+            "title": "Amount",
+            "type": "number"
+          }
+        },
+        "required": [
+          "case_id",
+          "amount"
+        ],
+        "title": "quote_feeArguments",
+        "type": "object"
+      }
+    }
+  ],
+  "version": "1.0.0",
+  "webhooks": {},
+  "documentation_url": "https://qull.io/connect/final-paycheck/api-docs/",
+  "privacy_policy_url": "https://qull.io/connect/final-paycheck/privacy/",
+  "terms_of_service_url": "https://qull.io/connect/final-paycheck/terms/",
+  "support_email": "wasiq@qull.io"
 }

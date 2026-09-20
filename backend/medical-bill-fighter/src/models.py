@@ -11,10 +11,14 @@ from __future__ import annotations
 from datetime import date
 from typing import Literal, Optional
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import ConfigDict, BaseModel, EmailStr, Field, field_validator
 
 
-class LineItem(BaseModel):
+class SafeModel(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False, str_strip_whitespace=True)
+
+
+class LineItem(SafeModel):
     code: str = Field(min_length=1, max_length=20, description="CPT/HCPCS code")
     description: str = Field(min_length=1, max_length=300)
     amount: float = Field(ge=0, le=1_000_000)
@@ -26,14 +30,14 @@ class LineItem(BaseModel):
         return v.strip().upper()
 
 
-class EobInfo(BaseModel):
+class EobInfo(SafeModel):
     allowed_amount: float = Field(ge=0, le=1_000_000)
     patient_responsibility: float = Field(ge=0, le=1_000_000)
     deductible_applied: float = Field(default=0.0, ge=0, le=1_000_000)
     coinsurance: float = Field(default=0.0, ge=0, le=1_000_000)
 
 
-class CaseIntake(BaseModel):
+class CaseIntake(SafeModel):
     patient_name: str = Field(min_length=1, max_length=120)
     patient_email: Optional[EmailStr] = None
     provider_name: str = Field(min_length=1, max_length=200)
@@ -48,7 +52,7 @@ class CaseIntake(BaseModel):
     facility_in_network: bool = True
 
 
-class OutcomeReport(BaseModel):
+class OutcomeReport(SafeModel):
     reduction_amount: float = Field(ge=0, le=1_000_000,
                                    description="Dollar amount the user confirms their bill was reduced by")
 

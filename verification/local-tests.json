@@ -1,0 +1,20 @@
+{
+  "checked_at": "2026-09-20T19:32:19.287474+00:00",
+  "environment": "isolated local Python3.12; mocked payment providers for application suites",
+  "command": "python -m pytest tests backend/tests -q",
+  "tests_passed": 70,
+  "tests_failed": 0,
+  "service_workflow_suites": 10,
+  "source_fingerprint": "6e28668057bca99d229b9dc006ab0ba2bf219e5ede5fec3eb63f68ce11a0a80e",
+  "schema_validation": "All 10 OpenAPI contracts and 100 illustrative response examples validated; 111 MCP tool schemas exported from runtime.",
+  "production_deployed": false,
+  "external_evidence": [
+    "stripe-sandbox.json",
+    "stripe-provider-extra.json"
+  ],
+  "limits": [
+    "Docker runtime not available locally; CI job added",
+    "Hosted Checkout final browser submission blocked by automatic approval review",
+    "VPS deployment and actual Muse testing still required"
+  ]
+}

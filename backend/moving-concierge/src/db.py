@@ -1,8 +1,9 @@
 """SQLite persistence for the moving-concierge connector. File-backed only (data/app.db)."""
+import os
 import sqlite3
 from pathlib import Path
 
-DB_PATH = Path(__file__).resolve().parent.parent / "data" / "app.db"
+DB_PATH = Path(os.environ.get("DATA_DIR", str(Path(__file__).resolve().parents[1] / "data"))) / "app.db"
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS moves (
@@ -43,17 +44,9 @@ def connect() -> sqlite3.Connection:
         if "owner_id" not in cols:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN owner_id TEXT")
         conn.execute(f"CREATE INDEX IF NOT EXISTS idx_{table}_owner ON {table}(owner_id)")
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(moves)")}
+    for column in ("stripe_setup_intent_id", "checkout_session_id", "stripe_payment_intent_id"):
+        if column not in cols:
+            conn.execute(f"ALTER TABLE moves ADD COLUMN {column} TEXT")
+    conn.commit()
     return conn
-
-
-def adopt_move(move_id: str, owner_id: str) -> None:
-    """Claim an ownerless (life-event draft) move for the first user who touches it."""
-    conn = connect()
-    try:
-        conn.execute("UPDATE moves SET owner_id = ? WHERE id = ? AND owner_id IS NULL",
-                     (owner_id, move_id))
-        conn.execute("UPDATE checklist_items SET owner_id = ? WHERE move_id = ? AND owner_id IS NULL",
-                     (owner_id, move_id))
-        conn.commit()
-    finally:
-        conn.close()

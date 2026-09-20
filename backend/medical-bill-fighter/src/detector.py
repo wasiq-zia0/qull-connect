@@ -55,7 +55,7 @@ def _rule_duplicates(case: CaseIntake) -> list[dict[str, Any]]:
         if len(refs) >= 2:
             findings.append(_finding(
                 rule="duplicate_line_items",
-                severity="error",
+                severity="warning",
                 line_refs=refs,
                 explanation=(
                     f"Code {code} at ${amount:,.2f} appears {len(refs)} times "
@@ -81,16 +81,15 @@ def _rule_bill_vs_eob(case: CaseIntake) -> list[dict[str, Any]]:
     direction = "higher" if diff > 0 else "lower"
     return [_finding(
         rule="bill_vs_eob_mismatch",
-        severity="error",
+        severity="warning",
         line_refs=[],
         explanation=(
             f"The bill asks you to pay ${billed:,.2f}, but your EOB says your "
             f"patient responsibility is ${eob:,.2f} — a ${abs(diff):,.2f} "
             f"{direction} amount on the bill."
         ),
-        suggested_action=("Do not pay the billed amount yet. Contact the provider's "
-                          "billing department with your EOB and ask them to "
-                          "reconcile to the EOB figure before paying."),
+        suggested_action=("Ask the provider and insurer to reconcile the bill and EOB for the same services and dates. "
+                          "Keep track of payment and appeal deadlines while the issue is reviewed."),
     )]
 
 
@@ -114,7 +113,7 @@ def _rule_balance_billing(case: CaseIntake) -> list[dict[str, Any]]:
             f"This case involves {context}. Under the federal No Surprises Act, "
             "patients in these situations MAY be protected from being billed "
             "more than their in-network cost-sharing amount — this is a flag "
-            "for review only, not a legal determination."
+            "for review only, not a legal determination. Protections have exceptions, including most ground ambulance bills and some coverage types."
         ),
         suggested_action=("Verify with your insurer and the provider whether No "
                           "Surprises Act protections apply to this bill, and "
@@ -175,8 +174,8 @@ def _rule_prompt_pay(case: CaseIntake) -> list[dict[str, Any]]:
         severity="info",
         line_refs=[],
         explanation=(
-            f"On a ${total:,.2f} balance, many providers offer 10–20% discounts "
-            "for immediate lump-sum payment. This is a negotiation opportunity, "
+            f"For this ${total:,.2f} balance, you can ask whether the provider offers payment assistance or a discount. "
+            "No discount is promised. This is a discussion opportunity, "
             "not a billing error."
         ),
         suggested_action=("Use the negotiation script pack to ask the billing "
@@ -189,7 +188,6 @@ _RULES = [
     _rule_duplicates,
     _rule_bill_vs_eob,
     _rule_balance_billing,
-    _rule_upcoding_unbundling,
     _rule_missing_itemization,
     _rule_prompt_pay,
 ]

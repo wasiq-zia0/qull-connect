@@ -1,72 +1,120 @@
-# Bill Negotiator
+# BillCut
 
-A Muse connector that helps users lower their internet/cable/phone bills and earns a **35% fee on user-confirmed documented savings**.
+Turn your current internet, cable, or phone bill into a practical call-and-chat script, then track a lower rate you negotiate yourself.
 
-The agent is the UI — there is no app screen. **Every API response and MCP tool output includes a `user_message` field**: a warm, ready-to-speak sentence the agent can say verbatim, so every flow is fully demoable inside a plain chat transcript.
+**Current scope:** Internet, cable, and phone bills supported by the script library or generic fallback.
 
-## What it does
+## Deliverables
 
-1. **Trigger** — a `bill_spike` life event (bill email shows an increase vs prior months, or a promo expiry approaches) creates a draft case and returns the proactive nudge: *"Your internet bill jumped from $70 to $110 — your promo expired. People are getting it back down to $75 with one call. Want the script? One tap."* Trigger → one tap → done.
-2. **Intake** — or the user just says their provider, service type, and current bill.
-3. **Negotiation script pack** — per-provider call script + chat script + talking points (researched: retention/loyalty department, competitor pricing mention, promotion ask, fee waivers). **The user makes the call/chat — the connector never contacts providers.**
-4. **Outcome tracking** — user reports the result in one sentence: new monthly bill and how many months the rate is locked, or "no success". Savings = (old − new) × months locked (months capped at 12).
-5. **Billing** — Stripe customer + SetupIntent to save a card. Before the card is
-   saved, the user is told in plain language:
+- Provider-specific call and chat scripts where available.
+- Talking points for asking about promotions, retention offers, and avoidable fees.
+- A savings calculation based on the outcome and rate duration you report.
 
-   > "You will be charged 35% of your documented bill savings, only if you confirm the new lower bill. No charge otherwise."
+## What the user supplies
 
-   The **35% fee is charged off-session ONLY after the user confirms documented savings**. No savings → no fee.
+- Provider, service type, and current monthly charge
+- Optional promotion expiry and account tenure
+- New monthly charge after your conversation
+- Number of months the new rate is confirmed to last
 
-Scripts are negotiation guidance only, not legal or financial advice.
+## Customer workflow
 
-## REST API (port 8474)
+1. **Describe the bill.** Record the provider and current recurring amount, excluding amounts that will not repeat.
+2. **Get the script.** Review the call/chat guide and adapt it to your actual service and alternatives.
+3. **Contact the provider.** Make the call or use the provider's chat yourself. Confirm any new fees or contract term.
+4. **Record the agreed rate.** Enter the new charge and confirmed duration. Review the savings and fee before authorizing payment.
 
-| Method & path | Purpose |
-|---|---|
-| `GET /health` | Health check |
-| `GET /api/providers` | Providers with researched scripts |
-| `POST /api/cases` | Intake: `provider, service_type, current_monthly_bill, promo_end_date?, account_tenure_months?, user_name?` |
-| `GET /api/cases/{id}` | Case detail incl. outcome/savings/billing status |
-| `GET /api/cases/{id}/script` | Negotiation script pack (call + chat scripts) |
-| `POST /api/cases/{id}/outcome` | `{success, new_monthly_bill?, months_locked?}` → computes documented savings |
-| `POST /api/cases/{id}/billing/setup` | Stripe customer + SetupIntent `client_secret` (collect card client-side; fee disclosed in plain language first) |
-| `POST /api/cases/{id}/savings-confirmed` | Charges 35% of documented savings off-session |
-| `POST /api/life-events` | Receives shared life-events bus fan-out; `bill_spike` creates a draft case and returns the proactive nudge + ready script pack |
+## Price and collection
 
-Example: `$120 → $85` locked 12 months = `$420` documented savings → fee `$147.00` (35%).
+35% of the documented savings you confirm: (old monthly bill − new monthly bill) × agreed months, capped at 12 months. No positive confirmed savings means no fee.
 
-## Proactive triggers (shared life-events bus)
+A bill reduced from $120 to $85 for 12 months saves $420. The fee is $147 and the remaining savings are $273.
 
-This connector integrates with the suite-wide event bus at `~/workspace/connectors/life-events/`:
+You can ask your provider for a lower rate directly without paying Qull.
 
-- **Emits:** `bill_spike` when intake includes a `prior_monthly_bill` lower than the current bill (logged to the shared `events.jsonl`).
-- **Receives:** `POST /api/life-events` accepts `{"event_type","payload"}`; a `bill_spike` payload pre-fills a draft case and returns the nudge as `user_message` with the script pack attached.
-- **Triggers:** see `connector/triggers.yaml` — the watched signal and the exact nudge copy.
+Billing setup requires explicit fee-term acceptance (`accept_fee_terms: true`)
+and returns Stripe's hosted setup URL. A return redirect does not establish
+that a payment method is ready; poll the authenticated billing-status endpoint.
+Retrieve the fee quote before asking for payment confirmation; fixed-price
+Moving Concierge and MatchMax expose their amount in billing status. A quote
+does not charge. The charge call requires a fresh confirmation
+(`confirm_fee: true`), the exact expected `fee_amount_cents`, and the
+operation's outcome data. The server
+calculates the amount and verifies the saved payment method. Never treat a
+local customer ID, a sample response, or a health response as proof of payment.
 
-## MCP endpoint (port 8574, streamable-HTTP)
+No test may create a live charge without separate explicit authorization.
+Use Stripe test mode for end-to-end payment verification. There is no automatic
+renewal, generic subscription, or automated tax calculation in this release.
 
-Tools: `create_negotiation_case`, `get_negotiation_script`, `report_negotiation_outcome`, `setup_negotiation_billing`, `charge_negotiation_fee`, `list_supported_providers`. See `connector/manifest.json` for the connector descriptor.
+## Authentication and access
 
-## Money flow
+REST calls use `Authorization: Bearer <opaque Qull user API key>`.
+Each credential maps to one server-controlled owner in `QULL_API_KEYS_FILE`.
+A caller-supplied platform/user header is not production authentication.
+Life-event intake follows the same owner-bound authentication.
+See [integration guide](../../docs/INTEGRATION.md) and
+[deployment documentation](../deploy/DEPLOY.md) for provisioning and hosting.
 
-- Stripe via the `stripe` skill CLI (`~/workspace/skills/stripe/bin/stripe`), which carries the user-connected `custom.stripe-billing` credential. **No raw keys anywhere.**
-- Deployment uses a least-privilege restricted Stripe key: Customers, SetupIntents, and PaymentIntents write only.
-- 35% of **documented** savings: `(old_monthly_bill − new_monthly_bill) × months_locked` (cap 12).
-- Charge happens only on `POST /api/cases/{id}/savings-confirmed` (or the `charge_negotiation_fee` MCP tool), after the user confirms the outcome. Off-session charge against the card saved via SetupIntent.
-- A "no success" outcome yields zero savings and zero fee.
+Public `/health` is process liveness. `/ready` is configuration readiness, not
+confirmation that a customer workflow or payment was completed. No OAuth flow
+or Meta-specific credential exchange is implemented; confirm that integration
+contract before describing the service as connected to Muse.
 
-## Run
+## Run and develop
 
-```bash
-cd ~/workspace/connectors/bill-negotiator
-python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python run.py        # REST on :8474, MCP on :8574
-```
+From this service directory, install `requirements.txt` in an isolated Python
+environment. Run `python run.py` to start the REST/MCP processes according to
+the checked-in ports, or `uvicorn app:app --host 127.0.0.1 --port 8000` for REST.
+Use the deploy scripts and their current environment documentation for the
+production configuration. Keep databases and credentials out of Git.
 
-## Storage
+## REST operations
 
-SQLite at `data/app.db` (file-backed; cases carry `stripe_customer_id`, `billing_status`, `savings`, `fee_cents`).
+| Method | Path | Operation |
+|---|---|---|
+| `GET` | `/health` | Health |
+| `GET` | `/api/providers` | Api providers |
+| `POST` | `/api/cases` | Api create case |
+| `GET` | `/api/cases/{cid}` | Api get case |
+| `GET` | `/api/cases/{cid}/script` | Api script |
+| `POST` | `/api/cases/{cid}/outcome` | User reports the negotiation result. Computes documented savings: |
+| `POST` | `/api/cases/{cid}/billing/setup` | Open Stripe-hosted card setup after the user accepts the disclosed fee. No charge. |
+| `GET` | `/api/cases/{cid}/billing/status` | Verify saved-card setup with Stripe; a pending checkout is never a saved card. |
+| `POST` | `/api/cases/{cid}/savings-confirmed` | User confirms documented savings: charge the 35% fee off-session. |
+| `POST` | `/api/life-events` | Receive fan-out from the shared life-events bus. For bill_spike: create a |
+| `GET` | `/api/me/data` | Export only the authenticated caller's local records. |
+| `DELETE` | `/api/me/data` | Delete local records and documents. Stripe/payment audit records remain separately retained. |
+| `GET` | `/api/cases/{cid}/billing/quote` | Quote the exact fee for the recorded outcome; does not charge or confirm it. |
 
-## Hosting
+The OpenAPI spec in `../../openapi/bill-negotiator.json` supplies exact request
+models. The public server origin is `https://5.78.152.6.nip.io/bill-negotiator`; operation paths
+already contain `/api`. Do not compose `/api/api`.
 
-TBD.
+## Important limits
+
+- Qull supplies scripts; it does not call providers, access your account, or negotiate on your behalf.
+- Savings are based on the figures you report, not an independent connection to provider billing.
+- A lower headline rate may come with taxes, equipment charges, termination fees, or a new contract. Check the full offer.
+
+Negotiation guidance; no guaranteed rate or saving.
+
+## Data handled
+
+Provider, service type, bill amounts, promotion dates, account tenure, negotiation outcome, savings, and Stripe references.
+
+User records are scoped to the authenticated owner. Use documented deletion
+operations where available. Local record deletion does not reverse payments
+or erase Stripe's independent records. A final retention/backup policy and
+support process remain operational launch requirements.
+
+## Links
+
+- [Product overview](https://qull.io/connect/billcut/)
+- [Integration and schema reference](https://qull.io/connect/billcut/api-docs/)
+- [Privacy policy — draft](https://qull.io/connect/billcut/privacy/)
+- [Terms — draft](https://qull.io/connect/billcut/terms/)
+- Contact: wasiq@qull.io (existing Qull contact; mailbox delivery not verified here).
+
+A functioning local test is not Meta approval. See [review status](../../STATUS.md)
+for the distinction between source changes, tests, deployment, and review.

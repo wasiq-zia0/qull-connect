@@ -1,351 +1,215 @@
-"""Shared business logic for the class-action-cash connector.
-
-Used by both the FastAPI REST API (app.py) and the MCP server
-(mcp_server.py), so the two interfaces behave identically.
-
-Design rule: the golden path is trigger -> one tap -> done.
-Everything heavier is an advanced path.
-"""
+"""Owner-scoped settlement matching, filing preparation and explicit-fee billing."""
+import hashlib
 import json
+import math
 import os
-import sys
 import uuid
 from datetime import date, datetime, timezone
+from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
+from urllib.parse import urlsplit
+import db
+import matcher
+import billing
+from safety import sanitize
 
-DIR = Path(__file__).resolve().parent
-DATA = DIR / "data"
-SETTLEMENTS_FILE = DATA / "open_settlements.json"
-FIXTURES_FILE = DATA / "fixtures" / "gmail_receipts.json"
-
-# Import the shared life-events bus (no server, no deps).
-sys.path.insert(0, str(Path.home() / "workspace/connectors/life-events"))
-import events as life_events  # noqa: E402
-
-import db  # noqa: E402
-import matcher  # noqa: E402
-import billing  # noqa: E402
-from safety import sanitize  # noqa: E402
-
-import re  # noqa: E402
-
+SETTLEMENTS_FILE = Path(__file__).parent / "data/open_settlements.json"
 FEE_RATE = 0.20
 FRESHNESS_STALE_DAYS = 90
-
-FEE_DISCLOSURE = (
-    "You will be charged 20% of the confirmed settlement payout, "
-    "only if you confirm the payout. No charge otherwise."
-)
+FEE_DISCLOSURE = "The fee is 20% of a settlement payout you actually receive, in USD. No recovery means no fee. A fee is charged only after you explicitly approve its exact amount. You file your claim yourself; filing directly with the administrator is free."
 
 
-def _owned_match(match_id: str, owner: str) -> dict:
-    """Fetch a match belonging to owner. An ownerless life-event draft is
-    claimed by the first owner who presents its unguessable ID; anyone
-    else's match raises KeyError (surfaced as 404)."""
-    match = db.get_match(match_id, owner)
-    if match:
-        return match
-    claimed = db.claim_match(match_id, owner)
-    if claimed:
-        return claimed
-    raise KeyError(f"No match found with id {match_id}.")
-
-
-def _expected_payout_ceiling(match: dict) -> float | None:
-    """Best-effort ceiling of the settlement's published payout range, parsed
-    from the match's typical_payout_range text. None when unparseable."""
-    text = match.get("typical_payout_range") or ""
-    vals = []
-    for m in re.finditer(r"\$\s*([\d,]+(?:\.\d+)?)\s*([KkMmBb]?)", text):
-        num = float(m.group(1).replace(",", ""))
-        mult = {"k": 1e3, "m": 1e6, "b": 1e9}.get(m.group(2).lower(), 1)
-        vals.append(num * mult)
-    return max(vals) if vals else None
-
-
-def _utcnow() -> str:
+def _utcnow():
     return datetime.now(timezone.utc).isoformat()
 
 
-def load_settlements() -> list:
+def _owned_match(match_id, owner):
+    if not owner:
+        raise ValueError("An authenticated owner is required")
+    match = db.get_match(match_id, owner)
+    if not match:
+        raise KeyError("Unknown match")
+    return match
+
+
+def load_settlements():
     return json.loads(SETTLEMENTS_FILE.read_text())
 
 
-def settlement_freshness() -> dict:
-    settlements = load_settlements()
-    dates = [s["last_verified"] for s in settlements if s.get("last_verified")]
-    if not dates:
-        return {"stale": True, "days_since_verified": None,
-                "warning": "No verification dates on file — treat every settlement as unverified until refreshed."}
-    newest = max(dates)
-    days = (date.today() - date.fromisoformat(newest)).days
-    stale = days > FRESHNESS_STALE_DAYS
-    warning = None
-    if stale:
-        warning = (
-            f"Settlement data is {days} days old (last verified {newest}). "
-            "Deadlines may have changed or closed — confirm each claim deadline "
-            "on the settlement's official site before filing."
-        )
-    return {"stale": stale, "days_since_verified": days,
-            "last_verified": newest, "warning": warning}
+def _active_settlements():
+    today = date.today()
+    active = []
+    for row in load_settlements():
+        try:
+            age = (today - date.fromisoformat(row["last_verified"])).days
+            valid = (row.get("review_status") == "official_administrator_verified"
+                     and row.get("official_claim_url_verified") is True
+                     and urlsplit(row["official_claim_url"]).scheme == "https"
+                     and 0 <= age <= FRESHNESS_STALE_DAYS
+                     and date.fromisoformat(row["claim_deadline"]) >= today)
+        except (KeyError, ValueError, TypeError):
+            valid = False
+        if valid:
+            active.append(row)
+    return active
 
 
-def get_settlements() -> dict:
-    settlements = load_settlements()
-    freshness = settlement_freshness()
-    names = ", ".join(s["name"].split(" $")[0] for s in settlements[:3])
-    return {
-        "settlements": settlements,
-        "data_freshness": freshness,
-        "user_message": (
-            f"I found {len(settlements)} open class-action settlements — including {names}. "
-            + ("Note: my settlement list is stale, so please double-check deadlines before filing."
-               if freshness["stale"]
-               else "All verified within the last 90 days. Want me to scan your receipts for matches?")
-        ),
-    }
+def settlement_freshness():
+    active = _active_settlements()
+    return {"active_verified_count": len(active), "excluded_count": len(load_settlements()) - len(active),
+            "stale": not bool(active), "warning": "Deadlines and eligibility must be confirmed with each official administrator before filing. Unverified, expired and stale entries are excluded."}
 
 
-def _nudge_for(match: dict) -> str:
-    s = match["settlement_name"]
-    payout = sanitize(match.get("typical_payout_range", ""), 120)
-    ev = sanitize(match.get("evidence_snippet", ""), 140)
-    return (
-        f"Your {ev or 'purchase history'} matches an open class-action settlement: {s}. "
-        f"Typical payout: {payout or 'see the claim pack'}. "
-        "Filing takes a few minutes. Want the pre-filled claim pack? One tap."
-    )
+def get_settlements():
+    settlements = _active_settlements()
+    return {"settlements": settlements, "data_freshness": settlement_freshness(),
+            "user_message": f"{len(settlements)} source-verified, unexpired settlement opportunities are available. Receipt matches identify candidates; they do not establish eligibility."}
 
 
-def scan(source: str = "gmail", owner: str | None = None) -> dict:
-    """Match receipts against open settlements. Emits settlement_match events."""
-    source = source.lower()
-    settlements = load_settlements()
-    if source == "fixtures":
-        candidates = matcher.search_fixtures(settlements)
-    elif source == "gmail":
-        candidates = matcher.search_gmail(settlements)
+def scan(source="receipts", owner=None, receipts=None):
+    if not owner:
+        raise ValueError("An authenticated owner is required")
+    active = _active_settlements()
+    demo = source == "fixtures"
+    if demo:
+        if os.environ.get("ENV") not in ("test", "development") or os.environ.get("ALLOW_DEMO_FIXTURES") != "1":
+            raise ValueError("Demo fixtures are disabled outside explicit local development/test mode")
+        candidates = matcher.search_fixtures(active)
+    elif source == "receipts":
+        if not receipts:
+            raise ValueError("Supply at least one receipt excerpt")
+        candidates = matcher.search_receipts(active, receipts)
     else:
-        raise ValueError("source must be 'gmail' or 'fixtures'")
-
+        raise ValueError("Gmail OAuth is not implemented. Use source='receipts' with your own receipt excerpts.")
     created = []
-    for c in candidates:
-        match_id = uuid.uuid4().hex[:12]
-        match = {
-            "id": match_id,
-            "settlement_name": c["settlement_name"],
-            "claim_deadline": c.get("claim_deadline", ""),
-            "status": "candidate",
-            "matched_keyword": c.get("matched_keyword", ""),
-            "evidence_json": json.dumps({
-                "snippet": c.get("snippet", ""),
-                "from": c.get("from", ""),
-                "subject": c.get("subject", ""),
-                "date": c.get("date", ""),
-                "message_id": c.get("id", ""),
-            }),
-            "typical_payout_range": c.get("typical_payout_range", ""),
-            "official_claim_url": c.get("official_claim_url", ""),
-        }
+    for candidate in candidates:
+        evidence = {"snippet": candidate["snippet"], "from": candidate["from"], "subject": candidate["subject"],
+                    "date": candidate["date"], "message_id": candidate["id"], "demo": demo}
+        digest = hashlib.sha256(json.dumps([owner, candidate["settlement_name"], demo], sort_keys=True).encode()).hexdigest()
+        existing = db.get_match(digest, owner)
+        if existing:
+            saved = json.loads(existing.get("evidence_json") or "{}")
+            prior = saved.get("receipts", [saved])
+            if evidence not in prior:
+                saved = {"receipts": [*prior, evidence], "demo": demo}
+                existing["evidence_json"] = json.dumps(saved)
+                db.save_match(existing, owner_id=owner)
+            if not any(row["id"] == digest for row in created):
+                created.append(existing)
+            continue
+        match = {"id": digest, "settlement_name": candidate["settlement_name"], "claim_deadline": candidate["claim_deadline"],
+                 "status": "candidate", "matched_keyword": candidate["matched_keyword"], "evidence_json": json.dumps({"receipts": [evidence], "demo": demo}),
+                 "typical_payout_range": candidate["typical_payout_range"], "official_claim_url": candidate["official_claim_url"]}
         db.save_match(match, owner_id=owner)
         created.append(match)
-        life_events.emit("settlement_match", {
-            "match_id": match_id,
-            "settlement_name": match["settlement_name"],
-            "claim_deadline": match["claim_deadline"],
-            "matched_keyword": match["matched_keyword"],
-            "evidence_snippet": c.get("snippet", ""),
-        }, source="class-action-cash")
-
-    if not created:
-        user_message = ("I scanned your receipts against the open settlements and didn't find "
-                        "any matches this time. I'll keep watching — new settlements open every week.")
-    else:
-        bits = []
-        for m in created[:3]:
-            bits.append(f"{m['settlement_name'].split(' $')[0]} (deadline {m['claim_deadline']})")
-        user_message = (f"I found {len(created)} potential settlement match{'es' if len(created) != 1 else ''}: "
-                        + "; ".join(bits) + ". Want me to prep the claim packs? One tap each.")
-
-    return {"matches": created, "events_emitted": len(created),
-            "source": source, "user_message": user_message}
+    return {"matches": created, "source": source, "demo": demo, "events_emitted": 0,
+            "user_message": f"Found {len(created)} potential matches in the receipt excerpts you supplied. Review each class definition and confirm eligibility before requesting a filing pack. No claim has been filed."}
 
 
-def list_matches(owner: str | None = None) -> dict:
+def list_matches(owner=None):
+    if not owner:
+        raise ValueError("An authenticated owner is required")
     matches = db.list_matches(owner)
-    if not matches:
-        msg = "No matches yet — run a scan and I'll check your receipts against every open settlement."
-    else:
-        msg = (f"You have {len(matches)} match{'es' if len(matches) != 1 else ''}: "
-               + ", ".join(f"{m['settlement_name'].split(' $')[0]} ({m['status']})" for m in matches[:5]))
-    return {"matches": matches, "user_message": msg}
+    return {"matches": matches, "user_message": f"You have {len(matches)} saved candidate matches. No monitoring or automatic filing is scheduled."}
 
 
-def generate_claim_pack(match_id: str, full_name: str = "", email: str = "",
-                        address: str = "", owner: str | None = None) -> dict:
-    """Build the filing pack. The USER files the claim; the connector NEVER files."""
+def _active_match(match):
+    settlement = next((s for s in _active_settlements() if s["name"] == match["settlement_name"]), None)
+    if settlement is None:
+        raise ValueError("This settlement is expired, stale or unverified. Confirm current information with its administrator before proceeding.")
+    return settlement
+
+
+def generate_claim_pack(match_id, full_name="", email="", address="", owner=None, eligibility_confirmed=False):
     match = _owned_match(match_id, owner)
-    settlement = next((s for s in load_settlements()
-                       if s["name"] == match["settlement_name"]), None)
+    settlement = _active_match(match)
+    if eligibility_confirmed is not True:
+        raise ValueError("Review the official class definition and explicitly confirm eligibility first")
     evidence = json.loads(match.get("evidence_json") or "{}")
-
-    checklist = [
-        "Confirm you meet the class definition in 'Who is eligible' below — do not file if you are unsure.",
-        "Claims are filed under penalty of perjury. Filing a claim you are not entitled to is a false statement on a court-supervised form.",
-        f"File before the claim deadline: {match.get('claim_deadline', 'see official site')}.",
-        "Save a copy of your submitted claim and any confirmation code.",
-    ]
-    steps = [
-        f"Open the official claim site: {settlement.get('official_claim_url') if settlement else match.get('official_claim_url', '')}",
-        "Fill in your name and contact details exactly as in the pre-filled sheet below.",
-        "When asked for the product/purchase, use the matched receipt details below.",
-        "Choose your payment method (PayPal, Venmo, Zelle, check, or prepaid card where offered).",
-        "Submit, save the confirmation code, and reply here with 'payout confirmed: $<amount>' when the money arrives.",
-    ]
-    pack = {
-        "match_id": match_id,
-        "settlement_name": sanitize(match["settlement_name"], 200),
-        "claim_deadline": match.get("claim_deadline", ""),
-        "official_claim_url": (settlement or {}).get("official_claim_url", match.get("official_claim_url", "")),
-        "claim_url_note": (settlement or {}).get("claim_url_note", ""),
-        "eligibility_summary": sanitize((settlement or {}).get("eligibility_summary", ""), 2000),
-        "eligibility_checklist": [sanitize(x, 500) for x in checklist],
-        "filing_steps": [sanitize(x, 500) for x in steps],
-        "prefilled_info_sheet": {
-            "full_name": sanitize(full_name, 200) or "[ask the user]",
-            "email": sanitize(email, 200) or "[ask the user]",
-            "mailing_address": sanitize(address, 300) or "[ask the user]",
-            "matched_purchase": {
-                "merchant_or_sender": sanitize(evidence.get("from", ""), 200),
-                "subject": sanitize(evidence.get("subject", ""), 200),
-                "date": sanitize(evidence.get("date", ""), 60),
-                "details": sanitize(evidence.get("snippet", ""), 500),
-            },
-            "matched_keyword": sanitize(match.get("matched_keyword", ""), 100),
-        },
-        "important": ("Class Action Cash never files claims for you — you file directly on the "
-                      "official settlement website above. Filing there is free."),
-        "user_message": (
-            f"Your claim pack for the {match['settlement_name'].split(' $')[0]} settlement is ready — "
-            f"file before {match.get('claim_deadline', 'the deadline')} at the official site in the pack. "
-            "You file it yourself; it takes a few minutes. Ping me when the payout lands and I'll handle my fee then."
-        ),
-    }
+    pack = {"match_id": match_id, "settlement_name": settlement["name"], "claim_deadline": settlement["claim_deadline"],
+            "official_claim_url": settlement["official_claim_url"], "eligibility_summary": settlement["eligibility_summary"],
+            "prefilled_info_sheet": {"full_name": sanitize(full_name, 200), "email": sanitize(email, 200),
+                                     "mailing_address": sanitize(address, 300), "receipt_evidence": evidence},
+            "filing_steps": ["Read the official notice, exclusions and proof requirements.",
+                             "Open the official administrator site and use its claim form.",
+                             "Enter accurate details and provide the required evidence. Never invent purchases or attestations.",
+                             "Submit yourself before the deadline, then keep the confirmation.",
+                             "Return only after payment is received to review the optional-service fee."],
+            "important": "This connector prepares information; it does not file claims or determine legal eligibility. Direct filing is free.",
+            "user_message": "Your filing information is ready. Review the official notice and complete the administrator's form yourself. Nothing has been submitted."}
     db.update_match_status(match_id, "claim_pack_generated", owner)
     return pack
 
 
-def receive_life_event(event_type: str, payload: dict, owner: str | None = None) -> dict:
-    """Fan-out receiver. Creates a draft match and returns the proactive nudge."""
+def receive_life_event(event_type, payload, owner=None):
+    if not owner:
+        raise ValueError("An authenticated owner is required")
     if event_type != "settlement_match":
-        return {"accepted": False, "event_type": event_type,
-                "user_message": f"I don't handle '{event_type}' events — nothing to do here."}
-    payload = payload or {}
-    name = sanitize(payload.get("settlement_name", ""), 200)
-    deadline = sanitize(payload.get("claim_deadline", ""), 20)
-    kw = sanitize(payload.get("matched_keyword", ""), 100)
-    snippet = sanitize(payload.get("evidence_snippet", ""), 500)
-    match_id = uuid.uuid4().hex[:12]
-    settlement = next((s for s in load_settlements() if s["name"] == name), None)
-    match = {
-        "id": match_id,
-        "settlement_name": name or "Unknown settlement",
-        "claim_deadline": deadline,
-        "status": "triggered",
-        "matched_keyword": kw,
-        "evidence_json": json.dumps({"snippet": snippet,
-                                     "source": "life-event fan-out"}),
-        "typical_payout_range": (settlement or {}).get("typical_payout_range", ""),
-        "official_claim_url": (settlement or {}).get("official_claim_url", ""),
-    }
-    db.save_match(match, owner_id=owner)
-    nudge = _nudge_for({**match, "evidence_snippet": snippet})
-    return {"accepted": True, "match_id": match_id, "status": "triggered",
-            "user_message": nudge}
+        return {"accepted": False, "user_message": "This connector handles settlement_match events only."}
+    # A caller supplies receipt evidence, not an arbitrary settlement/owner record.
+    from app import ReceiptIn, _validate_input
+    receipts = payload.get("receipts")
+    if set(payload) != {"receipts"} or not isinstance(receipts, list) or not 1 <= len(receipts) <= 100:
+        raise ValueError("Supply receipts (1-100) in the event payload")
+    validated = [_validate_input(ReceiptIn, r).model_dump(mode="json") for r in receipts]
+    return {"accepted": True, **scan("receipts", owner, validated)}
 
 
-def setup_billing(match_id: str, name: str, email: str = "", owner: str | None = None) -> dict:
+def setup_billing(match_id, name, email="", owner=None, accept_fee_terms=False):
     match = _owned_match(match_id, owner)
-    setup_key = f"{billing.CONNECTOR}-setup-{owner}-{match_id}"
-    res = billing.setup_customer(name, email, idempotency_key=setup_key)
-    if "error" in res:
-        return {"ok": False, "error": res["error"],
-                "user_message": "I couldn't set up billing just now — " + sanitize(res["error"], 200) +
-                               ". Your card was not saved and nothing was charged."}
-    si = billing.create_card_setup(res["customer_id"], idempotency_key=setup_key)
-    if "error" in si:
-        return {"ok": False, "error": si["error"],
-                "user_message": "I couldn't create the secure card setup — " + sanitize(si["error"], 200) +
-                               ". Nothing was charged."}
-    db.save_billing({
-        "match_id": match_id, "customer_name": name, "customer_email": email,
-        "stripe_customer_id": res["customer_id"],
-        "setup_intent_id": si.get("setup_intent_id", ""),
-        "status": "card_pending",
-    }, owner_id=owner)
-    return {
-        "ok": True,
-        "match_id": match_id,
-        "stripe_customer_id": res["customer_id"],
-        "client_secret": si.get("client_secret"),
-        "setup_intent_id": si.get("setup_intent_id"),
-        "fee_disclosure": FEE_DISCLOSURE,
-        "fee_rate": FEE_RATE,
-        "user_message": (
-            "Quick heads-up before you save your card: you will be charged 20% of the "
-            "confirmed settlement payout, only if you confirm the payout. No charge otherwise. "
-            "Complete the secure card setup and you're all set — then just file your claim and tell me when the money lands."
-        ),
-    }
-
-
-def confirm_payout(match_id: str, amount: float, currency: str = "USD",
-                   owner: str | None = None) -> dict:
-    """User confirms the payout -> charge the 20% fee off-session.
-
-    The charge always goes to the match's STORED stripe_customer_id — the
-    request carries only the payout amount, never card details. The fee is
-    20% of the asserted payout, sanity-bounded at 2x the settlement's
-    published payout ceiling (parsed from the match's typical payout range
-    when parseable): a larger assertion is rejected (400) rather than charged.
-    """
-    if amount is None or amount <= 0:
-        raise ValueError("amount must be a positive number (the payout you received, in dollars).")
-    match = _owned_match(match_id, owner)
-    bill = db.get_billing(match_id, owner)
-    if not bill or not bill.get("stripe_customer_id"):
-        return {"ok": False, "error": "no_saved_card",
-                "user_message": "I don't have a card on file for this match yet — set up billing first, then confirm the payout."}
+    # Payment can arrive after the filing deadline. An existing owner-scoped
+    # match remains billable after expiry; only new matches/packs require an active listing.
+    if json.loads(match.get("evidence_json") or "{}").get("demo"):
+        raise ValueError("Demo matches cannot be billed")
+    if accept_fee_terms is not True:
+        raise ValueError("Accept the fee terms before opening Stripe setup")
+    bill = db.get_billing(match_id, owner) or {"match_id": match_id}
     if bill.get("status") == "billed":
-        return {"ok": False, "error": "already_billed",
-                "user_message": "The 20% fee for this payout was already charged — nothing more to do. Enjoy the settlement!"}
-    expected = _expected_payout_ceiling(match)
-    if expected and amount > 2 * expected:
-        raise ValueError(
-            f"asserted payout ${amount:,.2f} is more than 2x the published payout range "
-            f"for this settlement (up to ${expected:,.2f}) — please confirm the payout "
-            "amount you actually received before I charge the fee.")
-    fee_cents = int(round(amount * FEE_RATE * 100))
-    desc = f"Class Action Cash fee: 20% of ${amount:,.2f} payout ({match['settlement_name'][:60]})"
-    res = billing.charge_fee(bill["stripe_customer_id"], fee_cents, desc,
-                             idempotency_key=f"{billing.CONNECTOR}-fee-{owner}-{match_id}")
-    if "error" in res:
-        return {"ok": False, "error": res["error"],
-                "user_message": "The payout is confirmed — congrats! — but the fee charge didn't go through: "
-                               + sanitize(res["error"], 200) + ". Nothing was charged; I'll retry or you can pay another way."}
-    db.save_billing({**bill, "payment_intent_id": res.get("payment_intent_id"),
-                     "payout_amount_cents": int(round(amount * 100)),
-                     "fee_cents": fee_cents, "status": "billed"}, owner_id=owner)
+        raise ValueError("This fee is already settled")
+    key = f"{billing.CONNECTOR}-setup-{owner}-{match_id}"
+    customer_id = bill.get("stripe_customer_id")
+    if not customer_id:
+        result = billing.setup_customer(name, email, idempotency_key=key)
+        if "error" in result:
+            return {"ok": False, **result, "user_message": result["error"]}
+        customer_id = result["customer_id"]
+        bill = {**bill, "customer_name": name, "customer_email": email, "stripe_customer_id": customer_id}
+        db.save_billing(bill, owner_id=owner)
+    setup = billing.create_card_setup(customer_id, idempotency_key=key)
+    if "error" in setup:
+        return {"ok": False, **setup, "user_message": setup["error"]}
+    db.save_billing({**bill, "checkout_session_id": setup.get("checkout_session_id"), "setup_intent_id": setup.get("setup_intent_id"),
+                     "fee_terms_accepted_at": _utcnow(), "status": "card_pending"}, owner_id=owner)
+    return {"ok": True, "match_id": match_id, "setup_url": setup.get("setup_url"),
+            "checkout_session_id": setup.get("checkout_session_id"), "fee_disclosure": FEE_DISCLOSURE,
+            "user_message": FEE_DISCLOSURE + " Open setup_url to save a payment method securely with Stripe. Nothing is charged now."}
+
+
+def confirm_payout(match_id, amount, currency="USD", owner=None, confirm_fee=False, fee_amount_cents=None):
+    if not math.isfinite(amount) or amount <= 0 or amount > 1_000_000 or currency.upper() != "USD":
+        raise ValueError("A finite positive USD payout up to 1000000 is required")
+    match = _owned_match(match_id, owner)
+    if json.loads(match.get("evidence_json") or "{}").get("demo"):
+        raise ValueError("Demo matches cannot be billed")
+    bill = db.get_billing(match_id, owner)
+    if not bill or not bill.get("fee_terms_accepted_at"):
+        raise ValueError("Accept fee terms and complete billing setup first")
+    if bill.get("status") == "billed":
+        raise ValueError("This fee is already settled")
+    cents = int((Decimal(str(amount)) * Decimal("20")).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    if confirm_fee is not True or fee_amount_cents != cents:
+        raise ValueError(f"Review and explicitly confirm the exact fee: {cents} cents USD")
+    db.save_billing({**bill, "fee_confirmed_at": _utcnow()}, owner_id=owner)
+    result = billing.charge_fee(bill["stripe_customer_id"], cents,
+        f"Class Action Cash 20% fee, match {match_id}",
+        idempotency_key=f"{billing.CONNECTOR}-fee-{hashlib.sha256(json.dumps([owner, match['settlement_name']]).encode()).hexdigest()}",
+        setup_intent_id=bill.get("setup_intent_id"), checkout_session_id=bill.get("checkout_session_id"), consent=confirm_fee)
+    if "error" in result or result.get("status") != "succeeded":
+        return {"ok": False, **result, "user_message": result.get("error", "Payment has not been confirmed. Check its status before retrying.")}
+    db.save_billing({**bill, "fee_confirmed_at": _utcnow(), "payment_intent_id": result["payment_intent_id"],
+        "payout_amount_cents": int((Decimal(str(amount)) * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP)),
+        "fee_cents": cents, "status": "billed"}, owner_id=owner)
     db.update_match_status(match_id, "billed", owner)
-    return {
-        "ok": True, "match_id": match_id, "currency": currency.upper(),
-        "payout_amount": round(amount, 2), "fee_rate": FEE_RATE,
-        "fee_charged": round(fee_cents / 100, 2),
-        "payment_intent_id": res.get("payment_intent_id"),
-        "dry_run": res.get("dry_run", False),
-        "user_message": (
-            f"You got paid ${amount:,.2f} from the {match['settlement_name'].split(' $')[0]} settlement — nice! "
-            f"My 20% fee of ${fee_cents / 100:,.2f} was charged to your saved card. Thanks for using Class Action Cash."
-        ),
-    }
+    return {"ok": True, "match_id": match_id, "currency": "USD", "payout_amount": amount,
+            "fee_rate": FEE_RATE, "fee_charged": cents / 100, "payment_intent_id": result["payment_intent_id"],
+            "user_message": f"The fee of ${cents/100:.2f} was paid after your confirmation of a ${amount:.2f} payout."}

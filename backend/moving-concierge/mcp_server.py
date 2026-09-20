@@ -1,103 +1,95 @@
-"""MCP server for Moving Concierge (SDK v2, streamable HTTP).
-
-Tools mirror the REST API; each tool result includes `user_message`, a warm
-sentence the agent can speak verbatim. The agent is the UI.
-"""
+"""Authenticated MCP tools using the same validated business functions as REST."""
+import json
+import os
+from fastapi import HTTPException
+from fastapi.responses import JSONResponse
 from mcp.server.mcpserver import MCPServer
-
+from mcp.server.transport_security import TransportSecuritySettings
+from urllib.parse import urlsplit
+from src.identity import IdentityMiddleware, require_owner
+from src.limits import RateLimitMiddleware, BodySizeLimitMiddleware
 import app as api
-from src import db
-from src.identity import require_owner
 
 server = MCPServer("moving-concierge")
 
 
 def create_mcp_app():
-    from src.identity import IdentityMiddleware
-    mcp_app = server.streamable_http_app(streamable_http_path="/mcp")
+    # Stateless requests bind every tool call to this request's verified user.
+    base = urlsplit(os.environ.get("PUBLIC_BASE_URL", "http://127.0.0.1"))
+    transport = TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=["127.0.0.1:*", "localhost:*", base.netloc],
+        allowed_origins=["http://127.0.0.1:*", "http://localhost:*", f"{base.scheme}://{base.netloc}"],
+    )
+    mcp_app = server.streamable_http_app(streamable_http_path="/mcp", stateless_http=True, json_response=True, transport_security=transport)
     mcp_app.add_middleware(IdentityMiddleware)
+    mcp_app.add_middleware(RateLimitMiddleware)
+    mcp_app.add_middleware(BodySizeLimitMiddleware)
     return mcp_app
 
 
+def _call(fn, *args, **kwargs) -> dict:
+    require_owner()
+    try:
+        result = fn(*args, **kwargs)
+        if isinstance(result, JSONResponse):
+            data = json.loads(result.body)
+            if result.status_code >= 400:
+                return {"error": data, "status_code": result.status_code}
+            return data
+        return result
+    except HTTPException as exc:
+        return {"error": exc.detail, "status_code": exc.status_code}
+
+
 @server.tool()
-def create_move(name: str, email: str, old_address: str, new_address: str,
-                move_date: str, state: str, draft_id: str | None = None) -> dict:
-    """Start a move pack: builds the address-change checklist, fans the move out to the suite.
-
-    state: 2-letter code for the NEW address (drives DMV deadline + voter links).
-    draft_id: draft move id from a life-event nudge, to upgrade it in place.
-    """
-    owner = require_owner()
-    payload = api.MoveIn(name=name, email=email, old_address=old_address,
-                         new_address=new_address, move_date=move_date,
-                         state=state, draft_id=draft_id)
-    return api.create_move(payload)
-
+def create_move(name: str, email: str, old_address: str, new_address: str, move_date: str, state: str, draft_id: str | None = None) -> dict:
+    """Prepare a move checklist; the user completes all address changes themselves. $49 one-time unlock."""
+    return _call(api.create_move, api.MoveIn(name=name, email=email, old_address=old_address, new_address=new_address, move_date=move_date, state=state, draft_id=draft_id))
 
 @server.tool()
 def get_move(move_id: str) -> dict:
-    """Get move details, checklist progress, and items."""
-    owner = require_owner()
-    return api.get_move(move_id)
-
+    """Read the user's move status. Pack details require payment."""
+    return _call(api.get_move, move_id)
 
 @server.tool()
 def get_pack(move_id: str) -> dict:
-    """Fetch the address-change pack (markdown + PDF link). Unlocks after the $49 fee is paid."""
-    owner = require_owner()
-    return api.get_pack(move_id, format="md")
-
+    """Return the paid checklist in Markdown and its authenticated PDF endpoint."""
+    return _call(api.get_pack, move_id, "md")
 
 @server.tool()
 def update_checklist(move_id: str, items: list[dict]) -> dict:
-    """Update checklist item statuses. items: [{"item_id": 1, "status": "done"|"pending"|"na"}]."""
-    owner = require_owner()
-    payload = api.ChecklistPatch(items=[api.ChecklistItemUpdate(**i) for i in items])
-    return api.update_checklist(move_id, payload)
-
+    """Record completed or inapplicable steps on the user's paid checklist."""
+    return _call(api.update_checklist, move_id, api.ChecklistPatch(items=items))
 
 @server.tool()
-def setup_billing(move_id: str) -> dict:
-    """Set up billing for the $49 pack fee: creates the Stripe customer and card SetupIntent.
-
-    Returns the client_secret for card collection. No charge happens here.
-    """
-    owner = require_owner()
-    return api.billing_setup(move_id)
-
+def setup_billing(move_id: str, accept_fee_terms: bool) -> dict:
+    """Return the secure card-save URL and disclose the one-time $49 fee. No charge."""
+    return _call(api.billing_setup, move_id, api.BillingConsent(accept_fee_terms=accept_fee_terms))
 
 @server.tool()
-def pay(move_id: str) -> dict:
-    """Charge the flat $49.00 pack fee off-session against the saved card, then deliver the pack.
-
-    Idempotent: an already-paid move returns an error, never a second charge.
-    """
-    owner = require_owner()
-    return api.pay(move_id)
-
+def pay(move_id: str, confirm_fee: bool, fee_amount_cents: int) -> dict:
+    """Charge $49 and unlock this move only after the user explicitly consents to the fee."""
+    return _call(api.pay, move_id, api.ChargeConsent(confirm_fee=confirm_fee, fee_amount_cents=fee_amount_cents))
 
 @server.tool()
 def billing_status(move_id: str) -> dict:
-    """Poll billing state: card state + whether the $49 pack fee is settled."""
-    owner = require_owner()
-    return api.billing_status(move_id)
-
+    """Verify saved-card state and paid status."""
+    return _call(api.billing_status, move_id)
 
 @server.tool()
 def receive_life_event(event_type: str, payload: dict) -> dict:
-    """Receive a fanned-out life event from the shared bus. A 'move' creates a draft move and the proactive nudge."""
-    owner = require_owner()
-    res = api.life_event(api.LifeEventIn(event_type=event_type, payload=payload))
-    # Drafts created without an owner are claimed by the calling user.
-    if isinstance(res, dict) and res.get("move_id"):
-        db.adopt_move(res["move_id"], owner)
-    return res
+    """Create a move draft bound to the authenticated user."""
+    return _call(api.life_event, api.LifeEventIn(event_type=event_type, payload=payload))
+
+@server.tool()
+def delete_my_data(consent: bool) -> dict:
+    """Delete this user's operational records after explicit confirmation. Required payment records are retained separately."""
+    if consent is not True:
+        raise ValueError("Explicit deletion confirmation required")
+    return _call(api.delete_my_data)
 
 
 if __name__ == "__main__":
-    import os as _os
-
     import uvicorn
-
-    port = int(_os.environ.get("MCP_PORT", "8578"))
-    uvicorn.run(create_mcp_app(), host="127.0.0.1", port=port, log_level="warning")
+    uvicorn.run(create_mcp_app(), host="127.0.0.1", port=int(os.environ.get("MCP_PORT", "8580")))

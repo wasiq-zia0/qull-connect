@@ -34,7 +34,7 @@ def get_state(abbr: str) -> dict | None:
 
 def today() -> date:
     override = os.environ.get("FINAL_PAYCHECK_TODAY")
-    if override:
+    if override and os.environ.get("ENV") in ("test", "development"):
         return date.fromisoformat(override)
     return date.today()
 
@@ -81,7 +81,7 @@ def _apply_rule(rule: dict, last_day: date, next_payday: date | None) -> tuple[d
                 missing.append(miss)
             elif dl is not None:
                 results.append(dl)
-        if missing and not results:
+        if missing:
             return None, missing[0]
         if not results:
             return None, None
@@ -99,6 +99,14 @@ def compute_deadline(abbr: str, termination_type: str, last_day: date,
     state = get_state(abbr)
     if state is None:
         return {"error": f"unknown state abbreviation: {abbr}"}
+    if next_payday and next_payday < last_day:
+        return {"error": "next_payday cannot be before last_day_worked"}
+    if not state.get("deadline_verified") or termination_type == "quit":
+        return {"state": abbr.upper(), "state_name": state["name"], "deadline": None,
+                "status": "needs_review", "statute": state.get("statute", ""),
+                "official_source_url": state["official_source_url"], "penalty_note": "No penalty determination.",
+                "days_overdue": 0, "days_remaining": None, "missing": None,
+                "flags": ["unverified_rule"], "note": "This deadline requires review. A factual unpaid-wages request can be prepared for you to send."}
     kind = "fired" if termination_type in ("fired", "laid_off") else "quit"
     rule = state[kind]
     deadline, missing = _apply_rule(rule, last_day, next_payday)

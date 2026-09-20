@@ -2,9 +2,18 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Medical Bill Fighter",
-    "description": "Spots errors in medical bills and EOBs, builds dispute letter packs, and charges 25% of the user-confirmed reduction. Template automation \u2014 NOT legal advice. Review before sending.",
-    "version": "0.2.0"
+    "description": "Qull Connect API. Supply a per-user API key in Authorization: Bearer <key>. Keys identify one customer; arbitrary platform/user-id headers are not accepted. Payment setup opens hosted Stripe Checkout and does not charge a service fee. Use the record's billing/status operation to verify setup, then explicitly authorize the applicable fee. See the linked guide for workflow and service limits.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Qull, Inc.",
+      "email": "wasiq@qull.io"
+    }
   },
+  "servers": [
+    {
+      "url": "https://5.78.152.6.nip.io/medical-bill-fighter"
+    }
+  ],
   "paths": {
     "/health": {
       "get": {
@@ -12,18 +21,30 @@
         "operationId": "health_health_get",
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Public process-liveness response; does not establish payment or launch readiness.",
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
                   "type": "object",
-                  "title": "Response Health Health Get"
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "service": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "example": {
+                  "ok": true,
+                  "service": "medical-bill-fighter"
                 }
               }
             }
           }
-        }
+        },
+        "security": []
       }
     },
     "/api/life-events": {
@@ -63,6 +84,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -86,13 +116,36 @@
         },
         "responses": {
           "201": {
-            "description": "Successful Response",
+            "description": "Starts a conversational bill review and returns the next question.",
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
                   "type": "object",
-                  "title": "Response Start Draft Api Cases Draft Post"
+                  "properties": {
+                    "user_message": {
+                      "type": "string"
+                    },
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "draft": {
+                      "type": "boolean"
+                    },
+                    "next_question": {
+                      "type": "string"
+                    },
+                    "legal_notice": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "example": {
+                  "user_message": "Let's check that bill for errors — takes about a minute. What's your full name, as it appears on the bill?",
+                  "case_id": "a1b2c3d4e5f6",
+                  "draft": true,
+                  "next_question": "What's your full name, as it appears on the bill?",
+                  "legal_notice": "Template automation — NOT legal advice. Review before sending."
                 }
               }
             }
@@ -106,6 +159,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -158,6 +220,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -178,13 +249,78 @@
         },
         "responses": {
           "201": {
-            "description": "Successful Response",
+            "description": "Creates a bill review with possible issues for provider/insurer review. Findings do not prove a billing error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
                   "type": "object",
-                  "title": "Response Create Case Api Cases Post"
+                  "properties": {
+                    "user_message": {
+                      "type": "string"
+                    },
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "findings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "rule": {
+                            "type": "string"
+                          },
+                          "severity": {
+                            "type": "string"
+                          },
+                          "line_refs": {
+                            "type": "array",
+                            "items": {
+                              "type": "integer"
+                            }
+                          },
+                          "explanation": {
+                            "type": "string"
+                          },
+                          "suggested_action": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    },
+                    "findings_count": {
+                      "type": "integer"
+                    },
+                    "legal_notice": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "example": {
+                  "user_message": "I went through your $500 bill and flagged 1 thing(s) to discuss with your provider or insurer. These flags do not establish an error. Would you like a letter template?",
+                  "case_id": "a1b2c3d4e5f6",
+                  "findings": [
+                    {
+                      "rule": "duplicate_line_items",
+                      "severity": "warning",
+                      "line_refs": [
+                        0,
+                        1
+                      ],
+                      "explanation": "Code 99213 at $250.00 appears 2 times (lines [1, 2]). This may indicate the same charge was billed more than once.",
+                      "suggested_action": "Ask the provider to confirm whether the service was actually performed multiple times; if not, request removal of the duplicate charge(s)."
+                    },
+                    {
+                      "rule": "prompt_pay_suggestion",
+                      "severity": "info",
+                      "line_refs": [],
+                      "explanation": "For this $500.00 balance, you can ask whether the provider offers payment assistance or a discount. No discount is promised. This is a discussion opportunity, not a billing error.",
+                      "suggested_action": "Use the negotiation script pack to ask the billing department about a prompt-pay discount before paying the full amount."
+                    }
+                  ],
+                  "findings_count": 2,
+                  "legal_notice": "Template automation — NOT legal advice. Review before sending."
                 }
               }
             }
@@ -198,6 +334,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -219,13 +364,249 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "The authenticated user's stored intake, findings, and outcome/payment state.",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Case Api Cases  Case Id  Get"
+                  "properties": {
+                    "user_message": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string"
+                    },
+                    "intake": {
+                      "type": "object",
+                      "properties": {
+                        "patient_name": {
+                          "type": "string"
+                        },
+                        "patient_email": {
+                          "type": "string"
+                        },
+                        "provider_name": {
+                          "type": "string"
+                        },
+                        "bill_date": {
+                          "type": "string"
+                        },
+                        "billed_patient_responsibility": {
+                          "type": "number"
+                        },
+                        "line_items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "amount": {
+                                "type": "number"
+                              },
+                              "quantity": {
+                                "type": "integer"
+                              }
+                            },
+                            "additionalProperties": true
+                          }
+                        },
+                        "eob": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "insurance_plan": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "is_emergency": {
+                          "type": "boolean"
+                        },
+                        "is_out_of_network": {
+                          "type": "boolean"
+                        },
+                        "facility_in_network": {
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": true
+                    },
+                    "findings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "rule": {
+                            "type": "string"
+                          },
+                          "severity": {
+                            "type": "string"
+                          },
+                          "line_refs": {
+                            "type": "array",
+                            "items": {
+                              "type": "integer"
+                            }
+                          },
+                          "explanation": {
+                            "type": "string"
+                          },
+                          "suggested_action": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    },
+                    "outcome": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "additionalProperties": true
+                    },
+                    "stripe_customer_id": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "stripe_setup_intent_id": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "checkout_session_id": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "stripe_payment_intent_id": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "fee_cents": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "fee_status": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "owner_id": {
+                      "type": "string"
+                    },
+                    "legal_notice": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "example": {
+                  "user_message": "I went through your $500 bill and flagged 1 thing(s) to discuss with your provider or insurer. These flags do not establish an error. Would you like a letter template?",
+                  "id": "a1b2c3d4e5f6",
+                  "created_at": "2026-09-20T12:00:00+00:00",
+                  "intake": {
+                    "patient_name": "Example User",
+                    "patient_email": "example@example.com",
+                    "provider_name": "Example Clinic",
+                    "bill_date": "2026-09-01",
+                    "billed_patient_responsibility": 500.0,
+                    "line_items": [
+                      {
+                        "code": "99213",
+                        "description": "Visit",
+                        "amount": 250.0,
+                        "quantity": 1
+                      },
+                      {
+                        "code": "99213",
+                        "description": "Visit",
+                        "amount": 250.0,
+                        "quantity": 1
+                      }
+                    ],
+                    "eob": null,
+                    "insurance_plan": null,
+                    "is_emergency": false,
+                    "is_out_of_network": false,
+                    "facility_in_network": true
+                  },
+                  "findings": [
+                    {
+                      "rule": "duplicate_line_items",
+                      "severity": "warning",
+                      "line_refs": [
+                        0,
+                        1
+                      ],
+                      "explanation": "Code 99213 at $250.00 appears 2 times (lines [1, 2]). This may indicate the same charge was billed more than once.",
+                      "suggested_action": "Ask the provider to confirm whether the service was actually performed multiple times; if not, request removal of the duplicate charge(s)."
+                    },
+                    {
+                      "rule": "prompt_pay_suggestion",
+                      "severity": "info",
+                      "line_refs": [],
+                      "explanation": "For this $500.00 balance, you can ask whether the provider offers payment assistance or a discount. No discount is promised. This is a discussion opportunity, not a billing error.",
+                      "suggested_action": "Use the negotiation script pack to ask the billing department about a prompt-pay discount before paying the full amount."
+                    }
+                  ],
+                  "outcome": null,
+                  "stripe_customer_id": null,
+                  "stripe_setup_intent_id": null,
+                  "checkout_session_id": null,
+                  "stripe_payment_intent_id": null,
+                  "fee_cents": null,
+                  "fee_status": null,
+                  "owner_id": "example-user",
+                  "legal_notice": "Template automation — NOT legal advice. Review before sending."
                 }
               }
             }
@@ -239,6 +620,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -277,10 +667,21 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Generated letter PDF. Requires the authenticated owner and a completed case. No letter is sent.",
+            "headers": {
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Attachment filename for the generated PDF."
+              }
+            },
             "content": {
-              "application/json": {
-                "schema": {}
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
               }
             }
           },
@@ -293,6 +694,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -303,16 +713,60 @@
         "operationId": "list_packs_api_packs_get",
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Available letter-template types and their intended uses; the user reviews and sends any letter.",
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
                   "type": "object",
-                  "title": "Response List Packs Api Packs Get"
+                  "properties": {
+                    "user_message": {
+                      "type": "string"
+                    },
+                    "packs": {
+                      "type": "object",
+                      "properties": {
+                        "dispute": {
+                          "type": "string"
+                        },
+                        "itemized": {
+                          "type": "string"
+                        },
+                        "assistance": {
+                          "type": "string"
+                        },
+                        "negotiate": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": true
+                    },
+                    "legal_notice": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "example": {
+                  "user_message": "I've got four letter packs: a dispute letter built from the findings, an itemized-bill request, a financial-assistance request, and a prompt-pay negotiation script. Say which one and I'll make the PDF.",
+                  "packs": {
+                    "dispute": "Billing-error dispute letter populated with the detected findings.",
+                    "itemized": "Request for a fully itemized bill with CPT/HCPCS detail.",
+                    "assistance": "Financial-assistance / charity-care request letter.",
+                    "negotiate": "Prompt-pay discount negotiation script."
+                  },
+                  "legal_notice": "Template automation — NOT legal advice. Review before sending."
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -344,13 +798,48 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Records the actual reduction reported by the user and quotes the fee; no charge.",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Report Outcome Api Cases  Case Id  Outcome Post"
+                  "properties": {
+                    "user_message": {
+                      "type": "string"
+                    },
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "reduction_amount": {
+                      "type": "number"
+                    },
+                    "fee_cents": {
+                      "type": "integer"
+                    },
+                    "fee_rate": {
+                      "type": "number"
+                    },
+                    "fee_disclosure": {
+                      "type": "string"
+                    },
+                    "next": {
+                      "type": "string"
+                    },
+                    "legal_notice": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "example": {
+                  "user_message": "That's a $100.00 reduction — nice work. My fee is 25% of that, $25.00, and it's only charged if you confirm. Want to save a card so I can collect it? It takes 30 seconds.",
+                  "case_id": "a1b2c3d4e5f6",
+                  "reduction_amount": 100.0,
+                  "fee_cents": 2500,
+                  "fee_rate": 0.25,
+                  "fee_disclosure": "25% of a documented reduction you confirm. No reduction, no fee.",
+                  "next": "POST /api/cases/{id}/billing/setup to save a card, then POST /api/cases/{id}/reduction-confirmed to be charged.",
+                  "legal_notice": "Template automation — NOT legal advice. Review before sending."
                 }
               }
             }
@@ -364,6 +853,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -384,15 +882,78 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillingConsent"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Returns the secure hosted card-save URL. Processor URL/IDs are illustrative; no fee is charged at setup.",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Billing Setup Api Cases  Case Id  Billing Setup Post"
+                  "properties": {
+                    "user_message": {
+                      "type": "string"
+                    },
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "fee_disclosure": {
+                      "type": "string"
+                    },
+                    "fee_rate": {
+                      "type": "number"
+                    },
+                    "client_secret": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "setup_url": {
+                      "type": "string"
+                    },
+                    "checkout_session_id": {
+                      "type": "string"
+                    },
+                    "setup_intent_id": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "note": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "example": {
+                  "user_message": "25% of a documented reduction you confirm. No reduction, no fee. Tap to save your card and you're all set.",
+                  "case_id": "a1b2c3d4e5f6",
+                  "fee_disclosure": "25% of a documented reduction you confirm. No reduction, no fee.",
+                  "fee_rate": 0.25,
+                  "client_secret": null,
+                  "setup_url": "https://checkout.stripe.com/example",
+                  "checkout_session_id": "cs_example",
+                  "setup_intent_id": null,
+                  "note": "Open setup_url to save a payment method securely, then check billing/status. A separate explicit confirmation is required for the disclosed fee."
                 }
               }
             }
@@ -406,6 +967,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -428,13 +998,44 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Verified payment-method state and fee disclosure.",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Billing Status Api Cases  Case Id  Billing Status Get"
+                  "properties": {
+                    "user_message": {
+                      "type": "string"
+                    },
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "billing_status": {
+                      "type": "string"
+                    },
+                    "card_state": {
+                      "type": "string"
+                    },
+                    "fee_rate": {
+                      "type": "number"
+                    },
+                    "fee_disclosure": {
+                      "type": "string"
+                    },
+                    "legal_notice": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "example": {
+                  "user_message": "Payment method ready; confirm the disclosed fee to continue.",
+                  "case_id": "a1b2c3d4e5f6",
+                  "billing_status": "card_ready",
+                  "card_state": "ready",
+                  "fee_rate": 0.25,
+                  "fee_disclosure": "25% of a documented reduction you confirm. No reduction, no fee.",
+                  "legal_notice": "Template automation — NOT legal advice. Review before sending."
                 }
               }
             }
@@ -448,6 +1049,101 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/fee-quote": {
+      "get": {
+        "summary": "Fee Quote",
+        "description": "Quote 25% of this case's stored, user-reported reduction without charging.",
+        "operationId": "fee_quote_api_cases__case_id__fee_quote_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exact fee derived from the stored reduction; requires separate consent to charge.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "reduction_amount": {
+                      "type": "number"
+                    },
+                    "fee_amount_cents": {
+                      "type": "integer"
+                    },
+                    "currency": {
+                      "type": "string"
+                    },
+                    "fee_disclosure": {
+                      "type": "string"
+                    },
+                    "already_paid": {
+                      "type": "boolean"
+                    },
+                    "requires_confirmation": {
+                      "type": "boolean"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "example": {
+                  "case_id": "a1b2c3d4e5f6",
+                  "reduction_amount": 100.0,
+                  "fee_amount_cents": 2500,
+                  "currency": "usd",
+                  "fee_disclosure": "25% of a documented reduction you confirm. No reduction, no fee.",
+                  "already_paid": false,
+                  "requires_confirmation": true,
+                  "user_message": "The fee for the recorded $100.00 reduction is $25.00 USD. Confirm only if the reduction and fee are correct."
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -468,15 +1164,60 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChargeConsent"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Example successful fee payment on the stored, explicitly confirmed reduction.",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Reduction Confirmed Api Cases  Case Id  Reduction Confirmed Post"
+                  "properties": {
+                    "user_message": {
+                      "type": "string"
+                    },
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "reduction_amount": {
+                      "type": "number"
+                    },
+                    "fee_cents": {
+                      "type": "integer"
+                    },
+                    "fee_usd": {
+                      "type": "number"
+                    },
+                    "payment_intent_id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "fee_disclosure": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "example": {
+                  "user_message": "All set — $25.00 collected (25% of your $100.00 reduction). You kept the rest. 🎉",
+                  "case_id": "a1b2c3d4e5f6",
+                  "reduction_amount": 100.0,
+                  "fee_cents": 2500,
+                  "fee_usd": 25.0,
+                  "payment_intent_id": "pi_example",
+                  "status": "succeeded",
+                  "fee_disclosure": "25% of a documented reduction you confirm. No reduction, no fee."
                 }
               }
             }
@@ -490,6 +1231,60 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
+          }
+        }
+      }
+    },
+    "/api/data": {
+      "delete": {
+        "summary": "Delete My Data",
+        "description": "Delete the authenticated user's operational data. Payment/accounting records remain with the processor and protected billing ledger.",
+        "operationId": "delete_my_data_api_data_delete",
+        "responses": {
+          "200": {
+            "description": "Deletes this user's operational records; discloses retained payment/accounting records and backup handling.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean"
+                    },
+                    "retained": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "example": {
+                  "deleted": true,
+                  "retained": "Required payment/accounting records and processor records; backups follow the operator's retention policy.",
+                  "user_message": "Your operational records for this connector were deleted. Required payment records are retained separately."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -497,6 +1292,21 @@
   },
   "components": {
     "schemas": {
+      "BillingConsent": {
+        "properties": {
+          "accept_fee_terms": {
+            "type": "boolean",
+            "const": true,
+            "title": "Accept Fee Terms"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "accept_fee_terms"
+        ],
+        "title": "BillingConsent"
+      },
       "CaseIntake": {
         "properties": {
           "patient_name": {
@@ -581,6 +1391,7 @@
             "default": true
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "patient_name",
@@ -591,6 +1402,28 @@
         ],
         "title": "CaseIntake"
       },
+      "ChargeConsent": {
+        "properties": {
+          "fee_amount_cents": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Fee Amount Cents"
+          },
+          "confirm_fee": {
+            "type": "boolean",
+            "const": true,
+            "title": "Confirm Fee",
+            "description": "Explicit permission to charge the disclosed fee for this record."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "fee_amount_cents",
+          "confirm_fee"
+        ],
+        "title": "ChargeConsent"
+      },
       "DraftAnswer": {
         "properties": {
           "answer": {
@@ -600,6 +1433,7 @@
             "title": "Answer"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "answer"
@@ -635,6 +1469,7 @@
             "default": 0.0
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "allowed_amount",
@@ -669,6 +1504,7 @@
             "title": "Payload"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "event_type"
@@ -704,6 +1540,7 @@
             "default": 1
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "code",
@@ -722,6 +1559,7 @@
             "description": "Dollar amount the user confirms their bill was reduced by"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "reduction_amount"
@@ -768,11 +1606,19 @@
         ],
         "title": "ValidationError"
       }
+    },
+    "securitySchemes": {
+      "UserApiKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Qull per-user API key",
+        "description": "An operator-provisioned opaque API key belonging to one customer. Never use a Stripe secret key here."
+      }
     }
   },
-  "servers": [
+  "security": [
     {
-      "url": "https://5.78.152.6.nip.io/medical-bill-fighter/api"
+      "UserApiKey": []
     }
   ]
 }

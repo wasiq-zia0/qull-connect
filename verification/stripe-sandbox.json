@@ -1,0 +1,96 @@
+{
+  "checked_at": "2026-09-20T19:09:24.432430+00:00",
+  "environment": "isolated Stripe sandbox",
+  "real_money_moved": false,
+  "scope": "Shared billing SDK/Stripe integration in USD and EUR; browser completion and production deployment not covered",
+  "checks": [
+    {
+      "check": "usd: customer creation",
+      "passed": true
+    },
+    {
+      "check": "usd: hosted setup URL",
+      "passed": true
+    },
+    {
+      "check": "usd: setup does not charge",
+      "passed": true
+    },
+    {
+      "check": "usd: incomplete checkout is not a saved method",
+      "passed": true
+    },
+    {
+      "check": "usd: provider setup succeeded",
+      "passed": true
+    },
+    {
+      "check": "usd: method ownership verified",
+      "passed": true
+    },
+    {
+      "check": "usd: missing consent refused",
+      "passed": true
+    },
+    {
+      "check": "usd: simulated fee succeeded",
+      "passed": true
+    },
+    {
+      "check": "usd: currency preserved",
+      "passed": true
+    },
+    {
+      "check": "usd: retry reuses payment",
+      "passed": true
+    },
+    {
+      "check": "usd: changed amount refused",
+      "passed": true
+    },
+    {
+      "check": "eur: customer creation",
+      "passed": true
+    },
+    {
+      "check": "eur: hosted setup URL",
+      "passed": true
+    },
+    {
+      "check": "eur: setup does not charge",
+      "passed": true
+    },
+    {
+      "check": "eur: incomplete checkout is not a saved method",
+      "passed": true
+    },
+    {
+      "check": "eur: provider setup succeeded",
+      "passed": true
+    },
+    {
+      "check": "eur: method ownership verified",
+      "passed": true
+    },
+    {
+      "check": "eur: missing consent refused",
+      "passed": true
+    },
+    {
+      "check": "eur: simulated fee succeeded",
+      "passed": true
+    },
+    {
+      "check": "eur: currency preserved",
+      "passed": true
+    },
+    {
+      "check": "eur: retry reuses payment",
+      "passed": true
+    },
+    {
+      "check": "eur: changed amount refused",
+      "passed": true
+    }
+  ]
+}

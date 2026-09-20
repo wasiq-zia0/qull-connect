@@ -1,124 +1,121 @@
 # Medical Bill Fighter
 
-Spots errors in medical bills and EOBs, builds dispute letter packs, and
-earns **25% of the bill reduction the user confirms** — charged only then,
-via Stripe off-session.
+Review bill and EOB details you enter for a limited set of potential billing issues, then prepare a dispute-letter PDF to send to the billing office yourself.
 
-> **Template automation — NOT legal advice. Review before sending.**
-> Findings never assert legal conclusions; balance-billing flags use
-> "may be protected — verify" language.
+**Current scope:** Structured U.S. medical-billing information and the checks supported by the current rule set.
 
-## Run
+## Deliverables
 
-```bash
-cd ~/workspace/connectors/medical-bill-fighter
-python3 -m venv .venv && .venv/bin/pip install fastapi uvicorn pydantic "mcp>=2" reportlab
-.venv/bin/python run.py        # REST on :8480, MCP (streamable-http) on :8580
-# or individually:
-.venv/bin/python run.py --rest-only
-.venv/bin/python run.py --mcp-only
-```
+- Potential issue flags from supported duplicate-line and bill/EOB consistency checks.
+- An explanation of the facts that triggered each flag.
+- A dispute-letter PDF and a record of the result you report.
 
-Data: SQLite at `data/app.db` (file-based, never in-memory).
+## What the user supplies
 
-## Golden path (agent-native)
+- Patient and provider contact details needed for a letter
+- Bill total, line-item dates, codes, descriptions, and amounts
+- Relevant insurer explanation-of-benefits figures
+- Original and revised balance if the provider changes it
 
-The agent is the UI. Every response carries a `user_message` — a warm,
-ready-to-speak sentence the agent can say verbatim. The bill check is a
-conversation, one question at a time:
+## Customer workflow
 
-1. `POST /api/life-events` `{"event_type":"medical_bill_received","payload":{"provider_name":"City General","total":4200}}`
-   → draft case + proactive nudge as `user_message`.
-2. User says yes → `POST /api/cases/draft` (or reuse the draft case) → first question.
-3. `POST /api/cases/{id}/answer` per answer → next question, until detection runs and the payoff message returns.
-4. "Want me to draft the dispute letter? One tap." → `GET /api/cases/{id}/pack?type=dispute` (PDF).
-5. User reports a reduction → `POST /api/cases/{id}/outcome` → fee computed, honest disclosure spoken.
-6. `POST /api/cases/{id}/billing/setup` → Stripe customer + SetupIntent (fee terms stated **before** card save).
-7. `POST /api/cases/{id}/reduction-confirmed` → 25% off-session charge.
+1. **Enter relevant billing details.** Use the itemized bill and EOB. Omit medical histories and identifiers the review does not need.
+2. **Review the flags.** Treat each finding as a question to check with the provider, not a proven billing error.
+3. **Send your letter.** Review the generated PDF and send it yourself to the provider or billing office.
+4. **Confirm a reduction.** Use the revised statement to record actual savings and review the fee before authorizing it.
 
-Agents that already have structured data can skip the conversation with
-`POST /api/cases`.
+## Price and collection
 
-## REST endpoints
+25% of the actual bill reduction you report and confirm. A flagged item is not a verified error or a guaranteed saving.
 
-| Method | Path | Notes |
+If a provider reduces your bill by $800 and you confirm that reduction, the fee is $200 and the net saving is $600.
+
+You can ask the provider or insurer to explain or correct a bill directly without using Qull.
+
+Billing setup requires explicit fee-term acceptance (`accept_fee_terms: true`)
+and returns Stripe's hosted setup URL. A return redirect does not establish
+that a payment method is ready; poll the authenticated billing-status endpoint.
+Retrieve the fee quote before asking for payment confirmation; fixed-price
+Moving Concierge and MatchMax expose their amount in billing status. A quote
+does not charge. The charge call requires a fresh confirmation
+(`confirm_fee: true`), the exact expected `fee_amount_cents`, and the
+operation's outcome data. The server
+calculates the amount and verifies the saved payment method. Never treat a
+local customer ID, a sample response, or a health response as proof of payment.
+
+No test may create a live charge without separate explicit authorization.
+Use Stripe test mode for end-to-end payment verification. There is no automatic
+renewal, generic subscription, or automated tax calculation in this release.
+
+## Authentication and access
+
+REST calls use `Authorization: Bearer <opaque Qull user API key>`.
+Each credential maps to one server-controlled owner in `QULL_API_KEYS_FILE`.
+A caller-supplied platform/user header is not production authentication.
+Life-event intake follows the same owner-bound authentication.
+See [integration guide](../../docs/INTEGRATION.md) and
+[deployment documentation](../deploy/DEPLOY.md) for provisioning and hosting.
+
+Public `/health` is process liveness. `/ready` is configuration readiness, not
+confirmation that a customer workflow or payment was completed. No OAuth flow
+or Meta-specific credential exchange is implemented; confirm that integration
+contract before describing the service as connected to Muse.
+
+## Run and develop
+
+From this service directory, install `requirements.txt` in an isolated Python
+environment. Run `python run.py` to start the REST/MCP processes according to
+the checked-in ports, or `uvicorn app:app --host 127.0.0.1 --port 8000` for REST.
+Use the deploy scripts and their current environment documentation for the
+production configuration. Keep databases and credentials out of Git.
+
+## REST operations
+
+| Method | Path | Operation |
 |---|---|---|
-| GET | `/health` | liveness |
-| POST | `/api/life-events` | receive fan-out; creates draft case, returns nudge |
-| POST | `/api/cases/draft` | start conversational bill check |
-| POST | `/api/cases/{id}/answer` | answer one question; advances to detection |
-| POST | `/api/cases` | direct structured intake (runs detector) |
-| GET | `/api/cases/{id}` | case + findings |
-| GET | `/api/cases/{id}/pack?type=` | `dispute\|itemized\|assistance\|negotiate` → PDF |
-| GET | `/api/packs` | pack descriptions |
-| POST | `/api/cases/{id}/outcome` | `{reduction_amount}` → fee computed |
-| POST | `/api/cases/{id}/billing/setup` | customer + SetupIntent; exact fee disclosure in response |
-| POST | `/api/cases/{id}/reduction-confirmed` | 25% off-session charge |
+| `GET` | `/health` | Health |
+| `POST` | `/api/life-events` | Receive a fanned-out life event. Creates a draft case and returns the nudge. |
+| `POST` | `/api/cases/draft` | Start the one-question-at-a-time bill check. |
+| `POST` | `/api/cases/{case_id}/answer` | Answer the current draft question; advances the conversation. |
+| `POST` | `/api/cases` | Create case |
+| `GET` | `/api/cases/{case_id}` | Get case |
+| `GET` | `/api/cases/{case_id}/pack` | Get pack |
+| `GET` | `/api/packs` | List packs |
+| `POST` | `/api/cases/{case_id}/outcome` | Report outcome |
+| `POST` | `/api/cases/{case_id}/billing/setup` | Create the Stripe customer + SetupIntent. |
+| `GET` | `/api/cases/{case_id}/billing/status` | Pollable billing state: card state + whether the 25% reduction fee is settled. |
+| `GET` | `/api/cases/{case_id}/fee-quote` | Quote 25% of this case's stored, user-reported reduction without charging. |
+| `POST` | `/api/cases/{case_id}/reduction-confirmed` | Charge 25% of the user-confirmed reduction off-session. |
+| `DELETE` | `/api/data` | Delete the authenticated user's operational data. Payment/accounting records remain with the processor and protected billing ledger. |
 
-Every JSON response includes `user_message`.
+The OpenAPI spec in `../../openapi/medical-bill-fighter.json` supplies exact request
+models. The public server origin is `https://5.78.152.6.nip.io/medical-bill-fighter`; operation paths
+already contain `/api`. Do not compose `/api/api`.
 
-## MCP (streamable-http, port 8580)
+## Important limits
 
-Tools: `receive_life_event`, `start_bill_check`, `answer_question`,
-`create_case`, `get_case`, `list_packs`, `generate_pack`, `report_outcome`,
-`setup_billing`, `confirm_reduction_charge`. Every tool result includes
-`user_message`.
+- Qull does not contact providers, negotiate balances, access insurer accounts, submit insurance appeals, or pay bills for you.
+- The rules are limited and can miss issues or flag legitimate charges. Unverified code-pair rules are disabled; this is not a complete coding, clinical, or insurance audit.
+- Do not provide Social Security numbers, insurer passwords, full medical records, or unnecessary diagnosis information.
 
-## Money flow
+Billing-organization assistance; no medical, legal, insurance, or clinical coding advice.
 
-1. Fee trigger: the **user confirms a reduction** (`report_outcome` /
-   `POST .../outcome`).
-2. Fee: **25% of the confirmed reduction**, computed by
-   `src/billing.py::contingency_cents`.
-3. Collection: Stripe customer + SetupIntent at `/billing/setup` (card saved
-   for off-session use), then PaymentIntent off-session at
-   `/reduction-confirmed`.
-4. Honest disclosure: the setup response and the outcome response state in
-   plain language — *"You will be charged 25% of the confirmed bill
-   reduction, only if you confirm the reduction. No charge otherwise."* —
-   **before** any card is saved. See `connector/TERMS.md` for cancellation
-   and refund policy.
+## Data handled
 
-Stripe calls go through `~/workspace/skills/stripe/bin/stripe` via
-subprocess; no raw keys in code, logs, or the database. **Deployment must
-use a least-privilege restricted Stripe key** with write access limited to
-Customers, SetupIntents, and PaymentIntents only.
+Patient/provider contact details, bill and EOB figures, line-item codes/descriptions, potential issue flags, generated letter, reported reduction, and Stripe references.
 
-## Detector rules (`src/detector.py`)
+User records are scoped to the authenticated owner. Use documented deletion
+operations where available. Local record deletion does not reverse payments
+or erase Stripe's independent records. A final retention/backup policy and
+support process remain operational launch requirements.
 
-Each finding: `{rule, severity, line_refs, explanation, suggested_action}`.
+## Links
 
-1. `duplicate_line_items` (error) — same code + amount billed 2+ times.
-2. `bill_vs_eob_mismatch` (error) — billed patient responsibility ≠ EOB figure.
-3. `possible_balance_billing` (warning) — out-of-network emergency care or
-   out-of-network charges at an in-network facility. Notes federal No
-   Surprises Act protection with **"may be protected — verify"** language;
-   flagged for review, never asserted.
-4. `possible_unbundling` (warning) — curated mutually-exclusive CPT pairs
-   (`src/code_pairs.json`), explicitly labeled **heuristic**.
-5. `missing_itemized_detail` (warning) — <3 lines but total >$1,000 → request
-   itemized bill.
-6. `prompt_pay_suggestion` (info) — 10–20% prompt-pay discount negotiation
-   tip, not an error finding.
+- [Product overview](https://qull.io/connect/medical-bill-fighter/)
+- [Integration and schema reference](https://qull.io/connect/medical-bill-fighter/api-docs/)
+- [Privacy policy — draft](https://qull.io/connect/medical-bill-fighter/privacy/)
+- [Terms — draft](https://qull.io/connect/medical-bill-fighter/terms/)
+- Contact: wasiq@qull.io (existing Qull contact; mailbox delivery not verified here).
 
-## Security notes
-
-- All inputs validated with pydantic; all SQL parameterized.
-- All user-supplied text is `html.escape()`d before rendering into PDFs or
-  tool output (reportlab Paragraphs interpret markup) — user data is inert
-  text and can never alter letter structure or instructions.
-- No prompt-injection surfaces: findings/letters are data derived from
-  intake; user text is never executed.
-
-## PII minimization (medical data)
-
-We collect only: patient name/email, provider name, bill date, line items,
-EOB figures. **No diagnoses, procedure notes, or insurance member IDs.**
-See `connector/TERMS.md` for handling, export, and deletion.
-
-## Disclaimers
-
-- Template automation — NOT legal or medical advice. Review before sending.
-- No letters are sent and no calls are made by this service; the user
-  reviews, signs, and sends everything themselves.
-- Hosting: TBD.
+A functioning local test is not Meta approval. See [review status](../../STATUS.md)
+for the distinction between source changes, tests, deployment, and review.
