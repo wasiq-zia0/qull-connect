@@ -24,7 +24,10 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           }
@@ -49,10 +52,46 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accepted": {
+                      "type": "boolean"
+                    },
+                    "claim_id": {
+                      "type": "string"
+                    },
+                    "draft": {
+                      "type": "boolean"
+                    },
+                    "eligible": {
+                      "type": "boolean"
+                    },
+                    "compensation_eur": {
+                      "type": "integer"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "accepted": true,
+                      "claim_id": "2bcda2065d714f09baecbe40e41db101",
+                      "draft": true,
+                      "eligible": false,
+                      "compensation_eur": 0,
+                      "user_message": "Heads up — flight your flight to New York looks like it might qualify for EU compensation. What's your name, so I can check it properly?"
+                    }
+                  }
+                }
               }
             }
           },
@@ -95,10 +134,139 @@
         },
         "responses": {
           "201": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "claim_id": {
+                      "type": "string"
+                    },
+                    "eligible": {
+                      "type": "boolean"
+                    },
+                    "assessment": {
+                      "type": "string"
+                    },
+                    "not_a_guarantee": {
+                      "type": "boolean"
+                    },
+                    "official_source_url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "compensation_eur": {
+                      "type": "integer"
+                    },
+                    "distance_km": {
+                      "type": "integer"
+                    },
+                    "from": {
+                      "type": "object",
+                      "properties": {
+                        "iata": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "eu_eea": {
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": true
+                    },
+                    "to": {
+                      "type": "object",
+                      "properties": {
+                        "iata": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "eu_eea": {
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": true
+                    },
+                    "disruption": {
+                      "type": "string"
+                    },
+                    "reasons": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "claim_id": "8bf424b32b9543b8b44272edf8de0cca",
+                      "eligible": true,
+                      "assessment": "preliminary_eligible",
+                      "not_a_guarantee": true,
+                      "official_source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32004R0261",
+                      "compensation_eur": 600,
+                      "distance_km": 5834,
+                      "from": {
+                        "iata": "CDG",
+                        "name": "Charles de Gaulle International Airport",
+                        "eu_eea": true
+                      },
+                      "to": {
+                        "iata": "JFK",
+                        "name": "John F Kennedy International Airport",
+                        "eu_eea": false
+                      },
+                      "disruption": "delay",
+                      "reasons": [
+                        "Great-circle distance Paris (CDG) -> New York (JFK): 5,834 km.",
+                        "Distance 5,834 km -> Article 7 tier EUR 600.",
+                        "Departure airport CDG (France) is in the EU/EEA: Regulation applies to any airline (Art 3(1)(a))."
+                      ],
+                      "user_message": "Based on the information supplied, your flight to New York may qualify for €600. The airline must assess the claim and exceptions. I can prepare a letter for you to review and send."
+                    }
+                  },
+                  "example_2": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "claim_id": "3dcf2014d9bd45f4bcc1e2e479f7c449",
+                      "eligible": false,
+                      "assessment": "needs_review",
+                      "not_a_guarantee": true,
+                      "official_source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32004R0261",
+                      "compensation_eur": 0,
+                      "distance_km": 5834,
+                      "from": {
+                        "iata": "CDG",
+                        "name": "Charles de Gaulle International Airport",
+                        "eu_eea": true
+                      },
+                      "to": {
+                        "iata": "JFK",
+                        "name": "John F Kennedy International Airport",
+                        "eu_eea": false
+                      },
+                      "disruption": "cancellation",
+                      "reasons": [
+                        "Great-circle distance Paris (CDG) -> New York (JFK): 5,834 km.",
+                        "Distance 5,834 km -> Article 7 tier EUR 600.",
+                        "Departure airport CDG (France) is in the EU/EEA: Regulation applies to any airline (Art 3(1)(a))."
+                      ],
+                      "user_message": "This flight needs more information or manual review before eligibility can be estimated: Great-circle distance Paris (CDG) -> New York (JFK): 5,834 km.; Distance 5,834 km -> Article 7 tier EUR 600.; Departure airport CDG (France) is in the EU/EEA: Regulation applies to any airline (Art 3(1)(a)).; Missing cancellation notice period: manual review required before estimating eligibility."
+                    }
+                  }
+                }
               }
             }
           },
@@ -145,7 +313,10 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           },
@@ -189,10 +360,57 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "claim_id": {
+                      "type": "string"
+                    },
+                    "generated": {
+                      "type": "boolean"
+                    },
+                    "pdf": {
+                      "type": "string"
+                    },
+                    "pdf_base64": {
+                      "type": "string",
+                      "format": "byte",
+                      "description": "Complete PDF bytes encoded as base64. Decode this field to obtain the generated PDF; contents are omitted from the abbreviated example."
+                    },
+                    "download_path": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Selected response fields; encoded PDF contents omitted",
+                    "value": {
+                      "claim_id": "8bf424b32b9543b8b44272edf8de0cca",
+                      "generated": true,
+                      "pdf": "eu261-claim-pack-8bf424b32b9543b8b44272edf8de0cca.pdf",
+                      "download_path": "/api/claims/8bf424b32b9543b8b44272edf8de0cca/claim-pack.pdf",
+                      "user_message": "Done — your €600 claim letter for the New York flight is ready. Just sign it and send it to the airline; their claims email is usually on their website."
+                    }
+                  },
+                  "example_2": {
+                    "summary": "Selected response fields; encoded PDF contents omitted",
+                    "value": {
+                      "claim_id": "8bf424b32b9543b8b44272edf8de0cca",
+                      "generated": true,
+                      "pdf": "eu261-claim-pack-8bf424b32b9543b8b44272edf8de0cca.pdf",
+                      "download_path": "/api/claims/8bf424b32b9543b8b44272edf8de0cca/claim-pack.pdf",
+                      "user_message": "Done — your €600 claim letter for the New York flight is ready. Just sign it and send it to the airline; their claims email is usually on their website."
+                    }
+                  }
+                }
               }
             }
           },
@@ -246,10 +464,60 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "claim_id": {
+                      "type": "string"
+                    },
+                    "stripe_customer_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "setup_url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "checkout_session_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "setup_intent_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "fee_disclosure": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative hosted-setup response; example URL is not a usable payment session",
+                    "value": {
+                      "claim_id": "8bf424b32b9543b8b44272edf8de0cca",
+                      "stripe_customer_id": "cus_owned",
+                      "setup_url": "https://checkout.stripe.com/example-not-a-live-session",
+                      "checkout_session_id": "cs_owned",
+                      "setup_intent_id": null,
+                      "fee_disclosure": "You will be charged 30% of the confirmed EU261 payout, only if you confirm the payout. No charge otherwise. You can cancel at any time before confirming.",
+                      "user_message": "You will be charged 30% of the confirmed EU261 payout, only if you confirm the payout. No charge otherwise. You can cancel at any time before confirming. Open setup_url to save a payment method securely with Stripe. Saving it does not charge a fee."
+                    }
+                  }
+                }
               }
             }
           },
@@ -293,10 +561,63 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "claim_id": {
+                      "type": "string"
+                    },
+                    "billing_status": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "card_state": {
+                      "type": "string"
+                    },
+                    "setup_status": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "fee_disclosure": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Card setup pending (illustrative provider fixture)",
+                    "value": {
+                      "claim_id": "8bf424b32b9543b8b44272edf8de0cca",
+                      "billing_status": "card_pending",
+                      "card_state": "pending",
+                      "setup_status": "requires_confirmation",
+                      "fee_disclosure": "You will be charged 30% of the confirmed EU261 payout, only if you confirm the payout. No charge otherwise. You can cancel at any time before confirming.",
+                      "user_message": "Card setup has not been confirmed. Open the Stripe setup link and complete it."
+                    }
+                  },
+                  "example_2": {
+                    "summary": "Card setup ready (illustrative provider fixture)",
+                    "value": {
+                      "claim_id": "8bf424b32b9543b8b44272edf8de0cca",
+                      "billing_status": "card_pending",
+                      "card_state": "ready",
+                      "setup_status": "succeeded",
+                      "fee_disclosure": "You will be charged 30% of the confirmed EU261 payout, only if you confirm the payout. No charge otherwise. You can cancel at any time before confirming.",
+                      "user_message": "Your payment method is saved. Review and explicitly approve the fee before payment."
+                    }
+                  }
+                }
               }
             }
           },
@@ -350,10 +671,56 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "claim_id": {
+                      "type": "string"
+                    },
+                    "payout_eur": {
+                      "type": "number"
+                    },
+                    "fee_eur": {
+                      "type": "number"
+                    },
+                    "fee_rate": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "payment_intent_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "claim_id": "8bf424b32b9543b8b44272edf8de0cca",
+                      "payout_eur": 300.0,
+                      "fee_eur": 90.0,
+                      "fee_rate": 0.3,
+                      "payment_intent_id": "pi_owned",
+                      "status": "succeeded",
+                      "user_message": "Confirmed — the airline paid €300.00, so our 30% fee of €90.00 has been charged. Congrats on the win!"
+                    }
+                  }
+                }
               }
             }
           },
@@ -396,10 +763,13 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "The authenticated owner’s generated claim-pack PDF. Generate the pack first; another customer cannot download it.",
             "content": {
-              "application/json": {
-                "schema": {}
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
               }
             }
           },
@@ -452,10 +822,139 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "claim_id": {
+                      "type": "string"
+                    },
+                    "eligible": {
+                      "type": "boolean"
+                    },
+                    "assessment": {
+                      "type": "string"
+                    },
+                    "not_a_guarantee": {
+                      "type": "boolean"
+                    },
+                    "official_source_url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "compensation_eur": {
+                      "type": "integer"
+                    },
+                    "distance_km": {
+                      "type": "integer"
+                    },
+                    "from": {
+                      "type": "object",
+                      "properties": {
+                        "iata": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "eu_eea": {
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": true
+                    },
+                    "to": {
+                      "type": "object",
+                      "properties": {
+                        "iata": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "eu_eea": {
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": true
+                    },
+                    "disruption": {
+                      "type": "string"
+                    },
+                    "reasons": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "claim_id": "8bf424b32b9543b8b44272edf8de0cca",
+                      "eligible": true,
+                      "assessment": "preliminary_eligible",
+                      "not_a_guarantee": true,
+                      "official_source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32004R0261",
+                      "compensation_eur": 600,
+                      "distance_km": 5834,
+                      "from": {
+                        "iata": "CDG",
+                        "name": "Charles de Gaulle International Airport",
+                        "eu_eea": true
+                      },
+                      "to": {
+                        "iata": "JFK",
+                        "name": "John F Kennedy International Airport",
+                        "eu_eea": false
+                      },
+                      "disruption": "delay",
+                      "reasons": [
+                        "Great-circle distance Paris (CDG) -> New York (JFK): 5,834 km.",
+                        "Distance 5,834 km -> Article 7 tier EUR 600.",
+                        "Departure airport CDG (France) is in the EU/EEA: Regulation applies to any airline (Art 3(1)(a))."
+                      ],
+                      "user_message": "Based on the information supplied, your flight to New York may qualify for €600. The airline must assess the claim and exceptions. I can prepare a letter for you to review and send."
+                    }
+                  },
+                  "example_2": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "claim_id": "2bcda2065d714f09baecbe40e41db101",
+                      "eligible": true,
+                      "assessment": "preliminary_eligible",
+                      "not_a_guarantee": true,
+                      "official_source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32004R0261",
+                      "compensation_eur": 600,
+                      "distance_km": 5834,
+                      "from": {
+                        "iata": "CDG",
+                        "name": "Charles de Gaulle International Airport",
+                        "eu_eea": true
+                      },
+                      "to": {
+                        "iata": "JFK",
+                        "name": "John F Kennedy International Airport",
+                        "eu_eea": false
+                      },
+                      "disruption": "delay",
+                      "reasons": [
+                        "Great-circle distance Paris (CDG) -> New York (JFK): 5,834 km.",
+                        "Distance 5,834 km -> Article 7 tier EUR 600.",
+                        "Departure airport CDG (France) is in the EU/EEA: Regulation applies to any airline (Art 3(1)(a))."
+                      ],
+                      "user_message": "Based on the information supplied, your flight to New York may qualify for €600. The airline must assess the claim and exceptions. I can prepare a letter for you to review and send."
+                    }
+                  }
+                }
               }
             }
           },
@@ -491,7 +990,10 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           },
@@ -525,7 +1027,10 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           },
@@ -579,10 +1084,53 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "claim_id": {
+                      "type": "string"
+                    },
+                    "currency": {
+                      "type": "string"
+                    },
+                    "recovery_amount": {
+                      "type": "number"
+                    },
+                    "fee_rate": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "fee_amount_cents": {
+                      "type": "integer"
+                    },
+                    "charged": {
+                      "type": "boolean"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "claim_id": "8bf424b32b9543b8b44272edf8de0cca",
+                      "currency": "EUR",
+                      "recovery_amount": 300.0,
+                      "fee_rate": 0.3,
+                      "fee_amount_cents": 9000,
+                      "charged": false,
+                      "user_message": "The fee would be 90.00 EUR. Review it, then explicitly approve this exact amount if you want to pay."
+                    }
+                  }
+                }
               }
             }
           },

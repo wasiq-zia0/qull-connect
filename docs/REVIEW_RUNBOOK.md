@@ -75,11 +75,11 @@ provider integration. Perform the following against Stripe's test environment.
 | Subscription Slayer | Owner-supplied receipts; recurring-charge detection checked against inputs; cancellation guide; user-completed cancellations; exactly $10 per distinct confirmed item. |
 | BillCut | Provider/generic script; outcome calculation; 12-month savings cap; no-success produces no fee; 35% exact amount confirmation. |
 | Final Paycheck | Separation inputs; unknown/incomplete deadline case; safe factual letter; actual recovered wages and exact 25% fee. |
-| Class Action Cash | Current verified settlement and dated receipt; stale/closed entries excluded; correct official claim link; user files; actual payout and20% fee. |
+| Class Action Cash | Current verified settlement and dated receipt; stale/closed entries excluded; correct official claim link; user files; actual payout and 20% fee. |
 | Found Money | Correct selected-state links/checklist; no claim of an actual database match; SSN rejection/no storage; fee endpoints blocked until agreement requirements are resolved. |
 | Moving Concierge | Correct old/new addresses; useful checklist and PDF; unpaid pack locked; one $49 payment; restart/retry does not re-charge. |
 | MatchMax | Independently computed simple formula and current annual limit; unsupported plan/midyear assumptions explained; one $99 payment; no automatic renewal. |
-| Medical Bill Fighter | Explain each issue flag from entered figures; false-positive limitations; correct PDF; user-reported reduction; exactly25% fee with authorization. |
+| Medical Bill Fighter | Explain each issue flag from entered figures; false-positive limitations; correct PDF; user-reported reduction; exactly 25% fee with authorization. |
 
 ## Muse submission package
 

@@ -6,11 +6,11 @@ Updated September 20, 2026. Operated by Qull, Inc.
 
 ## Service and scope
 
-Build a state-by-state checklist of official unclaimed-property portals and the information needed to search and file your own claims.
+Build a state-by-state claim checklist and use the NAUPA directory to reach official unclaimed-property programs where you can search and file your own claims.
 
-Official portal directory for U.S. states and DC. Billing setup and recovery-fee collection are disabled pending a compliant agreement flow.
+U.S. state/DC claim checklists with a NAUPA program-directory entry point. Historical state links require review. Billing setup and recovery-fee collection are disabled pending a compliant agreement flow.
 
-- Official state portal links for the states you select.
+- The verified NAUPA directory entry point for locating official state programs, alongside state-specific checklists.
 - A claim-preparation checklist and cover sheet using the details you provide.
 - A tracker for claim steps and outcomes you report.
 
@@ -19,6 +19,7 @@ Official portal directory for U.S. states and DC. Billing setup and recovery-fee
 Use the service for records and information you are authorized to provide. Check dates, amounts, identity details, and statements before relying on a result or sending a document. Do not fabricate eligibility, recoveries, savings, receipts, or claims. You remain responsible for taking the action with the relevant organization and meeting its deadlines.
 
 - Qull does not search state databases automatically, verify a property match, file claims, or receive recovered money for you.
+- Historical per-state reference links are unreviewed; use the NAUPA directory to locate the current official program. Claim steps are general guidance, not verified state-specific requirements.
 - A single percentage cap does not establish compliance. Agreement timing, registration, disclosures, and other state requirements may apply.
 - Do not send Qull Social Security numbers, identity-document scans, or bank-account credentials.
 

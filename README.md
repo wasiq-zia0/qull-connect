@@ -61,6 +61,23 @@ changes.
 
 ## Testing and payments
 
+With Python 3.12, create an isolated environment and run the same application
+checks used by CI:
+
+```bash
+python3.12 -m venv .venv
+. .venv/bin/activate
+python tools/install_review_environment.py
+python -m pytest tests backend/tests -q
+python tools/export_openapi.py
+git diff --exit-code -- openapi 'backend/*/connector/manifest.json'
+```
+
+The exporter validates all ten OpenAPI documents, response examples and runtime
+MCP tool schemas. Each service's `response_contracts.json` documents observed
+response fields and synthetic examples; examples are not live account records
+or usable payment links. CI also builds and starts all ten Docker images.
+
 Use temporary databases, synthetic records, independently scoped user keys,
 and Stripe **test mode**. Do not test by charging real cards or by weakening
 production identity. Live payments require separately authorized customer

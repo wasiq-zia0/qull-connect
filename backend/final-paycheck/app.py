@@ -389,7 +389,7 @@ def confirm_case(case_id: str, body: ConfirmDraft):
                f"You're in — I'm now tracking {wages} from {employer}. {_status_message(case, law)}")
 
 
-@app.post("/api/cases/{case_id}/demand-letter")
+@app.post("/api/cases/{case_id}/demand-letter", response_class=FileResponse)
 def demand_letter(case_id: str):
     owner = require_owner()
     case = _case_or_404(case_id, owner)

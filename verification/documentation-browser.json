@@ -1,0 +1,31 @@
+{
+  "date": "2026-09-20",
+  "deployment_reviewed": "6ab032a445a27f47d903df49",
+  "pages": [
+    "https://qull.io/connect/",
+    "https://qull.io/connect/deposit-recovery/",
+    "https://qull.io/connect/deposit-recovery/api-docs/",
+    "https://qull.io/connect/deposit-recovery/terms/",
+    "https://qull.io/connect/medical-bill-fighter/api-docs/"
+  ],
+  "viewport_width": 1348,
+  "checks": {
+    "desktop_visual_layout": "passed",
+    "horizontal_overflow": "none on inspected pages",
+    "hub_to_product_link": "passed",
+    "product_to_api_link": "passed",
+    "api_to_terms_link": "passed",
+    "deposit_swagger_expanded_operations": 16,
+    "medical_swagger_expanded_operations": 14,
+    "deposit_request_model": "rendered with tenancy_end and forwarding_date",
+    "try_it_out_buttons": 0,
+    "preview_and_draft_labels": "present",
+    "medical_disabled_code_pair_scope": "present"
+  },
+  "limitations": [
+    "Mobile viewport was not exercised.",
+    "These are public documentation checks, not backend workflow or Meta acceptance tests.",
+    "Pending final wording updates cover explicit fee quoting, payment error branches, and Found Money NAUPA directory scope.",
+    "Generic success-response schemas render unhelpful string examples; reported to root for correction."
+  ]
+}

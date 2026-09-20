@@ -18,7 +18,7 @@
     "inputs": [
       "Tenant name and forwarding address",
       "Rental property and landlord names/addresses",
-      "State, move-out date, and forwarding-address date where relevant",
+      "State, move-out date, and landlord receipt date for a written forwarding address where relevant; Connecticut also requires the date the tenancy legally ended",
       "Deposit amount and any amount later recovered"
     ],
     "steps": [
@@ -445,13 +445,13 @@
     "name": "Found Money",
     "category": "Unclaimed property",
     "headline": "Know where to check for unclaimed money.",
-    "summary": "Build a state-by-state checklist of official unclaimed-property portals and the information needed to search and file your own claims.",
+    "summary": "Build a state-by-state claim checklist and use the NAUPA directory to reach official unclaimed-property programs where you can search and file your own claims.",
     "price": "Free preview",
-    "price_basis": "official portal guides and claim preparation",
+    "price_basis": "program directory and claim preparation",
     "fee": "The current release provides portal guides and claim preparation without collecting a fee. Paid recovery assistance is unavailable while state-specific agreements and eligibility requirements are unresolved. A proposed future fee of up to 10% is not active or authorized.",
     "example": "Searching and filing directly through an official state program is free. This release does not collect a Qull recovery fee.",
     "deliverables": [
-      "Official state portal links for the states you select.",
+      "The verified NAUPA directory entry point for locating official state programs, alongside state-specific checklists.",
       "A claim-preparation checklist and cover sheet using the details you provide.",
       "A tracker for claim steps and outcomes you report."
     ],
@@ -467,8 +467,8 @@
         "Add the states where you have lived and the names under which property may be held."
       ],
       [
-        "Search official portals",
-        "Open the state links and run the searches yourself. A checklist is not evidence that money was found."
+        "Find the official program",
+        "Use the NAUPA directory to reach the current state program and run your search yourself. A checklist is not evidence that money was found."
       ],
       [
         "Prepare your claim",
@@ -481,10 +481,11 @@
     ],
     "limits": [
       "Qull does not search state databases automatically, verify a property match, file claims, or receive recovered money for you.",
+      "Historical per-state reference links are unreviewed; use the NAUPA directory to locate the current official program. Claim steps are general guidance, not verified state-specific requirements.",
       "A single percentage cap does not establish compliance. Agreement timing, registration, disclosures, and other state requirements may apply.",
       "Do not send Qull Social Security numbers, identity-document scans, or bank-account credentials."
     ],
-    "scope": "Official portal directory for U.S. states and DC. Billing setup and recovery-fee collection are disabled pending a compliant agreement flow.",
+    "scope": "U.S. state/DC claim checklists with a NAUPA program-directory entry point. Historical state links require review. Billing setup and recovery-fee collection are disabled pending a compliant agreement flow.",
     "data": "Legal/former names, selected states, contact details, optional consented birth date, claim statuses, reported recovery, and Stripe references if billing is available.",
     "disclaimer": "Claim-preparation information; no legal advice or assurance that unclaimed funds exist.",
     "workflow": [

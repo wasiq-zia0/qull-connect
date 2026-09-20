@@ -24,7 +24,10 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           }
@@ -41,7 +44,10 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           },
@@ -77,7 +83,10 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           },
@@ -119,10 +128,182 @@
         },
         "responses": {
           "201": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string"
+                    },
+                    "draft": {
+                      "type": "boolean"
+                    },
+                    "employee_name": {
+                      "type": "string"
+                    },
+                    "employer_name": {
+                      "type": "string"
+                    },
+                    "state": {
+                      "type": "string"
+                    },
+                    "state_name": {
+                      "type": "string"
+                    },
+                    "last_day_worked": {
+                      "type": "string"
+                    },
+                    "termination_type": {
+                      "type": "string"
+                    },
+                    "wages_owed": {
+                      "type": "number"
+                    },
+                    "pay_period": {
+                      "type": "string"
+                    },
+                    "next_payday": {},
+                    "deadline": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "days_overdue": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "days_remaining": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "statute": {
+                      "type": "string"
+                    },
+                    "penalty_note": {
+                      "type": "string"
+                    },
+                    "note": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "flags": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "missing": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "stripe_customer_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "fee_status": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "recovered_amount": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "demand_letter_generated": {
+                      "type": "boolean"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "id": "f20cb25800744dc8a8f5213ddfbda1f4",
+                      "created_at": "2026-09-20T19:29:09.717400+00:00",
+                      "draft": false,
+                      "employee_name": "Alice",
+                      "employer_name": "Employer",
+                      "state": "NV",
+                      "state_name": "Nevada",
+                      "last_day_worked": "2026-01-01",
+                      "termination_type": "fired",
+                      "wages_owed": 1000.0,
+                      "pay_period": "",
+                      "next_payday": null,
+                      "deadline": "2026-01-01",
+                      "status": "overdue",
+                      "days_overdue": 262,
+                      "days_remaining": 0,
+                      "statute": "NRS 608.020-608.050",
+                      "penalty_note": "Payment penalties have additional prerequisites; this tool does not calculate them.",
+                      "note": "",
+                      "flags": [],
+                      "missing": null,
+                      "stripe_customer_id": null,
+                      "fee_status": "none",
+                      "recovered_amount": null,
+                      "demand_letter_generated": false,
+                      "user_message": "Got it — I'm watching your $1,000.00 final paycheck from Employer. Nevada law says it was due 2026-01-01. I'll draft the demand letter after you request it and the verified deadline has passed."
+                    }
+                  },
+                  "example_2": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "id": "82a789a344164d27baa6c4a9bdd476e9",
+                      "created_at": "2026-09-20T19:29:09.728046+00:00",
+                      "draft": false,
+                      "employee_name": "Alice",
+                      "employer_name": "Employer",
+                      "state": "CA",
+                      "state_name": "California",
+                      "last_day_worked": "2026-01-01",
+                      "termination_type": "fired",
+                      "wages_owed": 1000.0,
+                      "pay_period": "",
+                      "next_payday": null,
+                      "deadline": null,
+                      "status": "needs_review",
+                      "days_overdue": 0,
+                      "days_remaining": null,
+                      "statute": "Cal. Lab. Code §§ 201-203",
+                      "penalty_note": "No penalty determination.",
+                      "note": "This deadline requires review. A factual unpaid-wages request can be prepared for you to send.",
+                      "flags": [
+                        "unverified_rule"
+                      ],
+                      "missing": null,
+                      "stripe_customer_id": null,
+                      "fee_status": "none",
+                      "recovered_amount": null,
+                      "demand_letter_generated": false,
+                      "user_message": "Got it — I'm watching your $1,000.00 final paycheck from Employer. California law says it was due no fixed state deadline. I'll draft the demand letter after you request it and the verified deadline has passed."
+                    }
+                  }
+                }
               }
             }
           },
@@ -168,7 +349,10 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           },
@@ -222,10 +406,149 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string"
+                    },
+                    "draft": {
+                      "type": "boolean"
+                    },
+                    "employee_name": {
+                      "type": "string"
+                    },
+                    "employer_name": {
+                      "type": "string"
+                    },
+                    "state": {
+                      "type": "string"
+                    },
+                    "state_name": {
+                      "type": "string"
+                    },
+                    "last_day_worked": {
+                      "type": "string"
+                    },
+                    "termination_type": {
+                      "type": "string"
+                    },
+                    "wages_owed": {
+                      "type": "number"
+                    },
+                    "pay_period": {
+                      "type": "string"
+                    },
+                    "next_payday": {},
+                    "deadline": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "days_overdue": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "days_remaining": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "statute": {
+                      "type": "string"
+                    },
+                    "penalty_note": {
+                      "type": "string"
+                    },
+                    "note": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "flags": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "missing": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "stripe_customer_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "fee_status": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "recovered_amount": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "demand_letter_generated": {
+                      "type": "boolean"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "id": "e92ec0696590473397bc05e4141a4a5a",
+                      "created_at": "2026-09-20T19:29:09.735938+00:00",
+                      "draft": false,
+                      "employee_name": "Alice",
+                      "employer_name": "Employer",
+                      "state": "NV",
+                      "state_name": "Nevada",
+                      "last_day_worked": "2026-01-01",
+                      "termination_type": "fired",
+                      "wages_owed": 1000.0,
+                      "pay_period": "",
+                      "next_payday": null,
+                      "deadline": "2026-01-01",
+                      "status": "overdue",
+                      "days_overdue": 262,
+                      "days_remaining": 0,
+                      "statute": "NRS 608.020-608.050",
+                      "penalty_note": "Payment penalties have additional prerequisites; this tool does not calculate them.",
+                      "note": "",
+                      "flags": [],
+                      "missing": null,
+                      "stripe_customer_id": null,
+                      "fee_status": "none",
+                      "recovered_amount": null,
+                      "demand_letter_generated": false,
+                      "user_message": "You're in — I'm now tracking $1,000.00 from Employer. Your $1,000.00 final paycheck from Employer is 262 days past due under Nevada law. I can draft your demand letter now — one tap."
+                    }
+                  }
+                }
               }
             }
           },
@@ -268,10 +591,13 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Generated factual wage-request PDF for the authenticated owner to review and send.",
             "content": {
-              "application/json": {
-                "schema": {}
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
               }
             }
           },
@@ -325,10 +651,60 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "stripe_customer_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "setup_url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "checkout_session_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "setup_intent_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "fee_disclosure": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative hosted-setup response; example URL is not a usable payment session",
+                    "value": {
+                      "case_id": "f20cb25800744dc8a8f5213ddfbda1f4",
+                      "stripe_customer_id": "cus_owned",
+                      "setup_url": "https://checkout.stripe.com/example-not-a-live-session",
+                      "checkout_session_id": "cs_owned",
+                      "setup_intent_id": null,
+                      "fee_disclosure": "You will be charged 25% of the recovered wages, only if you confirm the recovery. No charge otherwise. You can cancel at any time before a charge — simply do not confirm a recovery, or ask support to close your case.",
+                      "user_message": "You will be charged 25% of the recovered wages, only if you confirm the recovery. No charge otherwise. You can cancel at any time before a charge — simply do not confirm a recovery, or ask support to close your case. Open setup_url to save a payment method securely with Stripe. Saving it does not charge a fee."
+                    }
+                  }
+                }
               }
             }
           },
@@ -372,10 +748,63 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "billing_status": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "card_state": {
+                      "type": "string"
+                    },
+                    "setup_status": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "fee_disclosure": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Card setup pending (illustrative provider fixture)",
+                    "value": {
+                      "case_id": "f20cb25800744dc8a8f5213ddfbda1f4",
+                      "billing_status": "card_pending",
+                      "card_state": "pending",
+                      "setup_status": "requires_confirmation",
+                      "fee_disclosure": "You will be charged 25% of the recovered wages, only if you confirm the recovery. No charge otherwise. You can cancel at any time before a charge — simply do not confirm a recovery, or ask support to close your case.",
+                      "user_message": "Card setup has not been confirmed. Open the Stripe setup link and complete it."
+                    }
+                  },
+                  "example_2": {
+                    "summary": "Card setup ready (illustrative provider fixture)",
+                    "value": {
+                      "case_id": "f20cb25800744dc8a8f5213ddfbda1f4",
+                      "billing_status": "card_pending",
+                      "card_state": "ready",
+                      "setup_status": "succeeded",
+                      "fee_disclosure": "You will be charged 25% of the recovered wages, only if you confirm the recovery. No charge otherwise. You can cancel at any time before a charge — simply do not confirm a recovery, or ask support to close your case.",
+                      "user_message": "Your payment method is saved. Review and explicitly approve the fee before payment."
+                    }
+                  }
+                }
               }
             }
           },
@@ -429,10 +858,59 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "recovered_amount": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "fee_rate": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "fee_charged": {
+                      "type": "number"
+                    },
+                    "payment_intent_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "case_id": "f20cb25800744dc8a8f5213ddfbda1f4",
+                      "recovered_amount": 1000.0,
+                      "fee_rate": 0.25,
+                      "fee_charged": 250.0,
+                      "payment_intent_id": "pi_owned",
+                      "status": "succeeded",
+                      "user_message": "Done — $250.00 fee charged on your $1,000.00 recovery. You kept $750.00. Congratulations!"
+                    }
+                  }
+                }
               }
             }
           },
@@ -475,10 +953,53 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "draft": {
+                      "type": "boolean"
+                    },
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "missing_fields": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "rule": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "ok": true,
+                      "draft": true,
+                      "case_id": "e92ec0696590473397bc05e4141a4a5a",
+                      "missing_fields": [
+                        "employer_name",
+                        "last_day_worked",
+                        "wages_owed"
+                      ],
+                      "rule": "due on your last day",
+                      "user_message": "You left your former employer and your final paycheck hasn't arrived. Nevada law says it was due on your last day. Want me to draft the demand letter? One tap."
+                    }
+                  }
+                }
               }
             }
           },
@@ -514,7 +1035,10 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           },
@@ -548,7 +1072,10 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           },
@@ -602,10 +1129,53 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Successful response. Examples use fictional local test records; they are not live case or payment results.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "case_id": {
+                      "type": "string"
+                    },
+                    "currency": {
+                      "type": "string"
+                    },
+                    "recovery_amount": {
+                      "type": "number"
+                    },
+                    "fee_rate": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "fee_amount_cents": {
+                      "type": "integer"
+                    },
+                    "charged": {
+                      "type": "boolean"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "examples": {
+                  "example_1": {
+                    "summary": "Illustrative local test response",
+                    "value": {
+                      "case_id": "f20cb25800744dc8a8f5213ddfbda1f4",
+                      "currency": "USD",
+                      "recovery_amount": 1000.0,
+                      "fee_rate": 0.25,
+                      "fee_amount_cents": 25000,
+                      "charged": false,
+                      "user_message": "The fee would be 250.00 USD. Review it, then explicitly approve this exact amount if you want to pay."
+                    }
+                  }
+                }
               }
             }
           },

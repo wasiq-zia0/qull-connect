@@ -6,7 +6,7 @@
     "scheme": "Bearer",
     "description": "Operator-provisioned opaque key for one user. No OAuth or confirmed Muse identity exchange is implemented."
   },
-  "description": "Build a state-by-state checklist of official unclaimed-property portals and the information needed to search and file your own claims. The current release provides portal guides and claim preparation without collecting a fee. Paid recovery assistance is unavailable while state-specific agreements and eligibility requirements are unresolved. A proposed future fee of up to 10% is not active or authorized.",
+  "description": "Build a state-by-state claim checklist and use the NAUPA directory to reach official unclaimed-property programs where you can search and file your own claims. The current release provides portal guides and claim preparation without collecting a fee. Paid recovery assistance is unavailable while state-specific agreements and eligibility requirements are unresolved. A proposed future fee of up to 10% is not active or authorized.",
   "display_name": "Found Money",
   "proactive_triggers": [],
   "tools": [

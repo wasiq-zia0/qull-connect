@@ -11,7 +11,7 @@ calculation service it actually provides.
 |---|---|---|
 | Deposit Recovery | Organizing facts and preparing a deposit letter | Jurisdiction-specific deadline scope and percentage-fee/legal model review; do not price it as legal representation. |
 | FlightPay | Supported eligibility screening and claim-pack preparation | Confirm the supported scenarios and claims-assistance agreement; the user still submits to the airline. |
-| Subscription Slayer | Receipt organization and cancellation instructions | Explain why a user would pay$10 for guidance they execute themselves; actual delegated cancellation is not implemented. |
+| Subscription Slayer | Receipt organization and cancellation instructions | Explain why a user would pay $10 for guidance they execute themselves; actual delegated cancellation is not implemented. |
 | BillCut | A provider script and savings tracker | Clarify that the user negotiates; outcome reporting is not independent bill verification. |
 | Final Paycheck | Facts/deadline organization and letter preparation | Employment/jurisdiction coverage and wage-recovery percentage-fee review. |
 | Class Action Cash | Current receipt matching and claim organization | Maintain a real verified catalog and make free official filing prominent; receipt matching is not eligibility. |

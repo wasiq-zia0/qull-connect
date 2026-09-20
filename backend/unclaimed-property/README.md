@@ -1,12 +1,12 @@
 # Found Money
 
-Build a state-by-state checklist of official unclaimed-property portals and the information needed to search and file your own claims.
+Build a state-by-state claim checklist and use the NAUPA directory to reach official unclaimed-property programs where you can search and file your own claims.
 
-**Current scope:** Official portal directory for U.S. states and DC. Billing setup and recovery-fee collection are disabled pending a compliant agreement flow.
+**Current scope:** U.S. state/DC claim checklists with a NAUPA program-directory entry point. Historical state links require review. Billing setup and recovery-fee collection are disabled pending a compliant agreement flow.
 
 ## Deliverables
 
-- Official state portal links for the states you select.
+- The verified NAUPA directory entry point for locating official state programs, alongside state-specific checklists.
 - A claim-preparation checklist and cover sheet using the details you provide.
 - A tracker for claim steps and outcomes you report.
 
@@ -20,7 +20,7 @@ Build a state-by-state checklist of official unclaimed-property portals and the 
 ## Customer workflow
 
 1. **List your states.** Add the states where you have lived and the names under which property may be held.
-2. **Search official portals.** Open the state links and run the searches yourself. A checklist is not evidence that money was found.
+2. **Find the official program.** Use the NAUPA directory to reach the current state program and run your search yourself. A checklist is not evidence that money was found.
 3. **Prepare your claim.** Use the document checklist and follow the state's official filing instructions.
 4. **Track the result.** Record claim progress and actual recoveries. No recovery fee is collected in this release.
 
@@ -35,8 +35,11 @@ You can search and claim your own property through official state programs for f
 Billing setup requires explicit fee-term acceptance (`accept_fee_terms: true`)
 and returns Stripe's hosted setup URL. A return redirect does not establish
 that a payment method is ready; poll the authenticated billing-status endpoint.
-The charge call requires a fresh confirmation (`confirm_fee: true`), the exact
-expected `fee_amount_cents`, and the operation's outcome data. The server
+Retrieve the fee quote before asking for payment confirmation; fixed-price
+Moving Concierge and MatchMax expose their amount in billing status. A quote
+does not charge. The charge call requires a fresh confirmation
+(`confirm_fee: true`), the exact expected `fee_amount_cents`, and the
+operation's outcome data. The server
 calculates the amount and verifies the saved payment method. Never treat a
 local customer ID, a sample response, or a health response as proof of payment.
 
@@ -90,6 +93,7 @@ already contain `/api`. Do not compose `/api/api`.
 ## Important limits
 
 - Qull does not search state databases automatically, verify a property match, file claims, or receive recovered money for you.
+- Historical per-state reference links are unreviewed; use the NAUPA directory to locate the current official program. Claim steps are general guidance, not verified state-specific requirements.
 - A single percentage cap does not establish compliance. Agreement timing, registration, disclosures, and other state requirements may apply.
 - Do not send Qull Social Security numbers, identity-document scans, or bank-account credentials.
 

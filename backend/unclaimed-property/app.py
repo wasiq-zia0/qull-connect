@@ -338,7 +338,7 @@ def list_states() -> dict:
                            "DC. Tell me which states you've lived in and I'll build your claim packs."}
 
 
-@app.post("/api/life-events")
+@app.post("/api/life-events", status_code=201)
 def receive_life_event(evt: LifeEvent) -> JSONResponse:
     """Receive a fanned-out life event from the shared bus.
 
@@ -387,7 +387,7 @@ def receive_life_event(evt: LifeEvent) -> JSONResponse:
                   "Got it — that event isn't one I can act on, so I'll sit this one out.")
 
 
-@app.post("/api/searches")
+@app.post("/api/searches", status_code=201)
 def create_search(req: IntakeRequest) -> JSONResponse:
     owner = require_owner()
     if req.dob and not req.dob_consent:
@@ -536,7 +536,7 @@ def update_state_status(search_id: str, abbr: str, body: StatusUpdate) -> dict:
     return {**res, "user_message": um}
 
 
-@app.post("/api/searches/{search_id}/billing/setup")
+@app.post("/api/searches/{search_id}/billing/setup", status_code=409)
 def billing_setup(search_id: str, consent: BillingConsent) -> JSONResponse:
     owner = require_owner()
     rec = _get_search_or_404(search_id, owner)
@@ -576,7 +576,7 @@ def billing_status(search_id: str) -> dict:
             "user_message": FEE_DISCLOSURE}
 
 
-@app.post("/api/searches/{search_id}/recovery-confirmed")
+@app.post("/api/searches/{search_id}/recovery-confirmed", status_code=409)
 def recovery_confirmed(search_id: str, body: RecoveryConfirmed) -> JSONResponse:
     owner = require_owner()
     rec = _get_search_or_404(search_id, owner)

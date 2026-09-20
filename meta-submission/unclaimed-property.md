@@ -5,7 +5,7 @@
 ## Overview
 
 - Display name: **Found Money**
-- Description: Build a state-by-state checklist of official unclaimed-property portals and the information needed to search and file your own claims.
+- Description: Build a state-by-state claim checklist and use the NAUPA directory to reach official unclaimed-property programs where you can search and file your own claims.
 - Operator: Qull, Inc.
 - Contact name: Muhammad Wasiq Zia
 - Work/contact email: `wasiq@qull.io` (published Qull contact; receiving/inbox access must be verified).
@@ -39,7 +39,7 @@ another `/api` to the generated client.
 ### Access requirements
 
 An operator-provisioned Qull credential is required and is bound to one end
-user. No public signup or OAuth flow is implemented. Official portal directory for U.S. states and DC. Billing setup and recovery-fee collection are disabled pending a compliant agreement flow.
+user. No public signup or OAuth flow is implemented. U.S. state/DC claim checklists with a NAUPA program-directory entry point. Historical state links require review. Billing setup and recovery-fee collection are disabled pending a compliant agreement flow.
 
 The current release provides portal guides and claim preparation without collecting a fee. Paid recovery assistance is unavailable while state-specific agreements and eligibility requirements are unresolved. A proposed future fee of up to 10% is not active or authorized.
 
@@ -52,13 +52,14 @@ tested with Meta; a shared key must not mix multiple users' data.
 
 ### Reviewer notes: exact deliverable
 
-- Official state portal links for the states you select.
+- The verified NAUPA directory entry point for locating official state programs, alongside state-specific checklists.
 - A claim-preparation checklist and cover sheet using the details you provide.
 - A tracker for claim steps and outcomes you report.
 
 ### Boundaries that must stay in the listing
 
 - Qull does not search state databases automatically, verify a property match, file claims, or receive recovered money for you.
+- Historical per-state reference links are unreviewed; use the NAUPA directory to locate the current official program. Claim steps are general guidance, not verified state-specific requirements.
 - A single percentage cap does not establish compliance. Agreement timing, registration, disclosures, and other state requirements may apply.
 - Do not send Qull Social Security numbers, identity-document scans, or bank-account credentials.
 

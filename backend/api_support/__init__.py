@@ -1,6 +1,9 @@
 """Shared HTTP contract metadata and the non-sensitive payment return page."""
 
 import os
+import inspect
+import json
+from pathlib import Path
 from urllib.parse import urlsplit
 
 from fastapi.openapi.utils import get_openapi
@@ -12,6 +15,9 @@ def install_api_contract(app, slug: str, title: str):
     from payment_support import install_payment_routes
 
     install_payment_routes(app, slug)
+    health_route = next(route for route in app.routes if getattr(route, "path", None) == "/health")
+    contract_path = Path(inspect.getfile(health_route.endpoint)).parent / "response_contracts.json"
+    response_contracts = json.loads(contract_path.read_text()) if contract_path.exists() else {}
     base = os.environ.get("PUBLIC_BASE_URL", f"https://5.78.152.6.nip.io/{slug}").rstrip("/")
     if urlsplit(base).scheme not in ("https", "http"):
         raise ValueError("PUBLIC_BASE_URL must be an absolute HTTP(S) URL")
@@ -66,10 +72,19 @@ def install_api_contract(app, slug: str, title: str):
             for method, operation in item.items():
                 if method not in {"get", "post", "put", "patch", "delete", "options", "head"}:
                     continue
+                responses = operation.setdefault("responses", {})
+                responses.update(response_contracts.get(path, {}).get(method, {}))
+                for status, response in responses.items():
+                    if not str(status).startswith("2"):
+                        continue
+                    media = response.get("content", {}).get("application/json")
+                    if media is not None and not media.get("schema"):
+                        # Every remaining JSON success route returns an object;
+                        # endpoint contracts above supply its documented fields.
+                        media["schema"] = {"type": "object", "additionalProperties": True}
                 if path in {"/health", "/ready"}:
                     operation["security"] = []
                     continue
-                responses = operation.setdefault("responses", {})
                 for status, description in {
                     "401": "Missing, invalid, expired or disabled per-user API key.",
                     "413": "Request body exceeds the configured limit.",

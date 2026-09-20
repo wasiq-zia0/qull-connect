@@ -55,7 +55,8 @@ end users would collapse their identity boundary and is not a valid integration.
    SetupIntent, off-session usage, and a payment method belonging to the expected
    Stripe customer.
 4. Establish the relevant real outcome or fixed-price pack purchase. Display the
-   fee's amount and currency. The client must not invent recovery, reduction,
+   fee's amount and currency from the fee-quote endpoint below (or billing status
+   for the two fixed-price packs). A quote does not charge. The client must not invent recovery, reduction,
    cancellation, or user consent.
 5. After fresh confirmation, send `confirm_fee: true`, `fee_amount_cents`, and
    the operation's required outcome fields. The server recomputes/checks the fee.
@@ -77,6 +78,25 @@ secret/restricted key, HTTPS `PUBLIC_BASE_URL`, and durable `BILLING_LEDGER_PATH
 need to match the intended environment. Back up the billing ledger with the app
 DB. No secret should enter source control or an application response.
 
+## Quote before confirmation
+
+| Connector | Exact quote operation | Input |
+|---|---|---|
+| Deposit Recovery | `POST /api/cases/{cid}/billing/quote` | `amount_recovered` |
+| FlightPay | `POST /api/claims/{cid}/billing/quote` | `amount_eur` |
+| Subscription Slayer | `POST /api/savings/fee-quote` | `subscription_ids` |
+| BillCut | `GET /api/cases/{cid}/billing/quote` | Uses the stored outcome |
+| Final Paycheck | `POST /api/cases/{case_id}/billing/quote` | `amount` |
+| Class Action Cash | `POST /api/matches/{match_id}/billing/quote` | `amount` |
+| Medical Bill Fighter | `GET /api/cases/{case_id}/fee-quote` | Uses the stored reduction |
+| Moving Concierge / MatchMax | `GET` record `/billing/status` | Fixed fee |
+| Found Money | None available for collection | Billing remains disabled |
+
+Display `fee_amount_cents` in the returned `currency` before requesting the
+user's confirmation. Quote endpoints do not accept payment authorization or
+charge the card. If facts or the quote change, show the new amount and obtain
+a new confirmation rather than reusing approval of a different fee.
+
 ## Failures and retries
 
 | Condition | Correct client behavior |
@@ -85,7 +105,8 @@ DB. No secret should enter source control or an application response.
 | 404 | Treat the resource as unavailable; do not reveal or infer another user's data. |
 | 409 | Resolve the state conflict, unfinished setup, missing review, or blocked workflow. |
 | 422 | Fix the specified request fields. Never guess a missing legal, medical or payment fact. |
-| 402 | A paid pack is locked; offer the disclosed purchase, without charging automatically. |
+| 202 | Payment is still processing; keep the record unpaid and poll before retrying. |
+| 402 | Read the code: pack locked, setup incomplete, decline or bank authentication required. Resolve the specific condition with the user. |
 | 413 / 429 | Reduce request size or honor `Retry-After`; back off, especially around payments. |
 | Timeout / 5xx after mutation | Read current status before retrying. Network failure does not prove the mutation failed. |
 | Bank authentication | Have the user complete the returned authorization URL, then retry the same operation. |

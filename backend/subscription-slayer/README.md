@@ -35,8 +35,11 @@ You can cancel directly with the merchant without using or paying Qull.
 Billing setup requires explicit fee-term acceptance (`accept_fee_terms: true`)
 and returns Stripe's hosted setup URL. A return redirect does not establish
 that a payment method is ready; poll the authenticated billing-status endpoint.
-The charge call requires a fresh confirmation (`confirm_fee: true`), the exact
-expected `fee_amount_cents`, and the operation's outcome data. The server
+Retrieve the fee quote before asking for payment confirmation; fixed-price
+Moving Concierge and MatchMax expose their amount in billing status. A quote
+does not charge. The charge call requires a fresh confirmation
+(`confirm_fee: true`), the exact expected `fee_amount_cents`, and the
+operation's outcome data. The server
 calculates the amount and verifies the saved payment method. Never treat a
 local customer ID, a sample response, or a health response as proof of payment.
 

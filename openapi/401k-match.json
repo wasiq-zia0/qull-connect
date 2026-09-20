@@ -21,10 +21,33 @@
         "operationId": "health_health_get",
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Public process-liveness response; does not establish payment or launch readiness.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "service": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "example": {
+                  "ok": true,
+                  "service": "401k-match",
+                  "version": "0.1.0",
+                  "user_message": "401(k) Match Finder is up and running."
+                }
               }
             }
           }
@@ -52,7 +75,10 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           },
@@ -95,10 +121,57 @@
         },
         "responses": {
           "201": {
-            "description": "Successful Response",
+            "description": "Creates a full-year educational match illustration. The paid pack remains locked; no payroll changes are made.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "plan_id": {
+                      "type": "string"
+                    },
+                    "paid": {
+                      "type": "boolean"
+                    },
+                    "pack_locked": {
+                      "type": "boolean"
+                    },
+                    "uncaptured_match_annual": {
+                      "type": "number"
+                    },
+                    "current_employer_match": {
+                      "type": "number"
+                    },
+                    "max_annual_employer_match": {
+                      "type": "number"
+                    },
+                    "recommended_contrib_pct": {
+                      "type": "number"
+                    },
+                    "projected_annual_gain": {
+                      "type": "number"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    },
+                    "disclaimer": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "example": {
+                  "plan_id": "a1b2c3d4e5f6",
+                  "paid": false,
+                  "pack_locked": true,
+                  "uncaptured_match_annual": 1200.0,
+                  "current_employer_match": 2400.0,
+                  "max_annual_employer_match": 3600.0,
+                  "recommended_contrib_pct": 6.0,
+                  "projected_annual_gain": 1200.0,
+                  "user_message": "Ran your numbers: at 4.0% you're capturing $2,400 of your $3,600 possible match — leaving $1,200 a year on the table. The modeled minimum match-capture rate is 6.0% ($276.92 per paycheck). Confirm your plan rules before changing contributions. Want the full step-by-step fix plan? It's a one-time $99, charged once after you confirm — just say the word.",
+                  "disclaimer": "Educational/financial-education tool only — NOT financial advice. Confirm your match formula, vesting, and contribution rules with your plan administrator before changing anything."
+                }
               }
             }
           },
@@ -131,10 +204,33 @@
         "operationId": "start_draft_api_plans_draft_post",
         "responses": {
           "201": {
-            "description": "Successful Response",
+            "description": "Starts the conversational intake for this authenticated user.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "draft_id": {
+                      "type": "string"
+                    },
+                    "step": {
+                      "type": "string"
+                    },
+                    "done": {
+                      "type": "boolean"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "example": {
+                  "draft_id": "a1b2c3d4e5f6",
+                  "step": "basics",
+                  "done": false,
+                  "user_message": "What's your annual salary and your current 401(k) contribution %? For example: $120k and 4%."
+                }
               }
             }
           },
@@ -181,7 +277,10 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
               }
             }
           },
@@ -224,10 +323,57 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Stored match illustration summary and pack access state.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "plan_id": {
+                      "type": "string"
+                    },
+                    "paid": {
+                      "type": "boolean"
+                    },
+                    "pack_locked": {
+                      "type": "boolean"
+                    },
+                    "uncaptured_match_annual": {
+                      "type": "number"
+                    },
+                    "current_employer_match": {
+                      "type": "number"
+                    },
+                    "max_annual_employer_match": {
+                      "type": "number"
+                    },
+                    "recommended_contrib_pct": {
+                      "type": "number"
+                    },
+                    "projected_annual_gain": {
+                      "type": "number"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    },
+                    "disclaimer": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "example": {
+                  "plan_id": "a1b2c3d4e5f6",
+                  "paid": false,
+                  "pack_locked": true,
+                  "uncaptured_match_annual": 1200.0,
+                  "current_employer_match": 2400.0,
+                  "max_annual_employer_match": 3600.0,
+                  "recommended_contrib_pct": 6.0,
+                  "projected_annual_gain": 1200.0,
+                  "user_message": "Ran your numbers: at 4.0% you're capturing $2,400 of your $3,600 possible match — leaving $1,200 a year on the table. The modeled minimum match-capture rate is 6.0% ($276.92 per paycheck). Confirm your plan rules before changing contributions. Want the full step-by-step fix plan? It's a one-time $99, charged once after you confirm — just say the word.",
+                  "disclaimer": "Educational/financial-education tool only — NOT financial advice. Confirm your match formula, vesting, and contribution rules with your plan administrator before changing anything."
+                }
               }
             }
           },
@@ -281,10 +427,67 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Returns a hosted card-save URL for a one-time $99 purchase; no subscription. Processor URL/IDs are illustrative.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "plan_id": {
+                      "type": "string"
+                    },
+                    "stripe_customer_id": {
+                      "type": "string"
+                    },
+                    "setup_intent_id": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "client_secret": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "setup_url": {
+                      "type": "string"
+                    },
+                    "checkout_session_id": {
+                      "type": "string"
+                    },
+                    "fee_disclosure": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    },
+                    "note": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "example": {
+                  "plan_id": "a1b2c3d4e5f6",
+                  "stripe_customer_id": "cus_example",
+                  "setup_intent_id": null,
+                  "client_secret": null,
+                  "setup_url": "https://checkout.stripe.com/example",
+                  "checkout_session_id": "cs_example",
+                  "fee_disclosure": "You will be charged a one-time $99.00 for this match analysis and fix plan. There is no subscription or automatic renewal. Charged only after you confirm.",
+                  "user_message": "Your card setup is ready — saving a card now costs nothing. You will be charged a one-time $99.00 for this match analysis and fix plan. There is no subscription or automatic renewal. Charged only after you confirm. Ready to save your card?",
+                  "note": "Open setup_url to save a payment method securely, then return and check billing/status. Saving a card does not authorize the $99 fee."
+                }
               }
             }
           },
@@ -328,10 +531,49 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Verified payment-method state and the exact one-time $99 fee.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "plan_id": {
+                      "type": "string"
+                    },
+                    "billing_status": {
+                      "type": "string"
+                    },
+                    "card_state": {
+                      "type": "string"
+                    },
+                    "amount_dollars": {
+                      "type": "number"
+                    },
+                    "fee_amount_cents": {
+                      "type": "integer"
+                    },
+                    "currency": {
+                      "type": "string"
+                    },
+                    "fee_disclosure": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "example": {
+                  "plan_id": "a1b2c3d4e5f6",
+                  "billing_status": "card_ready",
+                  "card_state": "ready",
+                  "amount_dollars": 99.0,
+                  "fee_amount_cents": 9900,
+                  "currency": "usd",
+                  "fee_disclosure": "You will be charged a one-time $99.00 for this match analysis and fix plan. There is no subscription or automatic renewal. Charged only after you confirm.",
+                  "user_message": "Payment method ready; confirm the fee to continue."
+                }
               }
             }
           },
@@ -385,10 +627,49 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Example successful one-time payment; no automatic renewal.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "plan_id": {
+                      "type": "string"
+                    },
+                    "paid": {
+                      "type": "boolean"
+                    },
+                    "amount_dollars": {
+                      "type": "number"
+                    },
+                    "fee_disclosure": {
+                      "type": "string"
+                    },
+                    "payment_intent_id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "paid_at": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "example": {
+                  "plan_id": "a1b2c3d4e5f6",
+                  "paid": true,
+                  "amount_dollars": 99.0,
+                  "fee_disclosure": "You will be charged a one-time $99.00 for this match analysis and fix plan. There is no subscription or automatic renewal. Charged only after you confirm.",
+                  "payment_intent_id": "pi_example",
+                  "status": "succeeded",
+                  "paid_at": "2026-09-20T12:00:00+00:00",
+                  "user_message": "All set — $99.00 for this analysis is paid, and your full fix plan is unlocked. Here it comes."
+                }
               }
             }
           },
@@ -432,10 +713,216 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Unlocked educational illustration, assumptions, administrator checklist, and calculation source.",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "plan_id": {
+                      "type": "string"
+                    },
+                    "paid": {
+                      "type": "boolean"
+                    },
+                    "paid_at": {
+                      "type": "string"
+                    },
+                    "fix_plan": {
+                      "type": "object",
+                      "properties": {
+                        "recommended_contrib_pct": {
+                          "type": "number"
+                        },
+                        "per_paycheck_contrib_dollars": {
+                          "type": "number"
+                        },
+                        "annual_employee_contrib_dollars": {
+                          "type": "number"
+                        },
+                        "projected_annual_gain_dollars": {
+                          "type": "number"
+                        },
+                        "steps": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "notes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "additionalProperties": true
+                    },
+                    "math": {
+                      "type": "object",
+                      "properties": {
+                        "salary": {
+                          "type": "number"
+                        },
+                        "pay_frequency": {
+                          "type": "string"
+                        },
+                        "pay_periods_per_year": {
+                          "type": "integer"
+                        },
+                        "per_paycheck_gross": {
+                          "type": "number"
+                        },
+                        "current_contrib_pct": {
+                          "type": "number"
+                        },
+                        "current_per_paycheck_contrib": {
+                          "type": "number"
+                        },
+                        "current_annual_employee_contrib": {
+                          "type": "number"
+                        },
+                        "current_input_exceeds_base_limit": {
+                          "type": "boolean"
+                        },
+                        "match_pct": {
+                          "type": "number"
+                        },
+                        "match_cap_pct": {
+                          "type": "number"
+                        },
+                        "match_cap_dollars": {
+                          "type": "number"
+                        },
+                        "matchable_dollars": {
+                          "type": "number"
+                        },
+                        "employer_match_now": {
+                          "type": "number"
+                        },
+                        "max_annual_employer_match": {
+                          "type": "number"
+                        },
+                        "uncaptured_match_annual": {
+                          "type": "number"
+                        },
+                        "required_contrib_pct": {
+                          "type": "number"
+                        },
+                        "irs_elective_deferral_limit": {
+                          "type": "number"
+                        },
+                        "irs_compensation_limit": {
+                          "type": "number"
+                        },
+                        "irs_total_contribution_limit": {
+                          "type": "number"
+                        },
+                        "irs_limit_tax_year": {
+                          "type": "integer"
+                        },
+                        "irs_limit_binding": {
+                          "type": "boolean"
+                        },
+                        "new_annual_employee_contrib": {
+                          "type": "number"
+                        },
+                        "new_per_paycheck_contrib": {
+                          "type": "number"
+                        },
+                        "new_employer_match": {
+                          "type": "number"
+                        },
+                        "projected_annual_gain": {
+                          "type": "number"
+                        },
+                        "true_up": {
+                          "type": "boolean"
+                        },
+                        "calculation_basis": {
+                          "type": "string"
+                        },
+                        "scope_limits": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "source_url": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": true
+                    },
+                    "user_message": {
+                      "type": "string"
+                    },
+                    "disclaimer": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "example": {
+                  "plan_id": "a1b2c3d4e5f6",
+                  "paid": true,
+                  "paid_at": "2026-09-20T12:00:00+00:00",
+                  "fix_plan": {
+                    "recommended_contrib_pct": 6.0,
+                    "per_paycheck_contrib_dollars": 276.92,
+                    "annual_employee_contrib_dollars": 7200.0,
+                    "projected_annual_gain_dollars": 1200.0,
+                    "steps": [
+                      "Log in to your 401(k) provider's site or app (e.g. Fidelity, Vanguard, Empower, Schwab).",
+                      "Open your plan's contribution settings — look for 'Contributions', 'Manage contributions', or 'Deferral elections'.",
+                      "Ask whether a 6.0% contribution captures the modeled match under your plan rules. This is a minimum match illustration, not a recommendation to reduce existing contributions.",
+                      "Confirm the change and note the effective date — it usually applies to the next paycheck or within 1–2 pay cycles.",
+                      "Verify the next pay stub shows $276.92 going to the 401(k)."
+                    ],
+                    "notes": [
+                      "No true-up: employer match is typically calculated per paycheck, so the extra match accrues from the paycheck the change takes effect onward — change it as soon as possible."
+                    ]
+                  },
+                  "math": {
+                    "salary": 120000.0,
+                    "pay_frequency": "biweekly",
+                    "pay_periods_per_year": 26,
+                    "per_paycheck_gross": 4615.38,
+                    "current_contrib_pct": 4.0,
+                    "current_per_paycheck_contrib": 184.62,
+                    "current_annual_employee_contrib": 4800.0,
+                    "current_input_exceeds_base_limit": false,
+                    "match_pct": 50.0,
+                    "match_cap_pct": 6.0,
+                    "match_cap_dollars": 7200.0,
+                    "matchable_dollars": 4800.0,
+                    "employer_match_now": 2400.0,
+                    "max_annual_employer_match": 3600.0,
+                    "uncaptured_match_annual": 1200.0,
+                    "required_contrib_pct": 6.0,
+                    "irs_elective_deferral_limit": 24500.0,
+                    "irs_compensation_limit": 360000.0,
+                    "irs_total_contribution_limit": 72000.0,
+                    "irs_limit_tax_year": 2026,
+                    "irs_limit_binding": false,
+                    "new_annual_employee_contrib": 7200.0,
+                    "new_per_paycheck_contrib": 276.92,
+                    "new_employer_match": 3600.0,
+                    "projected_annual_gain": 1200.0,
+                    "true_up": false,
+                    "calculation_basis": "Full year at unchanged salary; capped annual contributions are averaged over pay periods, not a simulation of payroll stopping at the annual limit. Figures are illustrations, not guaranteed savings.",
+                    "scope_limits": [
+                      "No age-based catch-up",
+                      "No midyear or year-to-date contributions",
+                      "No other plans or employer contributions",
+                      "No vesting or true-up calculation",
+                      "Confirm payroll percentage increments and plan limits with the administrator"
+                    ],
+                    "source_url": "https://www.irs.gov/pub/irs-drop/n-25-67.pdf"
+                  },
+                  "user_message": "Your illustration uses a minimum match-capture contribution of 6.0% — that's $276.92 per paycheck. In your provider's site or app, check the contribution rules and effective date with your plan administrator before making a change. No true-up here, so the sooner you change it, the more match you capture.",
+                  "disclaimer": "Educational/financial-education tool only — NOT financial advice. Confirm your match formula, vesting, and contribution rules with your plan administrator before changing anything."
+                }
               }
             }
           },
@@ -468,13 +955,28 @@
         "operationId": "delete_my_data_api_data_delete",
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Deletes this user's operational records; discloses retained payment/accounting records and backup handling.",
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
                   "type": "object",
-                  "title": "Response Delete My Data Api Data Delete"
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean"
+                    },
+                    "retained": {
+                      "type": "string"
+                    },
+                    "user_message": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "example": {
+                  "deleted": true,
+                  "retained": "Required payment/accounting records and processor records; backups follow the operator's retention policy.",
+                  "user_message": "Your operational records for this connector were deleted. Required payment records are retained separately."
                 }
               }
             }

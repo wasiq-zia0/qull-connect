@@ -29,7 +29,9 @@ Source changes do not establish production deployment or provider-side success.
 All 70 local tests pass, including the ten connector workflow suites, shared
 payment tests and security/deployment tests. All ten OpenAPI contracts and 111
 MCP tool schemas were exported from the applications; the intake examples were
-validated against those contracts. Container build/startup checks run in CI.
+validated against those contracts. CI also passed the tests, schema drift check
+and build/startup/access-control smoke checks for all ten Docker images. The
+checked commit and run are recorded in `verification/github-ci.json`.
 
 `verification/stripe-sandbox.json` records 22 real Stripe **sandbox** checks:
 USD/EUR customer creation, hosted setup URL creation, rejection of incomplete

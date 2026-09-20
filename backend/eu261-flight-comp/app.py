@@ -451,7 +451,7 @@ def payout_confirmed(cid: str, payload: PayoutIn):
                              f"30% fee of €{fee:.2f} has been charged. Congrats on the win!")}
 
 
-@app.get("/api/claims/{cid}/claim-pack.pdf")
+@app.get("/api/claims/{cid}/claim-pack.pdf", response_class=FileResponse)
 def download_claim_pack(cid: str):
     claim = db.get_claim(cid, owner_id=require_owner())
     if not claim:

@@ -46,6 +46,19 @@ def export(slug):
         contract = json.loads((work / slug / "contract.json").read_text())
         from openapi_spec_validator import validate
         validate(contract)
+        from jsonschema import Draft202012Validator
+        for item in contract["paths"].values():
+            for operation in item.values():
+                if not isinstance(operation, dict):
+                    continue
+                for response in operation.get("responses", {}).values():
+                    for media in response.get("content", {}).values():
+                        examples = ([media["example"]] if "example" in media else [])
+                        examples += [item["value"] for item in media.get("examples", {}).values()
+                                     if isinstance(item, dict) and "value" in item]
+                        if "$ref" not in media.get("schema", {}):
+                            for example in examples:
+                                Draft202012Validator(media.get("schema", {})).validate(example)
         target = ROOT / "openapi" / f"{slug}.json"
         target.write_text(json.dumps(contract, indent=2, ensure_ascii=False) + "\n")
         tools = json.loads((work / slug / "tools.json").read_text())

@@ -14,7 +14,7 @@ Organize your tenancy details, review an estimated state return deadline, and pr
 
 - Tenant name and forwarding address
 - Rental property and landlord names/addresses
-- State, move-out date, and forwarding-address date where relevant
+- State, move-out date, and landlord receipt date for a written forwarding address where relevant; Connecticut also requires the date the tenancy legally ended
 - Deposit amount and any amount later recovered
 
 ## Customer workflow
@@ -35,8 +35,11 @@ You can contact your landlord yourself and use your state or local tenant resour
 Billing setup requires explicit fee-term acceptance (`accept_fee_terms: true`)
 and returns Stripe's hosted setup URL. A return redirect does not establish
 that a payment method is ready; poll the authenticated billing-status endpoint.
-The charge call requires a fresh confirmation (`confirm_fee: true`), the exact
-expected `fee_amount_cents`, and the operation's outcome data. The server
+Retrieve the fee quote before asking for payment confirmation; fixed-price
+Moving Concierge and MatchMax expose their amount in billing status. A quote
+does not charge. The charge call requires a fresh confirmation
+(`confirm_fee: true`), the exact expected `fee_amount_cents`, and the
+operation's outcome data. The server
 calculates the amount and verifies the saved payment method. Never treat a
 local customer ID, a sample response, or a health response as proof of payment.
 
