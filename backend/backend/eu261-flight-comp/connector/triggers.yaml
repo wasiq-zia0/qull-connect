@@ -1,0 +1,3 @@
+life_event: flight_delayed
+signal: "delay/cancellation email in Gmail, or boarding pass plus a schedule-change notice"
+nudge: "Your flight AF347 to Paris landed 4 hours late. EU law says that's €600 back in your pocket. Want me to draft the claim letter? One tap."

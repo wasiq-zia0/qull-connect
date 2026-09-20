@@ -1,0 +1,18 @@
+# triggers.yaml — proactive detection for Final Paycheck
+
+# Signal (from the shared life-events contract):
+#   resignation, termination, or new-job email in Gmail
+# On match: POST /api/life-events {"event_type": "job_change", "payload": {...}}
+# creates a draft and the agent sends the nudge below.
+
+triggers:
+  - event: job_change
+    source: shared life-events bus (~/workspace/connectors/life-events)
+    detection_signal: resignation, termination, or new-job email in Gmail
+    action: create a draft case via POST /api/life-events, then nudge the user in chat
+    needs_user_confirmation: true
+    nudge: >-
+      Looks like you left {employer}. {state} law says your final paycheck was due {deadline} — if it's late, you may be owed penalties too. I can build a demand letter and track it; my fee is 25% of what you recover, charged only after you confirm. Want me to check?
+    notes:
+      - The nudge must carry the exact fee disclosure before any card is saved ("You will be charged 25% of recovered wages — charged once, after you confirm.").
+      - Do not re-emit events received from the bus; emit only on direct intake.

@@ -1,0 +1,4 @@
+life_event: job_change
+signal: "new-job mention: offer-letter email, 'I started a new job' in chat, a LinkedIn job update, or a job_change event fanned out on the shared life-events bus"
+nudge: "New job, new 401(k). Most people leave free match money on the table in year one. Tell me your salary and contribution % and I'll check yours in 30 seconds."
+flow: "nudge -> draft (one question: salary + contribution %) -> confirm match formula (default 50%-up-to-6%) -> payoff summary -> optional $99/year fix pack"

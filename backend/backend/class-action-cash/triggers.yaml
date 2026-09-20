@@ -1,0 +1,18 @@
+# triggers.yaml — proactive detection for Class Action Cash
+
+# Signal (from the shared life-events contract):
+#   settlement notice or product-recall email matching a known settlement
+# On match: POST /api/life-events {"event_type": "settlement_match", "payload": {...}}
+# creates a draft and the agent sends the nudge below.
+
+triggers:
+  - event: settlement_match
+    source: shared life-events bus (~/workspace/connectors/life-events)
+    detection_signal: settlement notice or product-recall email matching a known settlement
+    action: create a draft match via POST /api/life-events, then nudge the user in chat
+    needs_user_confirmation: true
+    nudge: >-
+      You may qualify for the {settlement_name} settlement (typical payout {range}, deadline {deadline}). I can build your claim pack — my fee is 20% of your payout, charged only after you confirm you got paid. Want the pack?
+    notes:
+      - The nudge must carry the exact fee disclosure before any card is saved ("You will be charged 20% of your settlement payout — charged once, after you confirm.").
+      - Do not re-emit events received from the bus; emit only on direct intake.

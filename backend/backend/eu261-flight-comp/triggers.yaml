@@ -1,0 +1,18 @@
+# triggers.yaml — proactive detection for EU261 Flight Compensation
+
+# Signal (from the shared life-events contract):
+#   flight-delayed/cancelled email or booking change in Gmail
+# On match: POST /api/life-events {"event_type": "flight_delayed", "payload": {...}}
+# creates a draft and the agent sends the nudge below.
+
+triggers:
+  - event: flight_delayed
+    source: shared life-events bus (~/workspace/connectors/life-events)
+    detection_signal: flight-delayed/cancelled email or booking change in Gmail
+    action: create draft claim via POST /api/life-events, then nudge the user in chat
+    needs_user_confirmation: true
+    nudge: >-
+      Your flight {flight} was delayed {hours} hours — that's an EU261 claim worth up to €600. I can build the whole claim pack; my fee is 30% of what the airline actually pays you, charged only after you confirm. Want me to start it?
+    notes:
+      - The nudge must carry the exact fee disclosure before any card is saved ("You will be charged 30% of the payout you actually receive — charged once, after you confirm.").
+      - Do not re-emit events received from the bus; emit only on direct intake.

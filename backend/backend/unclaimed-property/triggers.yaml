@@ -1,0 +1,18 @@
+# triggers.yaml — proactive detection for Unclaimed Property
+
+# Signal (from the shared life-events contract):
+#   move or address-change signal (people often leave money behind when they move)
+# On match: POST /api/life-events {"event_type": "move", "payload": {...}}
+# creates a draft and the agent sends the nudge below.
+
+triggers:
+  - event: move
+    source: shared life-events bus (~/workspace/connectors/life-events)
+    detection_signal: move or address-change signal (people often leave money behind when they move)
+    action: create a draft search via POST /api/life-events, then nudge the user in chat
+    needs_user_confirmation: true
+    nudge: >-
+      Since you moved, it's worth checking every state you've lived in for unclaimed money — forgotten deposits, old refunds, dormant accounts. I can search all 51 for you; my fee is 10% of what you recover (capped by your state's law), charged only after you confirm. Want me to run the search?
+    notes:
+      - The nudge must carry the exact fee disclosure before any card is saved ("You will be charged 10% of recovered funds — charged once, after you confirm.").
+      - Do not re-emit events received from the bus; emit only on direct intake.

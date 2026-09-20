@@ -1,0 +1,16 @@
+# Subscription Slayer — proactive trigger contract
+# The life event this connector watches for and acts on.
+
+life_event: recurring_charge_detected
+
+# The detection signal: what the connector watches in the background.
+signal: "repeat receipt/invoice emails from the same merchant in Gmail (~monthly or ~yearly cadence, 2+ occurrences)"
+
+# The EXACT proactive nudge copy sent to the user when the event fires.
+# Warm, specific, realistic numbers, one tap to act.
+nudge: "You've paid $14.99 to StreamBox for 11 months and never opened it. That's $165 a year. Want me to walk you through cancelling? One tap."
+
+# Bus wiring (see ~/workspace/connectors/life-events/README.md):
+#   emit:    life_events.emit("recurring_charge_detected", {merchant, merchant_key, amount, currency, frequency, occurrences, subscription_id})
+#   receive: POST /api/life-events {"event_type": "recurring_charge_detected", "payload": {...}}
+#            -> creates/refreshes a draft subscription, returns the nudge as user_message

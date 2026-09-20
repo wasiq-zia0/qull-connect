@@ -1,0 +1,3 @@
+life_event: settlement_match
+signal: "A Gmail receipt (order confirmation, pharmacy receipt, ticket email) matches an open class-action settlement's purchase criteria"
+nudge: "You bought a Bestway Steel Pro pool in 2024 — there's an open $15M settlement for it and you're likely eligible for $40 cash, no receipt needed. The claim deadline is October 30, 2026. Filing takes 3 minutes. Want the pre-filled claim pack? One tap."

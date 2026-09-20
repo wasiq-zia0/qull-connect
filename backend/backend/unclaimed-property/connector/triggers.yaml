@@ -1,0 +1,8 @@
+# Proactive triggers — unclaimed-property connector
+# The golden path is: trigger -> one tap -> done.
+
+- life_event: move
+  signal: "mover confirmation, lease, or USPS change-of-address email detected in Gmail (fanned out from the shared life-event bus)"
+  prefill: "from_state + to_state from the event payload become the state checklist; draft search is created immediately"
+  nudge: "You just moved from Texas to Colorado. States are holding unclaimed money under old addresses more often than you'd think. Want me to check Texas and Colorado for you? One tap."
+  one_tap: "user replies with their full legal name -> PATCH /api/searches/{id} -> search activates, claim packs ready"

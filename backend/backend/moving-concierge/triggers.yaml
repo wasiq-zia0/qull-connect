@@ -1,0 +1,25 @@
+# triggers.yaml — proactive move detection for Moving Concierge
+
+# Signal (from the shared life-events contract):
+#   lease, mover confirmation, or USPS change-of-address email in Gmail
+# On match: POST /api/life-events {"event_type": "move", "payload": {...}}
+# creates a draft move and the agent sends the nudge below.
+
+triggers:
+  - event: move
+    source: shared life-events bus (~/workspace/connectors/life-events)
+    detection_signal: lease, mover confirmation, or USPS change-of-address email in Gmail
+    action: create draft move via POST /api/life-events, then nudge the user in chat
+    needs_user_confirmation: true
+    nudge: >-
+      Looks like you moved from {from_address} to {to_address}. I can handle the whole
+      address-change circus — USPS, banks, voter registration — in one $49 pack. Want it? One tap.
+    # When the payload carries specifics, prefer them:
+    #   "Looks like you moved from Austin to Denver. I can handle the whole address-change
+    #    circus — USPS, banks, voter registration — in one $49 pack. Want it? One tap."
+    # With state data, append the DMV deadline:
+    #   "...your Colorado driver's license (you've got 30 days)..."
+    notes:
+      - One tap "yes" upgrades the draft to a full move (same move_id) via POST /api/moves.
+      - The nudge must carry the exact fee disclosure before any card is saved ("You will be charged a flat $49.00 for the complete address-change pack. Charged once, after you confirm.").
+      - Do not re-emit move events received from the bus; emit only on direct intake.

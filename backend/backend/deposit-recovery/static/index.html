@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deposit Recovery</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; }
+  h1 { font-size: 1.4rem; }
+  label { display: block; margin: .7rem 0 .2rem; font-weight: 600; font-size: .85rem; }
+  input, select { width: 100%; padding: .55rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+  .row { display: flex; gap: .7rem; } .row > div { flex: 1; }
+  button { margin-top: 1rem; padding: .7rem 1.2rem; font-size: 1rem; border: 0; border-radius: 8px; background: #111; color: #fff; cursor: pointer; }
+  button.secondary { background: #fff; color: #111; border: 1px solid #111; }
+  #result { margin-top: 1.5rem; padding: 1rem; border-radius: 10px; display: none; }
+  #result.overdue { background: #fef2f2; border: 1px solid #fca5a5; display: block; }
+  #result.waiting { background: #f0fdf4; border: 1px solid #86efac; display: block; }
+  #result.other { background: #f8fafc; border: 1px solid #cbd5e1; display: block; }
+  .big { font-size: 1.15rem; font-weight: 700; margin-bottom: .4rem; }
+  .muted { color: #555; font-size: .9rem; margin: .3rem 0; }
+  .money { font-size: 1.6rem; font-weight: 800; margin: .5rem 0; }
+  .disclaimer { margin-top: 2rem; font-size: .75rem; color: #888; }
+</style>
+</head>
+<body>
+<h1>Deposit Recovery</h1>
+<p class="muted">Enter a move-out. We compute the legal deadline, and generate the demand letter the day it passes. In TX, CT, MN and WY the clock runs from the day you gave your landlord your forwarding address — that date is required there.</p>
+
+<form id="f">
+  <div class="row">
+    <div><label>Your name</label><input id="tenant_name" value="Alex Rivera" required></div>
+    <div><label>State</label><select id="state"></select></div>
+  </div>
+  <div class="row">
+    <div><label>Move-out date</label><input id="move_out" type="date" required></div>
+    <div><label>Deposit amount ($)</label><input id="deposit" type="number" min="1" step="1" value="1800" required></div>
+  </div>
+  <label>Forwarding address given to landlord (optional)</label><input id="forwarding_date" type="date">
+  <label>Your forwarding address (for the letter)</label><input id="tenant_forwarding_address" value="44 King St W, Toronto, ON" required>
+  <label>Rental address</label><input id="rental_address" value="1200 Congress Ave, Austin, TX 78701" required>
+  <div class="row">
+    <div><label>Landlord name</label><input id="landlord_name" value="Capitol Property Group" required></div>
+  </div>
+  <label>Landlord address</label><input id="landlord_address" value="PO Box 4021, Austin, TX 78765" required>
+  <button type="submit">Check my case</button>
+</form>
+
+<div id="result"></div>
+<p class="disclaimer">Template automation, NOT legal advice. State law data compiled from public legal guides (Sep 2026); verify statutes before relying on them. Fee: 25% of the recovered deposit, charged only if you confirm the recovery — no charge otherwise. See TERMS.md.</p>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let caseId = null;
+
+fetch('/api/state-laws').then(r => r.json()).then(d => {
+  d.states.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.abbr; o.textContent = s.state;
+    if (s.abbr === 'TX') o.selected = true;
+    $('state').appendChild(o);
+  });
+});
+// default: moved out 75 days ago (overdue in TX)
+$('move_out').value = new Date(Date.now() - 75*864e5).toISOString().slice(0,10);
+
+$('f').addEventListener('submit', async e => {
+  e.preventDefault();
+  const body = {
+    tenant_name: $('tenant_name').value, state: $('state').value,
+    move_out: $('move_out').value, deposit: +$('deposit').value,
+    forwarding_date: $('forwarding_date').value || null,
+    tenant_forwarding_address: $('tenant_forwarding_address').value,
+    rental_address: $('rental_address').value,
+    landlord_name: $('landlord_name').value, landlord_address: $('landlord_address').value,
+  };
+  const r = await fetch('/api/cases', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  const d = await r.json();
+  const el = $('result');
+  if (!r.ok) {
+    el.className = 'other';
+    el.innerHTML = `<div class="big">Hold on</div><p class="muted">${esc(d.user_message || d.detail || 'Something went wrong.')}</p>`;
+    return;
+  }
+  caseId = d.case_id;
+  el.className = d.status === 'overdue' ? 'overdue' : (d.status === 'waiting' ? 'waiting' : 'other');
+  let html = `<div class="big">${esc(d.user_message || d.headline)}</div>
+    <p class="muted">${esc(d.basis_explanation)}</p>
+    <p class="muted"><b>${esc(d.statute)}</b> — ${esc(d.statute_note || '')}</p>
+    <p class="muted">${esc(d.penalty_note || '')}</p>`;
+  if (d.max_recovery) {
+    html += `<div class="money">Up to $${d.max_recovery.toLocaleString()} recoverable</div>
+      <p class="muted">Our 25% contingency on a full win: $${d.our_fee_25pct.toLocaleString()} — charged only if you confirm the recovery.</p>`;
+  }
+  if (d.next_action === 'send_demand_letter') {
+    html += `<button class="secondary" id="dl">Generate demand letter (PDF)</button><p class="muted">${esc(d.detail)}</p>`;
+  } else {
+    html += `<p class="muted">${esc(d.detail || '')}</p>`;
+  }
+  el.innerHTML = html;
+  const btn = $('dl');
+  if (btn) btn.onclick = async () => {
+    const lr = await fetch(`/api/cases/${caseId}/demand-letter`, {method:'POST'});
+    const ld = await lr.json();
+    if (!lr.ok) { alert(ld.user_message || ld.detail || 'Letter not available yet.'); return; }
+    const bin = atob(ld.pdf_base64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([bytes], {type:'application/pdf'}));
+    const a = document.createElement('a');
+    a.href = url; a.download = ld.filename; a.click();
+    URL.revokeObjectURL(url);
+  };
+});
+</script>
+</body>
+</html>

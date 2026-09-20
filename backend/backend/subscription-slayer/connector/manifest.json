@@ -1,0 +1,154 @@
+{
+  "actions_on_install": "none",
+  "auth": {
+    "type": "oauth2_user",
+    "why": "To read your receipt and invoice emails so recurring subscriptions can be detected. Read-only: the connector never sends, replies to, forwards, labels, archives, or deletes any email."
+  },
+  "description": "Finds every recurring subscription hiding in your Gmail receipts, walks you through cancelling the ones you don't want, and tracks what you save. Flat fee: $10 per completed cancellation, charged only when you confirm the savings.",
+  "display_name": "Subscription Slayer",
+  "proactive_triggers": [
+    {
+      "action": "scan_and_nudge",
+      "description": "Repeat receipt emails from the same merchant detected in Gmail",
+      "event": "recurring_charge_detected",
+      "needs_user_confirmation": true
+    }
+  ],
+  "tools": [
+    {
+      "description": "Scan Gmail for subscription receipts and detect recurring subscriptions",
+      "input_schema": {
+        "properties": {
+          "max_results": {
+            "default": 100,
+            "maximum": 500,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "source": {
+            "default": "gmail",
+            "enum": [
+              "gmail",
+              "fixtures"
+            ],
+            "type": "string"
+          }
+        },
+        "required": []
+      },
+      "name": "scan_subscriptions"
+    },
+    {
+      "description": "List tracked subscriptions, optionally filtered by status",
+      "input_schema": {
+        "properties": {
+          "status": {
+            "enum": [
+              "new",
+              "reviewing",
+              "keep",
+              "cancel_requested",
+              "cancelled"
+            ],
+            "type": "string"
+          }
+        },
+        "required": []
+      },
+      "name": "list_subscriptions"
+    },
+    {
+      "description": "Update a subscription: status, confirmed monthly savings, or notes",
+      "input_schema": {
+        "properties": {
+          "notes": {
+            "maxLength": 500,
+            "type": "string"
+          },
+          "savings_monthly": {
+            "maximum": 100000,
+            "minimum": 0,
+            "type": "number"
+          },
+          "status": {
+            "enum": [
+              "new",
+              "reviewing",
+              "keep",
+              "cancel_requested",
+              "cancelled"
+            ],
+            "type": "string"
+          },
+          "subscription_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "subscription_id"
+        ],
+        "type": "object"
+      },
+      "name": "update_subscription"
+    },
+    {
+      "description": "Get the step-by-step cancellation pack (curated steps + direct link) for a subscription",
+      "input_schema": {
+        "properties": {
+          "subscription_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "subscription_id"
+        ],
+        "type": "object"
+      },
+      "name": "get_cancel_pack"
+    },
+    {
+      "description": "Set up billing: Stripe customer + SetupIntent to save a card (no charge taken)",
+      "input_schema": {
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "name": "setup_billing"
+    },
+    {
+      "description": "Confirm savings for cancelled subscriptions; charges the $10-per-cancellation fee off-session",
+      "input_schema": {
+        "properties": {
+          "subscription_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "subscription_ids"
+        ],
+        "type": "object"
+      },
+      "name": "confirm_savings"
+    }
+  ],
+  "version": "0.2.0",
+  "webhooks": {
+    "recurring_charge_detected": "Fired when repeat receipt emails from the same merchant are detected; agent sends the proactive nudge and offers the one-tap cancel walkthrough."
+  }
+}

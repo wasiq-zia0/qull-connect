@@ -1,0 +1,4 @@
+life_event: medical_bill_received
+signal: "hospital/provider bill or EOB email in Gmail"
+nudge: "That $4,200 ER bill just landed. 8 in 10 medical bills have errors, and I spot them in seconds. Want me to check yours? One tap."
+golden_path: "trigger -> one tap -> draft bill check (one question at a time) -> findings -> one-tap dispute letter"

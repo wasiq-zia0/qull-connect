@@ -1,0 +1,18 @@
+# triggers.yaml — proactive detection for 401(k) Match Maximizer
+
+# Signal (from the shared life-events contract):
+#   new-job or benefits-enrollment email in Gmail
+# On match: POST /api/life-events {"event_type": "job_change", "payload": {...}}
+# creates a draft and the agent sends the nudge below.
+
+triggers:
+  - event: job_change
+    source: shared life-events bus (~/workspace/connectors/life-events)
+    detection_signal: new-job or benefits-enrollment email in Gmail
+    action: nudge the user to run the match calculation in chat
+    needs_user_confirmation: true
+    nudge: >-
+      New job, new 401(k) — most people leave free match money on the table in year one. I can run your exact numbers and tell you the contribution % that captures every dollar; it's a flat $99/year, charged once after you confirm. Want me to run it?
+    notes:
+      - The nudge must carry the exact fee disclosure before any card is saved ("You will be charged flat $99.00 per year — charged once, after you confirm.").
+      - Do not re-emit events received from the bus; emit only on direct intake.

@@ -1,0 +1,18 @@
+# triggers.yaml — proactive detection for Bill Negotiator
+
+# Signal (from the shared life-events contract):
+#   bill-increase notice or new bill email in Gmail
+# On match: POST /api/life-events {"event_type": "bill_spike", "payload": {...}}
+# creates a draft and the agent sends the nudge below.
+
+triggers:
+  - event: bill_spike
+    source: shared life-events bus (~/workspace/connectors/life-events)
+    detection_signal: bill-increase notice or new bill email in Gmail
+    action: create a draft negotiation case via POST /api/life-events, then nudge the user in chat
+    needs_user_confirmation: true
+    nudge: >-
+      Your {provider} bill jumped to ${new_amount}. I can build you a negotiation script tailored to {provider}'s retention playbook — my fee is 35% of your documented savings, charged only after you confirm the lower rate. Want the script?
+    notes:
+      - The nudge must carry the exact fee disclosure before any card is saved ("You will be charged 35% of your documented savings — charged once, after you confirm.").
+      - Do not re-emit events received from the bus; emit only on direct intake.

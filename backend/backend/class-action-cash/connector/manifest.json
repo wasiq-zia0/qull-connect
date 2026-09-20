@@ -1,0 +1,138 @@
+{
+ "actions_on_install": "none",
+ "auth": {
+  "type": "oauth2_user",
+  "why": "To read the user's email receipts (read-only) and match them against open class-action settlements. The connector never sends, replies to, forwards, or deletes mail."
+ },
+ "description": "Matches your email receipts against open class-action settlements, prepares pre-filled claim packs, and takes 20% only when you confirm a payout. You always file the claim yourself; the connector never files or auto-charges.",
+ "display_name": "Class Action Cash",
+ "proactive_triggers": [
+  {
+   "action": "receive_life_event",
+   "description": "A Gmail receipt matches an open settlement's purchase criteria",
+   "event": "settlement_match",
+   "needs_user_confirmation": true
+  }
+ ],
+ "tools": [
+  {
+   "description": "List currently-open class-action settlements with deadlines and a data-freshness warning",
+   "input_schema": {
+    "properties": {},
+    "type": "object"
+   },
+   "name": "list_settlements"
+  },
+  {
+   "description": "Scan receipts against open settlements ('gmail' read-only, or 'fixtures' demo data); emits settlement_match life events",
+   "input_schema": {
+    "properties": {
+     "source": {
+      "default": "gmail",
+      "enum": [
+       "gmail",
+       "fixtures"
+      ],
+      "type": "string"
+     }
+    },
+    "type": "object"
+   },
+   "name": "scan_receipts"
+  },
+  {
+   "description": "List all settlement matches found so far",
+   "input_schema": {
+    "properties": {},
+    "type": "object"
+   },
+   "name": "get_matches"
+  },
+  {
+   "description": "Build the filing pack for a match: eligibility checklist, filing steps, pre-filled info sheet. The user files the claim; this never files anything.",
+   "input_schema": {
+    "properties": {
+     "address": {
+      "type": "string"
+     },
+     "email": {
+      "type": "string"
+     },
+     "full_name": {
+      "type": "string"
+     },
+     "match_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "match_id"
+    ],
+    "type": "object"
+   },
+   "name": "generate_claim_pack"
+  },
+  {
+   "description": "Save a card for the later fee. Response carries the exact fee disclosure first: 20% of the confirmed payout, charged only if the user confirms the payout.",
+   "input_schema": {
+    "properties": {
+     "email": {
+      "type": "string"
+     },
+     "match_id": {
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "match_id",
+     "name"
+    ],
+    "type": "object"
+   },
+   "name": "setup_billing"
+  },
+  {
+   "description": "User confirms the settlement paid out; charges the 20% fee off-session against the saved card",
+   "input_schema": {
+    "properties": {
+     "amount": {
+      "description": "Confirmed payout received, in dollars",
+      "type": "number"
+     },
+     "match_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "amount",
+     "match_id"
+    ],
+    "type": "object"
+   },
+   "name": "confirm_payout"
+  },
+  {
+   "name": "receive_life_event",
+   "description": "Shared-bus receiver: log a detected life event, create a draft match, and return the proactive nudge",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "event_type": {
+      "type": "string"
+     },
+     "payload": {
+      "type": "object"
+     }
+    },
+    "required": [
+     "event_type"
+    ]
+   }
+  }
+ ],
+ "version": "0.1.0",
+ "webhooks": {}
+}

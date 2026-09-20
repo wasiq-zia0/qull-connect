@@ -1,0 +1,822 @@
+{
+  "states": [
+    {
+      "abbr": "AK",
+      "name": "Alaska",
+      "portal_url": "https://unclaimedproperty.alaska.gov/",
+      "search_url": "https://unclaimedproperty.alaska.gov/",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "AL",
+      "name": "Alabama",
+      "portal_url": "https://treasury.alabama.gov",
+      "search_url": "https://treasury.alabama.gov",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "AR",
+      "name": "Arkansas",
+      "portal_url": "https://auditor.ar.gov",
+      "search_url": "https://auditor.ar.gov",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "AZ",
+      "name": "Arizona",
+      "portal_url": "https://azdor.gov/unclaimed-property",
+      "search_url": "https://azdor.gov/unclaimed-property",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "CA",
+      "name": "California",
+      "portal_url": "https://www.sco.ca.gov/upd_msg.html",
+      "search_url": "https://www.sco.ca.gov/upd_msg.html",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "CO",
+      "name": "Colorado",
+      "portal_url": "http://www.colorado.gov/treasury/gcp/index.html",
+      "search_url": "http://www.colorado.gov/treasury/gcp/index.html",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "CT",
+      "name": "Connecticut",
+      "portal_url": "https://www.ctbiglist.com/",
+      "search_url": "https://www.ctbiglist.com/",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "DC",
+      "name": "District of Columbia",
+      "portal_url": "https://cfo.dc.gov/page/unclaimed-property-how-reclaim-property",
+      "search_url": "https://cfo.dc.gov/page/unclaimed-property-how-reclaim-property",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "DE",
+      "name": "Delaware",
+      "portal_url": "https://unclaimedproperty.delaware.gov",
+      "search_url": "https://unclaimedproperty.delaware.gov",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "FL",
+      "name": "Florida",
+      "portal_url": "https://www.fltreasurehunt.gov",
+      "search_url": "https://www.fltreasurehunt.gov",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "Verified 2026-09-19 against Florida CFO press releases; FDIC list still shows an unclaimed.org redirect.",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "GA",
+      "name": "Georgia",
+      "portal_url": "https://dor.georgia.gov/unclaimed-property-program",
+      "search_url": "https://dor.georgia.gov/unclaimed-property-program",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "HI",
+      "name": "Hawaii",
+      "portal_url": "https://budget.hawaii.gov/finance/unclaimedproperty",
+      "search_url": "https://budget.hawaii.gov/finance/unclaimedproperty",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "IA",
+      "name": "Iowa",
+      "portal_url": "https://www.greatiowatreasurehunt.gov",
+      "search_url": "https://www.greatiowatreasurehunt.gov",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "ID",
+      "name": "Idaho",
+      "portal_url": "https://www.accessidaho.org/apps/tax/ucpsearch/",
+      "search_url": "https://www.accessidaho.org/apps/tax/ucpsearch/",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "IL",
+      "name": "Illinois",
+      "portal_url": "https://icash.illinoistreasurer.gov/",
+      "search_url": "https://icash.illinoistreasurer.gov/",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "IN",
+      "name": "Indiana",
+      "portal_url": "https://www.indianaunclaimed.com/apps/ag/ucp/index.html",
+      "search_url": "https://www.indianaunclaimed.com/apps/ag/ucp/index.html",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "KS",
+      "name": "Kansas",
+      "portal_url": "https://kansascash.ks.gov",
+      "search_url": "https://kansascash.ks.gov",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "Verified 2026-09-19 against Kansas State Treasurer releases; FDIC list still shows unclaimedproperty.ks.gov.",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "KY",
+      "name": "Kentucky",
+      "portal_url": "https://treasury.ky.gov/unclaimedproperty/Pages/overview.aspx",
+      "search_url": "https://treasury.ky.gov/unclaimedproperty/Pages/overview.aspx",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "LA",
+      "name": "Louisiana",
+      "portal_url": "https://louisiana.findyourunclaimedproperty.com",
+      "search_url": "https://louisiana.findyourunclaimedproperty.com",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "MA",
+      "name": "Massachusetts",
+      "portal_url": "http://www.mass.gov/?pageID=trehomepage&L=1&L0=Home&sid=Ctre",
+      "search_url": "http://www.mass.gov/?pageID=trehomepage&L=1&L0=Home&sid=Ctre",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "MD",
+      "name": "Maryland",
+      "portal_url": "https://marylandtaxes.gov/unclaimed-property/index.php",
+      "search_url": "https://marylandtaxes.gov/unclaimed-property/index.php",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "ME",
+      "name": "Maine",
+      "portal_url": "https://www.maineunclaimedproperty.gov",
+      "search_url": "https://www.maineunclaimedproperty.gov",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "MI",
+      "name": "Michigan",
+      "portal_url": "https://unclaimedproperty.michigan.gov",
+      "search_url": "https://unclaimedproperty.michigan.gov",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "MN",
+      "name": "Minnesota",
+      "portal_url": "https://mn.gov/commerce/money/unclaimed-property/",
+      "search_url": "https://mn.gov/commerce/money/unclaimed-property/",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "MO",
+      "name": "Missouri",
+      "portal_url": "https://www.treasurer.mo.gov/unclaimedproperty",
+      "search_url": "https://www.treasurer.mo.gov/unclaimedproperty",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "MS",
+      "name": "Mississippi",
+      "portal_url": "https://unclaimed.org/reporting/mississippi",
+      "search_url": "https://unclaimed.org/reporting/mississippi",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "FDIC/NAUPA lists a reporting link; confirm the state portal from it before filing.",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "MT",
+      "name": "Montana",
+      "portal_url": "https://mtrevenue.gov/2018/08/28/department-of-revenue-urges-montanans-to-check-for-unclaimed-cash-property",
+      "search_url": "https://mtrevenue.gov/2018/08/28/department-of-revenue-urges-montanans-to-check-for-unclaimed-cash-property",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "FDIC link appears stale (2018 press post); start at the Montana Department of Revenue unclaimed-property page.",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "NC",
+      "name": "North Carolina",
+      "portal_url": "https://unclaimed.nccash.com/app/claim-search",
+      "search_url": "https://unclaimed.nccash.com/app/claim-search",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "ND",
+      "name": "North Dakota",
+      "portal_url": "https://unclaimedproperty.nd.gov",
+      "search_url": "https://unclaimedproperty.nd.gov",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "NE",
+      "name": "Nebraska",
+      "portal_url": "https://nebraskalostcash.nebraska.gov",
+      "search_url": "https://nebraskalostcash.nebraska.gov",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "NH",
+      "name": "New Hampshire",
+      "portal_url": "https://www.nh.gov/treasury/contact-us/index.htm",
+      "search_url": "https://www.nh.gov/treasury/contact-us/index.htm",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "NJ",
+      "name": "New Jersey",
+      "portal_url": "http://www.unclaimedproperty.nj.gov/",
+      "search_url": "http://www.unclaimedproperty.nj.gov/",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "NM",
+      "name": "New Mexico",
+      "portal_url": "https://www.tax.newmexico.gov/individuals/what-is-unclaimed-property/search-unclaimed-property",
+      "search_url": "https://www.tax.newmexico.gov/individuals/what-is-unclaimed-property/search-unclaimed-property",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "NV",
+      "name": "Nevada",
+      "portal_url": "https://claims.nevadaunclaimedproperty.gov",
+      "search_url": "https://claims.nevadaunclaimedproperty.gov",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "NY",
+      "name": "New York",
+      "portal_url": "https://www.osc.state.ny.us/unclaimed-funds",
+      "search_url": "https://www.osc.state.ny.us/unclaimed-funds",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "OH",
+      "name": "Ohio",
+      "portal_url": "https://www.com.ohio.gov/unfd",
+      "search_url": "https://www.com.ohio.gov/unfd",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "OK",
+      "name": "Oklahoma",
+      "portal_url": "http://www.ok.gov/treasurer/Unclaimed_Property/index.html",
+      "search_url": "http://www.ok.gov/treasurer/Unclaimed_Property/index.html",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "OR",
+      "name": "Oregon",
+      "portal_url": "https://unclaimed.oregon.gov",
+      "search_url": "https://unclaimed.oregon.gov",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "PA",
+      "name": "Pennsylvania",
+      "portal_url": "http://www.patreasury.gov/unclaimed-property/",
+      "search_url": "http://www.patreasury.gov/unclaimed-property/",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "PA Treasury ran a system conversion 2026-09-04..13; portal reopened 2026-09-14 per Treasury notice.",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "RI",
+      "name": "Rhode Island",
+      "portal_url": "https://findrimoney.com/",
+      "search_url": "https://findrimoney.com/",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "SC",
+      "name": "South Carolina",
+      "portal_url": "https://treasurer.sc.gov/what-we-do/for-citizens/unclaimed-property-program/",
+      "search_url": "https://treasurer.sc.gov/what-we-do/for-citizens/unclaimed-property-program/",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "SD",
+      "name": "South Dakota",
+      "portal_url": "http://www.sdtreasurer.gov/",
+      "search_url": "http://www.sdtreasurer.gov/",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "TN",
+      "name": "Tennessee",
+      "portal_url": "http://treasury.tn.gov/unclaim/",
+      "search_url": "http://treasury.tn.gov/unclaim/",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "TX",
+      "name": "Texas",
+      "portal_url": "https://comptroller.texas.gov/programs/unclaimed",
+      "search_url": "https://comptroller.texas.gov/programs/unclaimed",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "UT",
+      "name": "Utah",
+      "portal_url": "https://mycash.utah.gov",
+      "search_url": "https://mycash.utah.gov",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "VA",
+      "name": "Virginia",
+      "portal_url": "https://trs.virginia.gov/Unclaimed-Property",
+      "search_url": "https://trs.virginia.gov/Unclaimed-Property",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "FDIC link carries a leading 'h' typo; stripped here.",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "VT",
+      "name": "Vermont",
+      "portal_url": "https://www.vermonttreasurer.gov/content/unclaimed-property",
+      "search_url": "https://www.vermonttreasurer.gov/content/unclaimed-property",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "WA",
+      "name": "Washington",
+      "portal_url": "https://ucp.dor.wa.gov",
+      "search_url": "https://ucp.dor.wa.gov",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "WI",
+      "name": "Wisconsin",
+      "portal_url": "https://www.revenue.wi.gov/Pages/UnclaimedProperty/Home.aspx",
+      "search_url": "https://www.revenue.wi.gov/Pages/UnclaimedProperty/Home.aspx",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "WV",
+      "name": "West Virginia",
+      "portal_url": "http://www.wvtreasury.com/Unclaimed-Property/Search-Claim",
+      "search_url": "http://www.wvtreasury.com/Unclaimed-Property/Search-Claim",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    },
+    {
+      "abbr": "WY",
+      "name": "Wyoming",
+      "portal_url": "http://treasurer.state.wy.us/uphome.asp",
+      "search_url": "http://treasurer.state.wy.us/uphome.asp",
+      "filing": "online",
+      "claim_summary": "Search the state's database by name. If you find property in your name, start a claim on the official portal, create an account, and upload or mail the required documents. Simple personal claims are usually completed online; claims for businesses, estates, deceased owners, or high-value property typically require mailed claim forms plus additional proof.",
+      "docs_required": [
+        "Government-issued photo ID",
+        "Proof of Social Security number (SSN card, W-2, or tax document)",
+        "Proof of address tied to the property (utility bill, bank statement, tax return, or mail from the company that reported the property)"
+      ],
+      "note": "",
+      "source_url": "FDIC unclaimed-property-by-state list (derived from missingmoney.com / NAUPA), retrieved 2026-09-19; spot corrections verified same day",
+      "last_verified": "2026-09-19"
+    }
+  ],
+  "generated": "2026-09-19",
+  "refresh_note": "Portal URLs and claim processes change without notice. Re-verify links against unclaimed.org / missingmoney.com before a public release or when a user reports a dead link."
+}

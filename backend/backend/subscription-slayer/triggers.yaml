@@ -1,0 +1,18 @@
+# triggers.yaml — proactive detection for Subscription Slayer
+
+# Signal (from the shared life-events contract):
+#   recurring charge receipt or renewal email in Gmail
+# On match: POST /api/life-events {"event_type": "recurring_charge_detected", "payload": {...}}
+# creates a draft and the agent sends the nudge below.
+
+triggers:
+  - event: recurring_charge_detected
+    source: shared life-events bus (~/workspace/connectors/life-events)
+    detection_signal: recurring charge receipt or renewal email in Gmail
+    action: record the detected subscription and nudge the user in chat
+    needs_user_confirmation: true
+    nudge: >-
+      I spotted a recurring charge from {merchant} for ${amount}/month. I can cancel the ones you don't want and track your savings — my fee is $10 per completed cancellation, charged only after you confirm the cancellations stuck. Want me to slay it?
+    notes:
+      - The nudge must carry the exact fee disclosure before any card is saved ("You will be charged $10 for each subscription cancellation you confirm — charged once, after you confirm. No charge otherwise.").
+      - Do not re-emit events received from the bus; emit only on direct intake.

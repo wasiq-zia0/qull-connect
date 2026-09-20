@@ -1,0 +1,42 @@
+# Proactive triggers — deposit-recovery
+# The agent is the UI. These triggers fire inside chat; every response carries
+# a speakable `user_message`. Golden path: trigger -> one tap -> done.
+
+life_event: move
+signal: "lease, mover confirmation, or USPS change-of-address email in Gmail"
+
+# The exact nudge the agent speaks when a move is detected and the case is
+# already overdue (TX example: $1,800 deposit, forwarding address given 42
+# days ago, 30-day clock -> 12 days overdue).
+# Note: the connector only ever *prepares* the demand letter — the user
+# reviews and sends it.
+nudge: "Your Texas landlord had 30 days to return your $1,800 deposit. It's day 42. Want me to prepare the demand letter for your review and sending? One tap."
+
+# Follow-up nudges for the other states of the world:
+nudges:
+  # Case complete from the event payload, deadline still in the future.
+  waiting: "I'm tracking your {deposit} deposit in {state}. Your landlord has until {deadline} ({days_left} days) to return it. I'll draft the demand letter the moment that passes — nothing for you to do."
+  # Payload missing the forwarding date in a forwarding-clock state (TX, CT, MN, WY).
+  needs_forwarding_date: "Quick one — I see you moved out of {state} {days_ago} days ago with your {deposit} deposit on the line. In {state}, the landlord's {deadline_days}-day clock starts the day you gave them your forwarding address. When did you send it?"
+  # Payload missing other fields: ask conversationally, one field at a time.
+  needs_fields: "I caught your move{where} — let me get your deposit back on the radar. I still need {missing}. What's {first_missing}?"
+  # The day the deadline passes (for a scheduled check / deadline-passed webhook).
+  deadline_passed: "Today's the day — your {state} landlord's deadline to return your {deposit} deposit just passed. Want me to prepare the demand letter for your review and sending? One tap."
+  # Recovery confirmed by the tenant: the only moment money moves.
+  recovery_confirmed: "Your {amount} is back — congratulations. The 25% fee is {fee}, charged now that you've confirmed the recovery. Case closed."
+
+# How the trigger is received: the shared bus fans the `move` life event out
+# to this connector's POST /api/life-events. A complete payload opens a real
+# case immediately; a partial payload opens a draft and the agent collects the
+# rest conversationally (POST /api/drafts/{id}/promote).
+receive:
+  endpoint: "POST /api/life-events"
+  event_type: move
+  fans_out_with: ["moving-concierge", "unclaimed-property"]
+
+# What this connector emits back onto the bus when it directly detects a move
+# (a case opened by the user outside the bus fan-out).
+emit:
+  event_type: move
+  on: "case created via POST /api/cases or MCP create_case"
+  payload: "{state, move_out, deposit, case_id}"

@@ -1,0 +1,18 @@
+# triggers.yaml — proactive detection for Medical Bill Fighter
+
+# Signal (from the shared life-events contract):
+#   medical bill or explanation-of-benefits email in Gmail
+# On match: POST /api/life-events {"event_type": "medical_bill_received", "payload": {...}}
+# creates a draft and the agent sends the nudge below.
+
+triggers:
+  - event: medical_bill_received
+    source: shared life-events bus (~/workspace/connectors/life-events)
+    detection_signal: medical bill or explanation-of-benefits email in Gmail
+    action: start a conversational bill review, then nudge the user in chat
+    needs_user_confirmation: true
+    nudge: >-
+      Got a medical bill for ${amount} from {provider}. Up to 80% of medical bills contain errors — I can audit every line item, draft dispute letters, and build a negotiation script; my fee is 25% of what you save, charged only after you confirm. Want me to audit it?
+    notes:
+      - The nudge must carry the exact fee disclosure before any card is saved ("You will be charged 25% of your documented reduction — charged once, after you confirm.").
+      - Do not re-emit events received from the bus; emit only on direct intake.

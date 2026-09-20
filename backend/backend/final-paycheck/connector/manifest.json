@@ -1,0 +1,178 @@
+{
+ "actions_on_install": "none",
+ "auth": {
+  "type": "oauth2_user",
+  "why": "To act on the user's tenancy: manage their final-paycheck cases, generate demand letters, and collect the 25% contingency fee via Stripe."
+ },
+ "description": "Recovers unpaid final wages. Watches for job changes, diaries each state's legal deadline, drafts the statute-citing demand letter once overdue, and charges 25% only on user-confirmed recoveries.",
+ "display_name": "Final Paycheck Recovery",
+ "proactive_triggers": [
+  {
+   "action": "create_case",
+   "description": "Job separation email or final-pay dispute detected",
+   "event": "user appears to have left a job with unpaid wages",
+   "needs_user_confirmation": true
+  }
+ ],
+ "tools": [
+  {
+   "description": "Open a final-paycheck recovery case",
+   "input_schema": {
+    "properties": {
+     "employee_email": {
+      "type": "string"
+     },
+     "employee_name": {
+      "type": "string"
+     },
+     "employer_address": {
+      "type": "string"
+     },
+     "employer_name": {
+      "type": "string"
+     },
+     "forwarding_address": {
+      "type": "string"
+     },
+     "last_day_worked": {
+      "format": "date",
+      "type": "string"
+     },
+     "next_payday": {
+      "format": "date",
+      "type": "string"
+     },
+     "pay_period": {
+      "type": "string"
+     },
+     "state": {
+      "maxLength": 2,
+      "minLength": 2,
+      "type": "string"
+     },
+     "termination_type": {
+      "enum": [
+       "fired",
+       "laid_off",
+       "quit"
+      ],
+      "type": "string"
+     },
+     "wages_owed": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "employee_name",
+     "state",
+     "last_day_worked",
+     "termination_type",
+     "wages_owed",
+     "employer_name"
+    ],
+    "type": "object"
+   },
+   "name": "create_case"
+  },
+  {
+   "description": "Current status: deadline, days remaining/overdue, statute, billing state",
+   "input_schema": {
+    "properties": {
+     "case_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "case_id"
+    ],
+    "type": "object"
+   },
+   "name": "get_case_status"
+  },
+  {
+   "name": "confirm_case",
+   "description": "One-tap activation of a draft case created from a job_change life event",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "case_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "case_id"
+    ]
+   }
+  },
+  {
+   "description": "Generate the statute-citing demand letter PDF (only once the deadline has passed; never sent by the service \u2014 user sends it)",
+   "input_schema": {
+    "properties": {
+     "case_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "case_id"
+    ],
+    "type": "object"
+   },
+   "name": "generate_demand_letter"
+  },
+  {
+   "description": "Look up a state's final-paycheck deadline rule, statute, and penalty note",
+   "input_schema": {
+    "properties": {
+     "state": {
+      "maxLength": 2,
+      "minLength": 2,
+      "type": "string"
+     }
+    },
+    "required": [
+     "state"
+    ],
+    "type": "object"
+   },
+   "name": "get_state_law"
+  },
+  {
+   "description": "Set up Stripe billing: customer + card SetupIntent for the later 25% contingency charge",
+   "input_schema": {
+    "properties": {
+     "case_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "case_id"
+    ],
+    "type": "object"
+   },
+   "name": "setup_billing"
+  },
+  {
+   "description": "User confirms wages recovered; charge the 25% contingency fee off-session",
+   "input_schema": {
+    "properties": {
+     "amount": {
+      "type": "number"
+     },
+     "case_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "case_id",
+     "amount"
+    ],
+    "type": "object"
+   },
+   "name": "confirm_recovery"
+  }
+ ],
+ "version": "0.2.0",
+ "webhooks": {
+  "case_deadline_passed": "Fired when a tracked case's legal deadline passes; agent generates the demand letter PDF for user approval."
+ }
+}
