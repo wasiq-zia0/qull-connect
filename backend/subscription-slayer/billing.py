@@ -1,178 +1,60 @@
-"""Stripe billing for the subscription-slayer connector.
+"""subscription-slayer pricing and shared Stripe billing.
 
-Flow:
-  1. User sets up billing -> setup_customer() creates a Stripe customer,
-     create_card_setup() returns a SetupIntent client_secret so the user can
-     save a card for later off-session use. No charge is taken at this point.
-  2. User confirms savings -> confirm_savings() charges $10 per completed
-     cancellation off-session via PaymentIntent.
-
-HONEST FEE DISCLOSURE (shown before the user saves a card):
-  "You will be charged $10 for each subscription cancellation you confirm —
-   charged once, after you confirm. No charge otherwise."
-
-All Stripe calls go through the stripe skill CLI at
-~/workspace/skills/stripe/bin/stripe, which carries the user-connected
-custom.stripe-billing credential. No raw keys in this code. Production transport: when STRIPE_SECRET_KEY is set, calls go direct to https://api.stripe.com via REST; the local skill CLI is the dev fallback. The key is read from the environment only and is never logged.
+Card collection uses Stripe-hosted Checkout in setup mode. A saved card is not a
+payment: callers must later present the exact fee and record explicit consent.
 """
-import json
-import os
-import subprocess
 from pathlib import Path
+import sys
 
-STRIPE_CLI = Path.home() / "workspace/skills/stripe/bin/stripe"
+_SERVICE_ROOT = Path(__file__).resolve().parent
+# In source checkouts the common package is a sibling of the service. Deployment
+# copies the same package into each service root; no network import is involved.
+if not (_SERVICE_ROOT / "payment_support").is_dir():
+    sys.path.insert(0, str(_SERVICE_ROOT.parent))
+from payment_support import BillingClient, percent_cents
 
-# Flat fee: $10 per completed cancellation the user confirms.
+CONNECTOR = 'subscription-slayer'
+CURRENCY = 'usd'
 FEE_PER_CANCELLATION_CENTS = 1000
 
-FEE_DISCLOSURE = (
-    "You will be charged $10 for each subscription cancellation you confirm "
-    "— charged once, after you confirm. No charge otherwise."
-)
-
-# Deterministic Stripe idempotency keys are built as
-# f"{CONNECTOR}-setup-{owner}-{record_id}" / f"{CONNECTOR}-fee-{owner}-{record_id}"
-# by the callers, so a retried setup/charge can never double-bill.
-CONNECTOR = "subscription-slayer"
+FEE_DISCLOSURE = '$10 for each completed cancellation you explicitly confirm. No completed cancellation, no fee.'
+_client = BillingClient(CONNECTOR, _SERVICE_ROOT / "data", currency=CURRENCY, disclosure=FEE_DISCLOSURE)
 
 
-STRIPE_API = "https://api.stripe.com/v1"
-
-
-def _stripe_cli(*args: str) -> dict:
-    """Dev transport: the local stripe skill CLI (agent machine only)."""
-    proc = subprocess.run([str(STRIPE_CLI), *args], capture_output=True, text=True, timeout=60)
-    out = proc.stdout.strip()
-    try:
-        data = json.loads(out[out.index("{"):]) if out else {}
-    except (ValueError, IndexError):
-        data = {"ok": False, "error": "unparseable stripe output: " + out[:200]}
-    if proc.returncode != 0 and "ok" not in data:
-        data = {"ok": False, "error": out[:300] or proc.stderr[:300]}
-    return data
-
-
-def _stripe_rest(*args: str, idempotency_key: str | None = None) -> dict:
-    """Production transport: direct Stripe REST calls (STRIPE_SECRET_KEY set).
-
-    Mirrors the stripe skill CLI's request shapes exactly (form-encoded POSTs).
-    The key is read from the environment only and is never logged.
-
-    ``idempotency_key`` is sent as the ``Idempotency-Key`` header on
-    SetupIntent/PaymentIntent creations so a retried request can never
-    create a second intent or charge.
-    """
-    import requests
-
-    key = os.environ.get("STRIPE_SECRET_KEY", "")
-    cmd = args[0] if args else ""
-    pairs = list(zip(args[1::2], args[2::2]))
-    opts = dict(pairs)
-    headers = {"Authorization": "Bearer " + key}
-    if idempotency_key:
-        headers["Idempotency-Key"] = idempotency_key
-    try:
-        if cmd == "create-customer":
-            resp = requests.post(
-                STRIPE_API + "/customers",
-                data={"name": opts.get("--name", ""), "email": opts.get("--email", "")},
-                headers=headers, timeout=30)
-        elif cmd == "create-setup-intent":
-            resp = requests.post(
-                STRIPE_API + "/setup_intents",
-                data={"customer": opts.get("--customer", "")},
-                headers=headers, timeout=30)
-        elif cmd == "charge":
-            resp = requests.post(
-                STRIPE_API + "/payment_intents",
-                data={"customer": opts.get("--customer", ""),
-                      "amount": opts.get("--amount-cents", "0"),
-                      "currency": "usd",
-                      "off_session": "true",
-                      "confirm": "true",
-                      "description": opts.get("--desc", "Contingency fee")},
-                headers=headers, timeout=30)
-        else:
-            return {"ok": False, "error": "unsupported stripe command: " + cmd}
-    except Exception as exc:
-        return {"ok": False, "error": "stripe request failed: " + type(exc).__name__}
-    if resp.status_code >= 400:
-        return {"ok": False, "http_status": resp.status_code,
-                "detail": resp.text[:500]}
-    try:
-        return resp.json()
-    except ValueError:
-        return {"ok": False, "error": "unparseable stripe response"}
-
-
-def _stripe(*args: str, idempotency_key: str | None = None) -> dict:
-    """Route Stripe calls: direct REST in production (STRIPE_SECRET_KEY set),
-    local skill CLI on the dev machine otherwise.
-
-    Note: the dev CLI fallback has no idempotency-key flag, so the key is
-    ignored there (documented); the REST transport always sends it.
-    """
-    if os.environ.get("STRIPE_SECRET_KEY"):
-        return _stripe_rest(*args, idempotency_key=idempotency_key)
-    return _stripe_cli(*args)
-
-
-def setup_customer(name: str, email: str = "") -> dict:
-    """Create a Stripe customer. Returns {'customer_id': ...} or {'error': ...}."""
-    args = ["create-customer", "--name", name]
-    if email:
-        args += ["--email", email]
-    res = _stripe(*args)
-    if res.get("id"):
-        return {"customer_id": res["id"]}
-    return {"error": res.get("error") or res.get("detail") or "customer creation failed"}
+def setup_customer(name: str, email: str = "", idempotency_key: str | None = None) -> dict:
+    return _client.setup_customer(name, email, idempotency_key)
 
 
 def create_card_setup(customer_id: str, idempotency_key: str | None = None) -> dict:
-    """Create a SetupIntent so the user can save a card for the later fee charge."""
-    res = _stripe("create-setup-intent", "--customer", customer_id,
-                  idempotency_key=idempotency_key)
-    if res.get("client_secret"):
-        return {"client_secret": res["client_secret"], "setup_intent_id": res.get("id")}
-    return {"error": res.get("error") or res.get("detail") or "setup intent failed"}
+    return _client.create_card_setup(customer_id, idempotency_key)
+
+
+def retrieve_card_setup(customer_id: str, setup_intent_id: str | None = None,
+                        checkout_session_id: str | None = None) -> dict:
+    return _client.retrieve_card_setup(customer_id, setup_intent_id, checkout_session_id)
 
 
 def charge_fee(customer_id: str, amount_cents: int, description: str,
-               idempotency_key: str | None = None) -> dict:
-    """Off-session charge of the per-cancellation fee against the saved card."""
-    res = _stripe("charge", "--customer", customer_id,
-                  "--amount-cents", str(amount_cents), "--desc", description,
-                  idempotency_key=idempotency_key)
-    if res.get("id") and res.get("status") in ("succeeded", "requires_capture"):
-        return {"payment_intent_id": res["id"], "status": res["status"],
-                "amount_cents": res.get("amount")}
-    err = res.get("error")
-    err_msg = err.get("message") if isinstance(err, dict) else err
-    return {"error": err_msg or res.get("detail") or f"charge failed (status={res.get('status')})",
-            "payment_intent_id": res.get("id")}
+               idempotency_key: str | None = None, *, setup_intent_id: str | None = None,
+               checkout_session_id: str | None = None, consent: bool = False) -> dict:
+    return _client.charge_fee(customer_id, amount_cents, description, idempotency_key,
+                              setup_intent_id=setup_intent_id, checkout_session_id=checkout_session_id,
+                              consent=consent)
 
 
 def fee_cents(n_cancellations: int) -> int:
-    """$10 flat per completed cancellation the user confirms, in cents."""
-    if n_cancellations <= 0:
-        return 0
+    if isinstance(n_cancellations, bool) or not isinstance(n_cancellations, int) or n_cancellations < 0:
+        raise ValueError("Cancellation count must be a nonnegative integer.")
     return FEE_PER_CANCELLATION_CENTS * n_cancellations
 
 
 def first_year_savings(subscriptions: list[dict]) -> float:
-    """Sum of monthly*12 for monthly subs + full yearly amounts for yearly subs.
-
-    Only counts subscriptions with a positive confirmed savings_monthly.
-    Kept as an informational figure in the confirm response; the fee itself
-    is the $10 flat per cancellation.
-    """
-    total = 0.0
-    for s in subscriptions:
-        monthly = s.get("savings_monthly") or 0
-        if monthly <= 0:
-            continue
-        if s.get("frequency") == "yearly":
-            total += float(monthly)  # stored as the yearly amount for yearly subs
-        else:
-            total += float(monthly) * 12
-    return round(total, 2)
+    """Informational projection; the payable fee is fixed per cancellation."""
+    from decimal import Decimal, ROUND_HALF_UP
+    total = Decimal("0")
+    for subscription in subscriptions:
+        amount = Decimal(str(subscription.get("savings_monthly") or 0))
+        if not amount.is_finite() or amount < 0:
+            raise ValueError("Savings must be finite and nonnegative.")
+        total += amount * 12  # savings_monthly is normalized by the outcome API.
+    return float(total.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))

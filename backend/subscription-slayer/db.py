@@ -11,12 +11,13 @@ resolved by ``identity``). Rows created by the service bus
 (``POST /api/life-events``, service-key auth, no user) store
 ``owner_id=NULL``.
 """
+import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "data" / "app.db"
+DB_PATH = Path(os.environ.get("DATA_DIR", str(Path(__file__).resolve().parents[0] / "data"))) / "app.db"
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS subscriptions (
@@ -91,10 +92,15 @@ def _migrate(conn: sqlite3.Connection) -> None:
             "INSERT INTO billing (owner_id, customer_id, setup_intent_id, created_at) "
             "SELECT NULL, customer_id, setup_intent_id, created_at FROM billing_old")
         conn.execute("DROP TABLE billing_old")
+    for table, column in (("billing", "checkout_session_id"), ("subscriptions", "confirmation_batch")):
+        cols = {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
+        if column not in cols:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} TEXT")
     conn.commit()
 
 
-def get_db(path: Path = DB_PATH) -> sqlite3.Connection:
+def get_db(path: Path | None = None) -> sqlite3.Connection:
+    path = path or DB_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(path))
     conn.row_factory = sqlite3.Row

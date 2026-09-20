@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = Path(os.environ.get("FINAL_PAYCHECK_DB", BASE_DIR / "data" / "app.db"))
+DB_PATH = Path(os.environ.get("FINAL_PAYCHECK_DB", Path(os.environ.get("DATA_DIR", BASE_DIR / "data")) / "app.db"))
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS cases (
@@ -51,6 +51,12 @@ def init_db() -> None:
     with connect() as conn:
         conn.executescript(SCHEMA)
         cols = [r[1] for r in conn.execute("PRAGMA table_info(cases)").fetchall()]
+        if "checkout_session_id" not in cols:
+            conn.execute("ALTER TABLE cases ADD COLUMN checkout_session_id TEXT")
+        if "fee_terms_accepted_at" not in cols:
+            conn.execute("ALTER TABLE cases ADD COLUMN fee_terms_accepted_at TEXT")
+        if "fee_confirmed_at" not in cols:
+            conn.execute("ALTER TABLE cases ADD COLUMN fee_confirmed_at TEXT")
         if "is_draft" not in cols:  # migrate DBs created before drafts existed
             conn.execute("ALTER TABLE cases ADD COLUMN is_draft INTEGER NOT NULL DEFAULT 0")
         if "owner_id" not in cols:  # tenant isolation: every case has exactly one owner
@@ -59,12 +65,7 @@ def init_db() -> None:
 
 
 def claim_case(case_id: str, owner_id: str) -> dict | None:
-    """Bind an ownerless (life-event draft) case to the first owner who
-    presents its unguessable ID. Returns the case, or None if it does not
-    exist or is already owned by someone else."""
-    with connect() as conn:
-        conn.execute("UPDATE cases SET owner_id = ? WHERE id = ? AND owner_id IS NULL",
-                     (owner_id, case_id))
+    """Legacy rows without a verified owner are never claimable by record ID."""
     return get_case(case_id, owner_id)
 
 
@@ -75,7 +76,7 @@ def _now() -> str:
 def create_case(data: dict, owner_id: str | None = None) -> dict:
     """Create a case. Draft cases (from life events) may omit fields;
     missing values default to empty/zero and are filled on confirm."""
-    case_id = uuid.uuid4().hex[:12]
+    case_id = uuid.uuid4().hex
     row = {
         "id": case_id,
         "created_at": _now(),
@@ -123,6 +124,9 @@ def get_case(case_id: str, owner_id: str | None = None) -> dict | None:
 
 
 def update_case(case_id: str, fields: dict, owner_id: str | None = None) -> dict:
+    allowed = {r[1] for r in connect().execute("PRAGMA table_info(cases)")} - {"id", "owner_id", "created_at"}
+    if not fields or set(fields) - allowed:
+        raise ValueError("Invalid case update columns")
     sets = ", ".join(f"{k} = :{k}" for k in fields)
     fields = dict(fields)
     fields["id"] = case_id
@@ -130,6 +134,8 @@ def update_case(case_id: str, fields: dict, owner_id: str | None = None) -> dict
     if owner_id is not None:
         sql += " AND owner_id = :owner_id"
         fields["owner_id"] = owner_id
+    if fields.get("fee_status") and fields["fee_status"] != "charged":
+        sql += " AND fee_status != 'charged'"
     with connect() as conn:
         conn.execute(sql, fields)
     return get_case(case_id, owner_id)
@@ -144,3 +150,32 @@ def list_cases(owner_id: str | None = None) -> list[dict]:
                 "SELECT * FROM cases WHERE owner_id = ? ORDER BY created_at DESC",
                 (owner_id,)).fetchall()
     return [dict(r) for r in rows]
+
+
+def export_owner(owner_id: str) -> dict:
+    if not owner_id:
+        raise ValueError("An owner is required")
+    with connect() as conn:
+        return {table: [dict(row) for row in conn.execute(f"SELECT * FROM {table} WHERE owner_id = ?", (owner_id,)).fetchall()]
+                for table in ('cases',)}
+
+
+def delete_owner(owner_id: str) -> dict:
+    if not owner_id:
+        raise ValueError("An owner is required")
+    with connect() as conn:
+        rows = {table: [dict(row) for row in conn.execute(f"SELECT * FROM {table} WHERE owner_id = ?", (owner_id,)).fetchall()]
+                for table in ('cases',)}
+        for table in ('cases',):
+            conn.execute(f"DELETE FROM {table} WHERE owner_id = ?", (owner_id,))
+        conn.commit()
+    return rows
+
+
+def activate_draft(case_id: str, owner_id: str, fields: dict) -> bool:
+    allowed = {"employee_name", "employer_name", "state", "last_day_worked", "termination_type", "wages_owed_cents", "next_payday", "forwarding_address", "is_draft"}
+    if set(fields) - allowed:
+        raise ValueError("Invalid draft completion fields")
+    with connect() as conn:
+        result = conn.execute(f"UPDATE cases SET {', '.join(f'{k} = ?' for k in fields)} WHERE id = ? AND owner_id = ? AND is_draft = 1 AND fee_confirmed_at IS NULL", [*fields.values(), case_id, owner_id])
+        return result.rowcount == 1

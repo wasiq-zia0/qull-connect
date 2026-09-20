@@ -1,116 +1,50 @@
-"""Deadline computation and case status engine."""
+"""Limited, source-reviewed deadline calculation; factual requests elsewhere."""
 from datetime import date, timedelta
-from .laws import get_state, requires_forwarding_date
+from decimal import Decimal, ROUND_HALF_UP
+from .laws import get_state
 
 
-def compute_deadline(state_abbr: str, move_out: date, forwarding_date: date | None = None) -> dict:
-    """Return the legal return deadline for a deposit.
-
-    move_out: date the tenant vacated / tenancy terminated.
-    forwarding_date: date the tenant gave the landlord a forwarding address.
-
-    In forwarding-dependent states (TX, CT, MN, WY) the legal clock runs from
-    the forwarding address date, so a missing forwarding_date raises
-    ValueError instead of falling back to move_out. States whose clock runs
-    from move-out still anchor on move_out.
-    """
+def compute_deadline(state_abbr: str, move_out: date, forwarding_date: date | None = None, tenancy_end: date | None = None) -> dict:
     law = get_state(state_abbr)
-    abbr = state_abbr.strip().upper()
-    days = law["deadline_days"]
-    basis = law["deadline_basis"]
-
-    if days is None:
-        return {
-            "state": law["state"],
-            "statute": law["statute"],
-            "deadline": None,
-            "basis_explanation": law["deadline_note"],
-            "note": "This state sets no fixed return deadline; follow the notification procedure in the statute.",
-        }
-
-    if requires_forwarding_date(abbr):
-        if not forwarding_date:
-            raise ValueError(
-                f"forwarding_date is required in {abbr}: the legal deadline runs "
-                "from the date you provided your forwarding address."
-            )
-        if basis == "forwarding_address":
-            anchor = forwarding_date
-            explanation = (
-                f"{days} days after you provided a forwarding address "
-                f"({anchor.isoformat()})."
-            )
-        else:  # later_of_move_out_or_forwarding
-            anchor = max(move_out, forwarding_date)
-            explanation = (
-                f"Later of move-out ({move_out.isoformat()}) and receipt of "
-                f"forwarding address ({forwarding_date.isoformat()})."
-            )
-    else:
-        anchor = move_out
-        explanation = f"{days} days after move-out ({move_out.isoformat()})."
-
-    return {
-        "state": law["state"],
-        "statute": law["statute"],
-        "deadline": (anchor + timedelta(days=days)).isoformat(),
-        "basis_explanation": explanation,
-        "statute_note": law["deadline_note"],
-    }
+    abbr = law["abbr"]
+    result = {"state": law["state"], "statute": law["statute"], "deadline": None,
+              "official_source_url": law["official_source_url"],
+              "basis_explanation": law["deadline_note"], "verified": False}
+    if not law.get("deadline_verified"):
+        result["note"] = "This jurisdiction's deadline needs review. A factual return request can be prepared without claiming a missed legal deadline."
+        return result
+    if abbr == "CT":
+        if forwarding_date is None or tenancy_end is None:
+            result["note"] = "Connecticut requires the tenancy-end date and the date the landlord received written notice of your forwarding address."
+            return result
+        deadline = max(tenancy_end + timedelta(days=21), forwarding_date + timedelta(days=15))
+    elif abbr == "TX":
+        if forwarding_date is None or forwarding_date > move_out + timedelta(days=30):
+            result["note"] = "The forwarding-address timing requires review under Texas Property Code 92.107; no new 30-day period is assumed."
+            return result
+        deadline = move_out + timedelta(days=30)
+    else:  # CA: ordinary residential tenancy after the tenant vacates.
+        deadline = move_out + timedelta(days=21)
+    result.update(deadline=deadline.isoformat(), verified=True,
+                  note="Preliminary timing calculation for an ordinary residential tenancy. Deductions, estimates, exceptions and proof still need review.")
+    return result
 
 
 def case_status(state_abbr: str, move_out: date, deposit: float,
-                forwarding_date: date | None = None, today: date | None = None) -> dict:
-    """Full case picture: deadline, days remaining/overdue, max recovery."""
+                forwarding_date: date | None = None, today: date | None = None, tenancy_end: date | None = None) -> dict:
     today = today or date.today()
     law = get_state(state_abbr)
-    dl = compute_deadline(state_abbr, move_out, forwarding_date)
-
-    result = {
-        "state": law["state"],
-        "statute": law["statute"],
-        "deposit": round(deposit, 2),
-        "move_out": move_out.isoformat(),
-        "deadline": dl["deadline"],
-        "deadline_days": law["deadline_days"],
-        "basis_explanation": dl["basis_explanation"],
-        "statute_note": law.get("deadline_note"),
-        "penalty_multiple": law["penalty_multiple"],
-        "penalty_note": law["penalty_note"],
-    }
-
-    if dl["deadline"] is None:
-        result.update(status="no_fixed_deadline",
-                      headline="No fixed statutory deadline in this state",
-                      detail=dl["note"])
-        return result
-
-    deadline = date.fromisoformat(dl["deadline"])
-    delta = (deadline - today).days
-    result["days_remaining"] = delta
-
-    mult = law["penalty_multiple"] or 1
-    result["max_recovery"] = round(deposit * mult, 2)
-    result["our_fee_25pct"] = round(deposit * mult * 0.25, 2)
-
-    if delta >= 0:
-        result.update(
-            status="waiting",
-            headline=f"Landlord has {delta} day(s) left (deadline {deadline.isoformat()})",
-            detail="No action yet. We diary the deadline and prepare the demand letter so it goes out on day one past due.",
-            next_action="wait",
-        )
-    else:
-        overdue = -delta
-        result.update(
-            status="overdue",
-            headline=f"Deadline passed {overdue} day(s) ago ({deadline.isoformat()})",
-            detail=(
-                f"Demand letter should go out now citing {law['statute']}. "
-                + (f"If bad faith is found, recovery could reach {mult}x the deposit = "
-                   f"${result['max_recovery']:,.2f}." if law["penalty_multiple"]
-                   else "Additional statutory damages may apply under state law.")
-            ),
-            next_action="send_demand_letter",
-        )
-    return result
+    dl = compute_deadline(state_abbr, move_out, forwarding_date, tenancy_end)
+    result = {"state": law["state"], "statute": law["statute"], "deposit": round(deposit, 2),
+              "move_out": move_out.isoformat(), "deadline": dl["deadline"],
+              "deadline_days": law["deadline_days"] if dl["verified"] else None,
+              "basis_explanation": dl["basis_explanation"], "statute_note": dl.get("note"),
+              "official_source_url": dl["official_source_url"], "deadline_verified": dl["verified"],
+              "penalty_multiple": None, "penalty_note": "No penalty entitlement or amount has been determined.",
+              "estimated_fee_if_full_deposit_recovered_cents": int((Decimal(str(deposit)) * Decimal("25")).quantize(Decimal("1"), rounding=ROUND_HALF_UP))}
+    if not dl["verified"]:
+        return {**result, "status": "needs_review", "headline": "Legal deadline needs review", "detail": dl.get("note"), "next_action": "prepare_factual_request"}
+    delta = (date.fromisoformat(dl["deadline"]) - today).days
+    return {**result, "days_remaining": delta, "status": "waiting" if delta >= 0 else "overdue",
+            "headline": f"Preliminary return/accounting deadline: {dl['deadline']}",
+            "detail": dl["note"], "next_action": "check_case_later" if delta >= 0 else "prepare_return_request"}

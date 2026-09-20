@@ -1,1 +1,308 @@
-{"actions_on_install":"none","auth":{"type":"oauth2_user","why":"To create your search, store your claim packs and statuses, and bill the 15% contingency fee to your saved card after a confirmed recovery."},"description":"Finds unclaimed money held by the state in your name across all 50 states + DC. Builds per-state claim packs with the official portal link, step-by-step filing instructions, and a pre-filled cover sheet — you file, we never do. Contingency: 15% of recovered funds, charged only after you confirm the recovery. No charge otherwise.","display_name":"Unclaimed Property Finder","proactive_triggers":[{"action":"receive_life_event","description":"A move is detected (mover confirmation or address-change signal). The connector pre-fills the old and new states and asks one question: your full legal name. One tap and claim packs are ready.","event":"user appears to have moved","needs_user_confirmation":true}],"tools":[{"description":"List all 50 states + DC with their official unclaimed-property portal URLs","input_schema":{"properties":{},"required":[],"type":"object"},"name":"list_states"},{"description":"Start an unclaimed-property search: name, email, and states lived in. Returns per-state claim checklist.","input_schema":{"properties":{"dob":{"description":"YYYY-MM-DD, optional; some states need it at filing","type":"string"},"dob_consent":{"description":"Must be true to store dob","type":"boolean"},"email":{"format":"email","type":"string"},"full_legal_name":{"type":"string"},"prior_names":{"description":"Comma-separated maiden/prior names, optional","type":"string"},"states":{"description":"JSON list like '[{\"abbr\":\"TX\",\"years\":\"2018-2021\"}]'","type":"string"}},"required":["full_legal_name","email","states"],"type":"object"},"name":"start_search"},{"description":"Handle a fanned-out life event from the shared bus. A 'move' pre-fills the state checklist and returns the proactive nudge.","input_schema":{"properties":{"event_type":{"type":"string"},"payload":{"description":"JSON object, e.g. '{\"from_state\":\"TX\",\"to_state\":\"CO\"}'","type":"string"}},"required":["event_type","payload"],"type":"object"},"name":"handle_life_event"},{"description":"The one-tap confirmation after a move nudge: supply the claimant's full legal name to activate a draft search.","input_schema":{"properties":{"full_legal_name":{"type":"string"},"search_id":{"type":"string"}},"required":["search_id","full_legal_name"],"type":"object"},"name":"complete_search"},{"description":"Get the claim pack for one state: portal link, filing steps, document checklist, pre-filled cover sheet.","input_schema":{"properties":{"search_id":{"type":"string"},"state":{"maxLength":2,"minLength":2,"type":"string"}},"required":["search_id","state"],"type":"object"},"name":"get_claim_pack"},{"description":"Update a state's claim status: not_started, in_progress, filed, paid, denied.","input_schema":{"properties":{"search_id":{"type":"string"},"state":{"maxLength":2,"minLength":2,"type":"string"},"status":{"enum":["not_started","in_progress","filed","paid","denied"],"type":"string"}},"required":["search_id","state","status"],"type":"object"},"name":"update_claim_status"},{"description":"Set up billing: Stripe customer + SetupIntent for an off-session card save. States the exact fee before the card is saved.","input_schema":{"properties":{"search_id":{"type":"string"}},"required":["search_id"],"type":"object"},"name":"setup_billing"},{"description":"Confirm a recovery and charge the 15% contingency fee off-session. Requires setup_billing first.","input_schema":{"properties":{"amount":{"description":"Recovered amount in USD","type":"number"},"search_id":{"type":"string"},"state":{"description":"Optional: state the recovery came from","maxLength":2,"minLength":2,"type":"string"}},"required":["search_id","amount"],"type":"object"},"name":"confirm_recovery"}],"version":"0.2.0","webhooks":{"life_event_received":"Fired when the shared life-event bus fans out an event to this connector (e.g. a move). The agent sends the proactive nudge from the response's user_message."}}
+{
+  "actions_on_install": "none",
+  "auth": {
+    "type": "api_key",
+    "header": "Authorization",
+    "scheme": "Bearer",
+    "description": "Operator-provisioned opaque key for one user. No OAuth or confirmed Muse identity exchange is implemented."
+  },
+  "description": "Build a state-by-state checklist of official unclaimed-property portals and the information needed to search and file your own claims. The current release provides portal guides and claim preparation without collecting a fee. Paid recovery assistance is unavailable while state-specific agreements and eligibility requirements are unresolved. A proposed future fee of up to 10% is not active or authorized.",
+  "display_name": "Found Money",
+  "proactive_triggers": [],
+  "tools": [
+    {
+      "name": "list_states",
+      "description": "List official state portals. The user performs the search on those portals.",
+      "input_schema": {
+        "properties": {},
+        "title": "list_statesArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "start_search",
+      "description": "Prepare a free state-by-state claim guide. This does not search or file with any state.",
+      "input_schema": {
+        "properties": {
+          "full_legal_name": {
+            "title": "Full Legal Name",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "states": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "States",
+            "type": "array"
+          },
+          "prior_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Prior Names"
+          },
+          "dob": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Dob"
+          },
+          "dob_consent": {
+            "default": false,
+            "title": "Dob Consent",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "full_legal_name",
+          "email",
+          "states"
+        ],
+        "title": "start_searchArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "handle_life_event",
+      "description": "Create a move-related draft for the authenticated user only.",
+      "input_schema": {
+        "properties": {
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          }
+        },
+        "required": [
+          "event_type",
+          "payload"
+        ],
+        "title": "handle_life_eventArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "complete_search",
+      "description": "Complete the user's draft claim guide.",
+      "input_schema": {
+        "properties": {
+          "search_id": {
+            "title": "Search Id",
+            "type": "string"
+          },
+          "full_legal_name": {
+            "title": "Full Legal Name",
+            "type": "string"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Email"
+          }
+        },
+        "required": [
+          "search_id",
+          "full_legal_name"
+        ],
+        "title": "complete_searchArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_search",
+      "description": "Read the user's claim checklist and reported status.",
+      "input_schema": {
+        "properties": {
+          "search_id": {
+            "title": "Search Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "search_id"
+        ],
+        "title": "get_searchArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_claim_pack",
+      "description": "Return a claim guide and official portal. The user searches and files for free.",
+      "input_schema": {
+        "properties": {
+          "search_id": {
+            "title": "Search Id",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "search_id",
+          "state"
+        ],
+        "title": "get_claim_packArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "update_claim_status",
+      "description": "Record the status reported by the user; no state agency is contacted.",
+      "input_schema": {
+        "properties": {
+          "search_id": {
+            "title": "Search Id",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "search_id",
+          "state",
+          "status"
+        ],
+        "title": "update_claim_statusArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "setup_billing",
+      "description": "Paid assistance is unavailable pending state fee and agreement review.",
+      "input_schema": {
+        "properties": {
+          "search_id": {
+            "title": "Search Id",
+            "type": "string"
+          },
+          "accept_fee_terms": {
+            "title": "Accept Fee Terms",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "search_id",
+          "accept_fee_terms"
+        ],
+        "title": "setup_billingArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "confirm_recovery",
+      "description": "Paid assistance remains blocked until state-specific fee eligibility is implemented.",
+      "input_schema": {
+        "properties": {
+          "search_id": {
+            "title": "Search Id",
+            "type": "string"
+          },
+          "amount": {
+            "title": "Amount",
+            "type": "number"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "confirm_fee": {
+            "title": "Confirm Fee",
+            "type": "boolean"
+          },
+          "fee_amount_cents": {
+            "title": "Fee Amount Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "search_id",
+          "amount",
+          "state",
+          "confirm_fee",
+          "fee_amount_cents"
+        ],
+        "title": "confirm_recoveryArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "billing_status",
+      "description": "Read the billing status for the authenticated user's search.",
+      "input_schema": {
+        "properties": {
+          "search_id": {
+            "title": "Search Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "search_id"
+        ],
+        "title": "billing_statusArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "delete_my_data",
+      "description": "Delete this user's operational records after explicit confirmation. Required payment records are retained separately.",
+      "input_schema": {
+        "properties": {
+          "consent": {
+            "title": "Consent",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "consent"
+        ],
+        "title": "delete_my_dataArguments",
+        "type": "object"
+      }
+    }
+  ],
+  "version": "1.0.0",
+  "webhooks": {},
+  "documentation_url": "https://qull.io/connect/found-money/api-docs/",
+  "privacy_policy_url": "https://qull.io/connect/found-money/privacy/",
+  "terms_of_service_url": "https://qull.io/connect/found-money/terms/",
+  "support_email": "wasiq@qull.io"
+}

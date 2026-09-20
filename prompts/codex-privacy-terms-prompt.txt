@@ -1,39 +1,29 @@
-Build privacy policy and terms of service pages for all 10 of our Qull Connect connectors on qull.io — 20 pages total (one privacy + one terms per connector).
+Maintain connector privacy and terms from the actual service and operating policy.
+This supersedes the original draft-policy brief and its placeholder contacts.
 
-Host each pair at:
-qull.io/connect/<that connector's existing landing-page folder>/privacy
-qull.io/connect/<that connector's existing landing-page folder>/terms
-(Use whatever folder each connector's landing page already lives in under qull.io/connect/.)
+Source material:
+- docs/connector-content.json (actual product inputs, outputs, limits and price)
+- docs/build_documentation.py (shared policy generation)
+- docs/DOMAIN_REVIEW.md (unresolved domain-specific requirements)
+- docs/INTEGRATION.md and backend/deploy/ENV.md (data/auth/payment implementation)
+- Existing public Qull contact: wasiq@qull.io; mailbox delivery has not been
+  established by a code review. Do not reuse support@qull.io or Ontario as facts;
+  the old backend terms explicitly labeled those entries placeholders.
 
-GLOBAL REQUIREMENTS (all 20 pages):
-- Match the header, footer, fonts, and styling of our existing qull.io/connect/ pages.
-- Clean URLs, no .html extension. Mobile-friendly.
-- Visible "Draft — pending legal review" notice at the top of every page.
-- "Back" links point to that connector's landing page.
-- Support contact: use a clearly-marked placeholder [SUPPORT EMAIL] everywhere — I'll fill it in.
-- Privacy pages: payments processed by Stripe (we never see or store full card numbers); data used only to operate the service; we don't sell personal info and share it only with providers needed to run the service (hosting, Stripe); users can request a copy or deletion of their data anytime.
-- Terms pages: Qull, Inc.'s liability limited to fees paid, no liability for indirect/consequential damages; we may update terms, continued use after changes means acceptance.
-
-PER-CONNECTOR FACTS — write each page from these, don't invent beyond them:
-
-1. Deposit Recovery — helps renters recover rental security deposits: tracks state-by-state return deadlines and generates demand letters from templates. Collects: name, forwarding address, move-out date, deposit amount, landlord name and address, rental address. Fee: 25% contingency on amounts recovered, charged only after the user confirms the deposit (or part of it) was returned; nothing recovered = nothing charged. Not a law firm; no legal advice; no attorney-client relationship. User must provide accurate info and approve every letter before it's sent; outcomes not guaranteed.
-
-2. FlightPay — claims EU261 compensation for delayed/cancelled flights. Collects: name, contact info, airline, flight number, flight date, booking reference, disruption details. Fee: 30% contingency on compensation received, charged only after payout is confirmed. Not a law firm; no legal advice.
-
-3. Subscription Slayer — cancels unwanted subscriptions on the user's behalf. Collects: name, contact info, subscriptions to cancel and account identifiers needed. Fee: $10 flat per completed cancellation, charged only after cancellation is confirmed.
-
-4. BillCut — negotiates down recurring bills (internet, cable, phone, etc.). Collects: name, contact info, provider and bill details, account info needed to negotiate. Fee: 35% of documented savings, capped at 12 months of savings; charged only after savings are confirmed.
-
-5. Final Paycheck Recovery — recovers unpaid final wages after job separation. Collects: name, contact info, employer details, employment dates, amount owed. Fee: 25% contingency, charged only after the user confirms payment was received. Not a law firm; no legal advice.
-
-6. Class Action Cash — finds class action settlements the user is eligible for and files claims. Collects: name, contact info, eligibility details per settlement. Fee: 20% contingency on payouts received, charged only after payout is confirmed. Not a law firm; no legal advice.
-
-7. Found Money — finds unclaimed property (dormant accounts, uncashed checks) in state databases and helps claim it. Collects: name, contact info, identifiers needed to search and file claims. Fee: maximum 10% of amounts recovered, subject to state rules (some states cap or prohibit finder fees); charged only after funds are received.
-
-8. Moving Concierge — plans your move: checklists, timelines, mover coordination. Collects: name, contact info, move dates, origin/destination addresses. Fee: $49 flat per move, charged when the move plan is created.
-
-9. MatchMax — 401(k) employer-match education and calculations; shows how much match you're leaving on the table. Collects: salary, contribution rate, employer match formula. Fee: $99/year. Education and calculation only — not financial advice, not a fiduciary, no investment recommendations.
-
-10. Medical Bill Fighter — reviews medical bills for errors and negotiates them down. Collects: name, contact info, bill and provider details, insurance info. Fee: 25% of documented savings/reductions, charged only after the reduction is confirmed. Not a law firm and no legal advice; not medical advice.
-
-Reply with all 20 final public URLs, plus a list of anything you were unsure about.
+For each of the ten connectors:
+1. Describe the actual information collected, processing purpose, user-directed
+   external actions, providers, Stripe's hosted collection, retention/deletion
+   behavior, support path and unresolved operating policy.
+2. State the exact service users receive and actions they must take themselves.
+   State fees, currency and payment authorization accurately. MatchMax is a
+   one-time $99 pack; Found Money's paid collection is disabled pending its lawful
+   state-specific agreement flow. No automatic tax or renewal system is implied.
+3. Do not invent retention deadlines, certifications, lawful fee eligibility,
+   governing law, support staffing, refunds or a complete data-rights process.
+   Final terms, privacy policy and operating practices need appropriate review.
+4. Keep Draft—pending legal and operational review while unresolved. Source
+   improvements are not authority to mark a policy final or a product approved.
+5. Run docs/build_documentation.py --site /path/to/qull_site to keep service TERMS,
+   modern /privacy/ and /terms/ pages and legacy /website/*.html copies aligned.
+6. Review the rendered pages and cross-links. Publish only connector-scoped changes
+   to the existing website, preserving unrelated pages and configuration.

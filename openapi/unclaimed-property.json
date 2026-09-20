@@ -2,8 +2,18 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Unclaimed Property Connector",
-    "version": "0.2.0"
+    "description": "Qull Connect API. Supply a per-user API key in Authorization: Bearer <key>. Keys identify one customer; arbitrary platform/user-id headers are not accepted. Payment setup opens hosted Stripe Checkout and does not charge a service fee. Use the record's billing/status operation to verify setup, then explicitly authorize the applicable fee. See the linked guide for workflow and service limits.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Qull, Inc.",
+      "email": "wasiq@qull.io"
+    }
   },
+  "servers": [
+    {
+      "url": "https://5.78.152.6.nip.io/unclaimed-property"
+    }
+  ],
   "paths": {
     "/health": {
       "get": {
@@ -22,7 +32,8 @@
               }
             }
           }
-        }
+        },
+        "security": []
       }
     },
     "/api/states": {
@@ -41,6 +52,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -78,6 +98,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -114,6 +143,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -162,6 +200,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       },
@@ -201,6 +248,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -253,6 +309,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -313,6 +378,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -332,6 +406,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillingConsent"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -350,6 +434,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -392,6 +485,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -439,6 +541,45 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
+          }
+        }
+      }
+    },
+    "/api/data": {
+      "delete": {
+        "summary": "Delete My Data",
+        "description": "Delete the authenticated user's operational data. Payment/accounting records remain with the processor and protected billing ledger.",
+        "operationId": "delete_my_data_api_data_delete",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Delete My Data Api Data Delete"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -446,6 +587,21 @@
   },
   "components": {
     "schemas": {
+      "BillingConsent": {
+        "properties": {
+          "accept_fee_terms": {
+            "type": "boolean",
+            "const": true,
+            "title": "Accept Fee Terms"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "accept_fee_terms"
+        ],
+        "title": "BillingConsent"
+      },
       "DraftUpdate": {
         "properties": {
           "full_legal_name": {
@@ -517,7 +673,8 @@
                   "$ref": "#/components/schemas/StateOfResidence"
                 },
                 "type": "array",
-                "maxItems": 51
+                "maxItems": 51,
+                "minItems": 1
               },
               {
                 "type": "null"
@@ -526,6 +683,7 @@
             "title": "States Of Residence"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "title": "DraftUpdate"
       },
@@ -605,6 +763,7 @@
             "description": "Optional: emit a 'move' life event so the suite (deposit-recovery, moving-concierge) can act on it too."
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "full_legal_name",
@@ -627,6 +786,7 @@
             "title": "Payload"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "event_type"
@@ -648,6 +808,7 @@
             "title": "To State"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "from_state",
@@ -657,6 +818,16 @@
       },
       "RecoveryConfirmed": {
         "properties": {
+          "fee_amount_cents": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Fee Amount Cents"
+          },
+          "confirm_fee": {
+            "type": "boolean",
+            "const": true,
+            "title": "Confirm Fee"
+          },
           "amount": {
             "type": "number",
             "maximum": 100000000.0,
@@ -665,21 +836,20 @@
             "description": "Recovered amount in USD"
           },
           "state_abbr": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "maxLength": 2,
+            "minLength": 2,
             "title": "State Abbr",
             "description": "State the recovery came from"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
-          "amount"
+          "fee_amount_cents",
+          "confirm_fee",
+          "amount",
+          "state_abbr"
         ],
         "title": "RecoveryConfirmed"
       },
@@ -700,6 +870,7 @@
             "default": ""
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "abbr"
@@ -714,6 +885,7 @@
             "description": "One of: not_started, in_progress, filed, paid, denied"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "status"
@@ -760,11 +932,19 @@
         ],
         "title": "ValidationError"
       }
+    },
+    "securitySchemes": {
+      "UserApiKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Qull per-user API key",
+        "description": "An operator-provisioned opaque API key belonging to one customer. Never use a Stripe secret key here."
+      }
     }
   },
-  "servers": [
+  "security": [
     {
-      "url": "https://5.78.152.6.nip.io/unclaimed-property/api"
+      "UserApiKey": []
     }
   ]
 }

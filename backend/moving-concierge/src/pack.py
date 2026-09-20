@@ -32,12 +32,12 @@ def build_checklist(move: dict, state: dict) -> list[dict]:
     items = [
         {"category": "Mail", "title": "File your USPS Change of Address",
          "detail": (f"Forward mail from the old place to {new} for 12 months. "
-                    "USPS charges a $1.10 identity-verification fee — that is the only official fee; "
+                    "Check USPS for its current identity-verification fee, forwarding exclusions, and any service charges; "
                     "beware copycat sites charging more."),
          "url": USPS_URL},
         {"category": "Driver's license & car", "title": f"Update your {state['state']} driver's license / ID",
-         "detail": (f"{state['dmv_name']} requires it {state['dmv_deadline']}. "
-                    "Usually takes about 5 minutes online."),
+         "detail": (f"Check {state['dmv_name']} for deadlines and documents for your move type. "
+                    "Moving between states can require an in-person visit."),
          "url": state["dmv_url"]},
         {"category": "Driver's license & car", "title": "Update your vehicle registration",
          "detail": ("Separate record from your license — skip it and renewal notices "
@@ -45,7 +45,7 @@ def build_checklist(move: dict, state: dict) -> list[dict]:
          "url": state["dmv_url"]},
         {"category": "Vote", "title": "Update your voter registration",
          "detail": (state["voter_note"] or
-                    "Takes about 2 minutes online. Do it now so you're set for the next election."),
+                    "Check the official election site for eligibility, registration deadlines, and online or paper options."),
          "url": state["voter_url"]},
         {"category": "Money", "title": "Update banks & credit cards",
          "detail": "Checking, savings, credit cards — new address on file; order new debit cards if needed.",
@@ -117,7 +117,7 @@ def render_markdown(move: dict, state: dict, items: list[dict]) -> str:
         "",
         f"- **Driver's license ({st})**: update it {state['dmv_deadline']} — {state['dmv_url']}",
         f"- **Voter registration**: {state['voter_url']}",
-        f"- **USPS mail forwarding**: file now (takes 2 minutes) — {USPS_URL}",
+        f"- **USPS mail forwarding**: check current options and processing times — {USPS_URL}",
         "",
         "## ✅ Checklist",
         "",
@@ -127,7 +127,7 @@ def render_markdown(move: dict, state: dict, items: list[dict]) -> str:
         if it["category"] != current_cat:
             current_cat = it["category"]
             lines += [f"### {current_cat}", ""]
-        box = "[x]" if it["status"] == "done" else "[ ]"
+        box = "[x]" if it["status"] in ("done", "na") else "[ ]"
         title = md_escape(it["title"])
         detail = md_escape(it["detail"])
         link = f" — {it['url']}" if it["url"] else ""
@@ -167,7 +167,7 @@ def build_pdf(move: dict, state: dict, items: list[dict], path: str) -> str:
     for label, url in [
         (f"Driver's license ({state['state']}): update it {state['dmv_deadline']}", state["dmv_url"]),
         ("Voter registration", state["voter_url"]),
-        ("USPS mail forwarding (file now, ~2 min)", USPS_URL),
+        ("USPS mail forwarding", USPS_URL),
     ]:
         story.append(Paragraph(
             f"{xml_escape(label)}: <a href=\"{xml_escape(url)}\">{xml_escape(url)}</a>", body))
@@ -179,7 +179,7 @@ def build_pdf(move: dict, state: dict, items: list[dict], path: str) -> str:
         if it["category"] != current_cat:
             current_cat = it["category"]
             story.append(Paragraph(xml_escape(current_cat), h3))
-        box = "[x]" if it["status"] == "done" else "[ ]"
+        box = "[x]" if it["status"] in ("done", "na") else "[ ]"
         text = f"{box} <b>{xml_escape(sanitize(it['title']))}</b> — {xml_escape(sanitize(it['detail']))}"
         if it["url"]:
             text += f" — <a href=\"{xml_escape(it['url'])}\">{xml_escape(it['url'])}</a>"

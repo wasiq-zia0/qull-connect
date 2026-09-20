@@ -11,21 +11,21 @@ change-of-address anywhere — the user completes each step via the official lin
 import os
 import uuid
 from datetime import date, datetime, timezone
+from typing import Literal
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.exceptions import RequestValidationError
-from pydantic import BaseModel, Field, field_validator
+from pydantic import ConfigDict, BaseModel, Field, field_validator
 
-from src import db
+from src import db, billing
 from src.identity import IdentityMiddleware, IdentityError, require_owner
 from src.limits import BodySizeLimitMiddleware, RateLimitMiddleware
 from src.states import get_state
 from src.pack import build_checklist, render_markdown, build_pdf, sanitize
 from src.billing import (setup_customer, create_card_setup, charge_pack,
                          FEE_LABEL, FEE_DISCLOSURE, CONNECTOR)
-from src.bus import emit_move
 
 _PROD = os.environ.get("ENV") == "production"
 _PUBLIC_DOCS = os.environ.get("PUBLIC_DOCS") == "1"
@@ -36,9 +36,9 @@ app = FastAPI(title="Moving Concierge API", version="0.1.0",
 
 # Middleware order: added last runs first. IdentityMiddleware must run before
 # everything else so unauthenticated requests never reach handlers.
-app.add_middleware(BodySizeLimitMiddleware)
-app.add_middleware(RateLimitMiddleware)
 app.add_middleware(IdentityMiddleware)
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(BodySizeLimitMiddleware)
 
 
 @app.exception_handler(IdentityError)
@@ -46,15 +46,28 @@ async def identity_error_handler(_, exc: IdentityError):
     msg = str(exc)
     return JSONResponse(status_code=401,
                         content={"error": msg, "user_message": msg})
-PACKS_DIR = Path(__file__).resolve().parent / "packs_out"
-PACKS_DIR.mkdir(exist_ok=True)
+PACKS_DIR = Path(os.environ.get("DATA_DIR", str(Path(__file__).resolve().parent / "data"))) / "packs_out"
+PACKS_DIR.mkdir(parents=True, exist_ok=True)
 
 VALID_STATUSES = {"pending", "done", "na"}
 
 
 # ---------- models ----------
 
-class MoveIn(BaseModel):
+class SafeModel(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False, str_strip_whitespace=True)
+
+
+class BillingConsent(SafeModel):
+    accept_fee_terms: Literal[True]
+
+
+class ChargeConsent(SafeModel):
+    fee_amount_cents: int = Field(..., gt=0)
+    confirm_fee: Literal[True] = Field(..., description="Explicit permission to charge the disclosed fee for this record.")
+
+
+class MoveIn(SafeModel):
     name: str = Field(..., min_length=1, max_length=200)
     email: str = Field(..., min_length=3, max_length=200)
     old_address: str = Field(..., min_length=1, max_length=500)
@@ -77,17 +90,17 @@ class MoveIn(BaseModel):
         return v.strip().upper()
 
 
-class LifeEventIn(BaseModel):
+class LifeEventIn(SafeModel):
     event_type: str
     payload: dict = Field(default_factory=dict)
 
 
-class ChecklistItemUpdate(BaseModel):
+class ChecklistItemUpdate(SafeModel):
     item_id: int
     status: str = Field(..., description="pending | done | na")
 
 
-class ChecklistPatch(BaseModel):
+class ChecklistPatch(SafeModel):
     items: list[ChecklistItemUpdate] = Field(..., min_length=1)
 
 
@@ -107,13 +120,13 @@ _HTTP_USER_MESSAGES = {
     402: "Your pack just needs the $49 unlock — say the word and I'll charge it.",
     404: "I couldn't find that one — want to double-check and try again?",
     500: "Something went wrong on my end — give me a moment, then let's try again.",
-    502: "The payment service hiccuped — nothing was charged. Want to try again?",
+    502: "Payment status could not be confirmed. Check billing status before retrying.",
 }
 
 
 @app.exception_handler(HTTPException)
 async def http_error_handler(_, exc: HTTPException):
-    detail = exc.detail if isinstance(exc.detail, str) else "Request failed"
+    detail = exc.detail
     return JSONResponse(status_code=exc.status_code, content={
         "error": detail,
         "user_message": _HTTP_USER_MESSAGES.get(
@@ -122,19 +135,13 @@ async def http_error_handler(_, exc: HTTPException):
 
 
 def _get_move_or_404(move_id: str, owner: str) -> dict:
-    """Owner-scoped read: 404 unless the move belongs to the caller. Also
-    claims ownerless life-event drafts on first authenticated touch."""
+    """Owner-scoped read. Legacy ownerless drafts remain inaccessible."""
     conn = db.connect()
     row = conn.execute("SELECT * FROM moves WHERE id = ? AND owner_id = ?",
                        (move_id, owner)).fetchone()
     if row is None:
-        unowned = conn.execute("SELECT owner_id FROM moves WHERE id = ?",
-                               (move_id,)).fetchone()
         conn.close()
-        if unowned is not None and unowned["owner_id"] is None:
-            db.adopt_move(move_id, owner)
-            return _get_move_or_404(move_id, owner)
-        raise HTTPException(404, f"No move found with id {move_id!r}")
+        raise HTTPException(404, "Move not found")
     conn.close()
     return dict(row)
 
@@ -166,7 +173,7 @@ def _create_items(move_id: str, move: dict, state: dict, owner_id: str) -> list[
 
 def _progress(items: list[dict]) -> dict:
     total = len(items)
-    done = sum(1 for i in items if i["status"] == "done")
+    done = sum(1 for i in items if i["status"] in ("done", "na"))
     return {"total": total, "done": done,
             "remaining": total - done,
             "percent": round(done / total * 100) if total else 0}
@@ -188,13 +195,14 @@ def health():
 @app.post("/api/life-events")
 def life_event(evt: LifeEventIn):
     """Receive a fanned-out life event. A 'move' creates a draft move + the proactive nudge."""
+    owner = require_owner()
     if evt.event_type != "move":
         return {"acknowledged": True, "acted": False, "event_type": evt.event_type,
                 "user_message": "Noted — nothing for me to pack there."}
     p = evt.payload or {}
     move_id = uuid.uuid4().hex[:12]
     now = datetime.now(timezone.utc).isoformat()
-    state_abbr = str(p.get("state") or "").strip().upper()
+    state_abbr = str(p.get("state") or p.get("to_state") or "").strip().upper()
     state = None
     if state_abbr:
         try:
@@ -205,14 +213,14 @@ def life_event(evt: LifeEventIn):
     try:
         conn.execute(
             "INSERT INTO moves (id, name, email, old_address, new_address, move_date, state, status, created_at, owner_id)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, NULL)",
+            " VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?)",
             (move_id,
              sanitize(p.get("name") or "there", 200),
              sanitize(p.get("email") or "", 200),
              sanitize(p.get("from_address") or p.get("old_address") or "", 500),
              sanitize(p.get("to_address") or p.get("new_address") or "", 500),
              sanitize(p.get("move_date") or "", 20),
-             state_abbr, now))
+             state_abbr, now, owner))
         conn.commit()
     finally:
         conn.close()
@@ -220,12 +228,12 @@ def life_event(evt: LifeEventIn):
     old_s = _short(p.get("from_address") or p.get("old_address") or "your old place")
     new_s = _short(p.get("to_address") or p.get("new_address") or "your new place")
     if state:
-        nudge = (f"Looks like you moved from {old_s} to {new_s}. I can handle the whole "
+        nudge = (f"Looks like you moved from {old_s} to {new_s}. I can prepare a checklist for the "
                  f"address-change circus — USPS, banks, voter registration, your {state['state']} "
                  f"driver's license (you've got {state['dmv_deadline']}) — in one $49 pack. "
                  f"Want it? One tap.")
     else:
-        nudge = (f"Looks like you moved from {old_s} to {new_s}. I can handle the whole "
+        nudge = (f"Looks like you moved from {old_s} to {new_s}. I can prepare a checklist for the "
                  f"address-change circus — USPS, banks, voter registration, your driver's "
                  f"license — in one $49 pack. Want it? One tap.")
     return {"acknowledged": True, "acted": True, "move_id": move_id, "status": "draft",
@@ -251,12 +259,14 @@ def create_move(payload: MoveIn):
     conn = db.connect()
     try:
         if payload.draft_id:
-            existing = conn.execute("SELECT id, owner_id FROM moves WHERE id = ?",
+            existing = conn.execute("SELECT id, owner_id, status FROM moves WHERE id = ?",
                                     (move_id,)).fetchone()
             if not existing:
                 raise HTTPException(404, f"No draft move found with id {payload.draft_id!r}")
-            if existing["owner_id"] not in (None, owner):
+            if existing["owner_id"] != owner:
                 raise HTTPException(404, f"No draft move found with id {payload.draft_id!r}")
+            if existing["status"] != "draft":
+                raise HTTPException(409, "Only a draft move can be completed; create a new move for different addresses.")
             conn.execute(
                 "UPDATE moves SET name=?, email=?, old_address=?, new_address=?, move_date=?, state=?, status='ready', owner_id=?"
                 " WHERE id = ?",
@@ -274,10 +284,7 @@ def create_move(payload: MoveIn):
         conn.close()
 
     items = _create_items(move_id, move, state, owner)
-    try:
-        fanout = emit_move(move)
-    except Exception:
-        fanout = {"event_id": None, "fanned_out_to": []}
+    fanout = {"fanned_out_to": []}
 
     first = sanitize(move["name"]).split()[0] if sanitize(move["name"]) else "there"
     return {
@@ -303,7 +310,7 @@ def get_move(move_id: str):
     nxt = next((i for i in items if i["status"] == "pending"), None)
     first = sanitize(move["name"]).split()[0] if sanitize(move["name"]) else "there"
     if prog["remaining"] == 0 and prog["total"]:
-        msg = (f"That's everything, {first} — all {prog['total']} stops done. "
+        msg = (f"That's everything, {first} — all {prog['total']} stops completed or marked not applicable. "
                f"You're officially moved. 🎉")
     elif nxt:
         msg = (f"Your move to {_short(move['new_address'])}: {prog['done']} of {prog['total']} "
@@ -314,7 +321,8 @@ def get_move(move_id: str):
     return {"move_id": move_id, **{k: move[k] for k in
             ("name", "email", "old_address", "new_address", "move_date", "state",
              "status", "billing_status", "paid_at")},
-            "checklist": prog, "items": items, "user_message": msg}
+            "checklist": prog, "items": items if move["status"] == "paid" else [],
+            "pack_locked": move["status"] != "paid", "user_message": msg}
 
 
 @app.get("/api/moves/{move_id}/pack")
@@ -342,7 +350,7 @@ def get_pack(move_id: str, format: str = Query("md", pattern="^(md|pdf)$")):
             "pdf_url": f"/api/moves/{move_id}/pack?format=pdf",
             "user_message": (
                 f"Here's your pack, {sanitize(move['name']).split()[0] if sanitize(move['name']) else 'friend'} — "
-                f"{prog['total']} stops, starting with USPS mail forwarding (2 minutes) and your "
+                f"{prog['total']} stops, starting with USPS mail forwarding and your "
                 f"{state['state']} driver's license, due {state['dmv_deadline']}. "
                 f"There's a printable PDF too. You've got this. 💪")}
 
@@ -350,7 +358,9 @@ def get_pack(move_id: str, format: str = Query("md", pattern="^(md|pdf)$")):
 @app.patch("/api/moves/{move_id}/checklist")
 def update_checklist(move_id: str, payload: ChecklistPatch):
     owner = require_owner()
-    _get_move_or_404(move_id, owner)
+    move = _get_move_or_404(move_id, owner)
+    if move["status"] != "paid":
+        raise HTTPException(402, "Unlock the pack before updating its checklist.")
     items = _items_for(move_id, owner)
     by_id = {i["id"]: i for i in items}
     for u in payload.items:
@@ -370,7 +380,7 @@ def update_checklist(move_id: str, payload: ChecklistPatch):
     items = _items_for(move_id, owner)
     prog = _progress(items)
     if prog["remaining"] == 0:
-        msg = (f"That's everything — all {prog['total']} stops done. You're officially moved. 🎉")
+        msg = (f"That's everything — all {prog['total']} stops completed or marked not applicable. You're officially moved. 🎉")
     else:
         nxt = next((i for i in items if i["status"] == "pending"), None)
         nxt_s = f" Next up: {sanitize(nxt['title'])}." if nxt else ""
@@ -379,16 +389,16 @@ def update_checklist(move_id: str, payload: ChecklistPatch):
 
 
 @app.post("/api/moves/{move_id}/billing/setup")
-def billing_setup(move_id: str):
+def billing_setup(move_id: str, consent: BillingConsent):
     """Create the Stripe customer + card SetupIntent. Honest fee disclosure BEFORE any charge."""
     owner = require_owner()
     move = _get_move_or_404(move_id, owner)
     if move["status"] == "paid":
         raise HTTPException(400, "This move's pack fee is already paid.")
-    if move["billing_status"] not in ("none", "card_pending") or move.get("stripe_customer_id"):
-        if move.get("stripe_customer_id"):
-            raise HTTPException(400, "Billing is already set up for this move.")
-    cust = setup_customer(move["name"], move["email"])
+    if move["status"] == "draft":
+        raise HTTPException(409, "Complete the move details before setting up billing.")
+    cust = ({"customer_id": move["stripe_customer_id"]} if move.get("stripe_customer_id") else
+            setup_customer(move["name"], move["email"], idempotency_key=f"{CONNECTOR}-customer-{owner}-{move_id}"))
     if "error" in cust:
         raise HTTPException(502, f"Stripe customer creation failed: {cust['error']}")
     setup = create_card_setup(
@@ -398,14 +408,15 @@ def billing_setup(move_id: str):
         raise HTTPException(502, f"Stripe card setup failed: {setup['error']}")
     conn = db.connect()
     try:
-        conn.execute("UPDATE moves SET stripe_customer_id = ?, billing_status = 'card_pending' WHERE id = ? AND owner_id = ?",
-                     (cust["customer_id"], move_id, owner))
+        conn.execute("UPDATE moves SET stripe_customer_id = ?, stripe_setup_intent_id = ?, checkout_session_id = ?, billing_status = 'card_pending' WHERE id = ? AND owner_id = ?",
+                     (cust["customer_id"], setup.get("setup_intent_id"), setup.get("checkout_session_id"), move_id, owner))
         conn.commit()
     finally:
         conn.close()
     return {"move_id": move_id, "stripe_customer_id": cust["customer_id"],
-            "client_secret": setup["client_secret"],
-            "fee": FEE_LABEL, "fee_disclosure": FEE_DISCLOSURE,
+            "client_secret": setup.get("client_secret"), "setup_url": setup.get("setup_url"),
+            "checkout_session_id": setup.get("checkout_session_id"),
+            "fee": FEE_LABEL, "fee_amount_cents": 4900, "currency": "usd", "fee_disclosure": FEE_DISCLOSURE,
             "user_message": (
                 f"Your pack is ready. {FEE_DISCLOSURE} "
                 f"Save your card now — nothing is charged until you say the word.")}
@@ -417,21 +428,25 @@ def billing_status(move_id: str):
     owner = require_owner()
     move = _get_move_or_404(move_id, owner)
     bs = move["billing_status"] or "none"
-    card_state = {"none": "none", "card_pending": "pending", "paid": "ready"}.get(bs, bs)
+    verified = billing.retrieve_card_setup(move["stripe_customer_id"], setup_intent_id=move.get("stripe_setup_intent_id"), checkout_session_id=move.get("checkout_session_id")) if move.get("stripe_customer_id") else {}
+    if bs == "card_pending" and verified.get("status") == "succeeded":
+        bs = "card_ready"
+    card_state = {"card_ready": "ready", "none": "none", "card_pending": "pending", "paid": "ready"}.get(bs, bs)
     um = {"none": "No card on file yet — say the word and I'll set one up.",
-          "card_pending": "Your card is on file; nothing is charged until you confirm.",
+          "card_pending": "Complete the secure card setup link. No fee has been confirmed.",
+          "card_ready": "Your payment method is ready; the $49 fee requires your confirmation.",
           "paid": "The $49 pack fee is paid — your pack is unlocked."}.get(
               bs, "Billing state unclear — ask me and I'll check.")
     return {"move_id": move_id,
             "billing_status": bs,
             "card_state": card_state,
-            "fee": FEE_LABEL,
+            "fee": FEE_LABEL, "fee_amount_cents": 4900, "currency": "usd",
             "fee_disclosure": FEE_DISCLOSURE,
             "user_message": um}
 
 
 @app.post("/api/moves/{move_id}/pay")
-def pay(move_id: str):
+def pay(move_id: str, consent: ChargeConsent):
     """Charge the flat $49.00 pack fee off-session against the saved card, then deliver the pack."""
     owner = require_owner()
     move = _get_move_or_404(move_id, owner)
@@ -440,21 +455,23 @@ def pay(move_id: str):
     if not move.get("stripe_customer_id"):
         raise HTTPException(400, f"No card on file. {FEE_DISCLOSURE} "
                                   f"POST /api/moves/{move_id}/billing/setup first to save a card.")
+    if consent.fee_amount_cents != 4900:
+        raise HTTPException(409, detail={"error": "fee_quote_changed", "fee_amount_cents": 4900})
     # The fee amount is the server-side FEE_CENTS constant — never client input.
     # The stored customer id is used; nothing from the request reaches Stripe.
     result = charge_pack(
         move["stripe_customer_id"],
-        idempotency_key=f"{CONNECTOR}-fee-{owner}-{move_id}")
+        idempotency_key=f"{CONNECTOR}-fee-{owner}-{move_id}",
+        setup_intent_id=move.get("stripe_setup_intent_id"), checkout_session_id=move.get("checkout_session_id"), consent=consent.confirm_fee)
     if "error" in result:
-        raise HTTPException(402, f"Card charge failed: {result['error']}. "
-                                  "No money was taken — check the saved card and try again.")
+        return _payment_error(result)
     now = datetime.now(timezone.utc).isoformat()
     conn = db.connect()
     try:
         # Atomic compare-and-set: a concurrent retry can never double-mark paid.
-        cur = conn.execute("UPDATE moves SET status = 'paid', billing_status = 'paid', paid_at = ?"
+        cur = conn.execute("UPDATE moves SET status = 'paid', billing_status = 'paid', paid_at = ?, stripe_payment_intent_id = ?"
                            " WHERE id = ? AND owner_id = ? AND status != 'paid'",
-                           (now, move_id, owner))
+                           (now, result["payment_intent_id"], move_id, owner))
         conn.commit()
     finally:
         conn.close()
@@ -473,7 +490,36 @@ def pay(move_id: str):
             "checklist": _progress(items),
             "user_message": (
                 f"Done, {first} — {result['amount_label']} charged, once. Your pack is live: "
-                f"{len(items)} stops, starting with USPS mail forwarding (2 minutes) and your "
+                f"{len(items)} stops, starting with USPS mail forwarding and your "
                 f"{state['state']} driver's license, due {state['dmv_deadline']}. "
-                f"I've also flagged your move to our deposit-recovery and unclaimed-property "
-                f"services, in case there's money waiting for you. 💰")}
+                "Use the checklist to complete each address change yourself; no forms have been filed for you.")}
+
+
+@app.delete("/api/data")
+def delete_my_data() -> dict:
+    """Delete the authenticated user's operational data. Payment/accounting records remain with the processor and protected billing ledger."""
+    owner = require_owner()
+    conn = db.connect()
+    try:
+        ids = [row["id"] for row in conn.execute("SELECT id FROM moves WHERE owner_id=?", (owner,))]
+        conn.execute("DELETE FROM checklist_items WHERE owner_id=?", (owner,))
+        conn.execute("DELETE FROM moves WHERE owner_id=?", (owner,))
+        conn.commit()
+    finally:
+        conn.close()
+    for move_id in ids:
+        (PACKS_DIR / f"pack-{move_id}.pdf").unlink(missing_ok=True)
+    return {"deleted": True, "retained": "Required payment/accounting records and processor records; backups follow the operator's retention policy.", "user_message": "Your operational records for this connector were deleted. Required payment records are retained separately."}
+
+
+
+def _payment_error(result: dict) -> JSONResponse:
+    code = result.get("code")
+    status = {"payment_processing": 202, "billing_conflict": 409, "payment_not_captured": 409,
+              "billing_configuration": 503, "billing_unavailable": 503, "billing_busy": 503,
+              "billing_failed": 503, "invalid_fee": 422, "consent_required": 422}.get(code, 402)
+    return JSONResponse(status_code=status, content=result)
+
+
+from api_support import install_api_contract
+install_api_contract(app, "moving-concierge", app.title)

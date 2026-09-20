@@ -2,9 +2,18 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Class Action Cash",
-    "description": "Matches Gmail receipts against open class-action settlements, prepares claim packs. 20% fee on confirmed payout only.",
-    "version": "0.1.0"
+    "description": "Qull Connect API. Supply a per-user API key in Authorization: Bearer <key>. Keys identify one customer; arbitrary platform/user-id headers are not accepted. Payment setup opens hosted Stripe Checkout and does not charge a service fee. Use the record's billing/status operation to verify setup, then explicitly authorize the applicable fee. See the linked guide for workflow and service limits.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Qull, Inc.",
+      "email": "wasiq@qull.io"
+    }
   },
+  "servers": [
+    {
+      "url": "https://5.78.152.6.nip.io/class-action-cash"
+    }
+  ],
   "paths": {
     "/health": {
       "get": {
@@ -19,7 +28,8 @@
               }
             }
           }
-        }
+        },
+        "security": []
       }
     },
     "/api/settlements": {
@@ -34,6 +44,15 @@
                 "schema": {}
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -70,6 +89,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -86,6 +114,15 @@
                 "schema": {}
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -106,15 +143,11 @@
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ClaimPackRequest",
-                "default": {
-                  "full_name": "",
-                  "email": "",
-                  "address": ""
-                }
+                "$ref": "#/components/schemas/ClaimPackRequest"
               }
             }
           }
@@ -137,6 +170,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -185,6 +227,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -192,7 +243,7 @@
     "/api/matches/{match_id}/billing/status": {
       "get": {
         "summary": "Billing Status",
-        "description": "Pollable card-save status: billing status, derived card_state, and the\nfee disclosure \u2014 the agent's signal for whether a charge can be attempted.",
+        "description": "Pollable card-save status: billing status, derived card_state, and the\nfee disclosure — the agent's signal for whether a charge can be attempted.",
         "operationId": "billing_status_api_matches__match_id__billing_status_get",
         "parameters": [
           {
@@ -223,6 +274,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -271,6 +331,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -308,6 +377,142 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
+          }
+        }
+      }
+    },
+    "/api/me/data": {
+      "get": {
+        "summary": "Export My Data",
+        "description": "Export only the authenticated caller's local records.",
+        "operationId": "export_my_data_api_me_data_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete My Data",
+        "description": "Delete local records and documents. Stripe/payment audit records remain separately retained.",
+        "operationId": "delete_my_data_api_me_data_delete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteDataIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
+          }
+        }
+      }
+    },
+    "/api/matches/{match_id}/billing/quote": {
+      "post": {
+        "summary": "Quote Fee",
+        "description": "Show the exact rounded fee for review; no card setup, confirmation or payment occurs.",
+        "operationId": "quote_fee_api_matches__match_id__billing_quote_post",
+        "parameters": [
+          {
+            "name": "match_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Match Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeeQuoteIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -317,6 +522,12 @@
     "schemas": {
       "BillingSetupRequest": {
         "properties": {
+          "accept_fee_terms": {
+            "type": "boolean",
+            "const": true,
+            "title": "Accept Fee Terms",
+            "description": "The user accepted the disclosed fee terms before opening Stripe checkout."
+          },
           "name": {
             "type": "string",
             "maxLength": 200,
@@ -337,14 +548,21 @@
             "default": ""
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
+          "accept_fee_terms",
           "name"
         ],
         "title": "BillingSetupRequest"
       },
       "ClaimPackRequest": {
         "properties": {
+          "eligibility_confirmed": {
+            "type": "boolean",
+            "const": true,
+            "title": "Eligibility Confirmed"
+          },
           "full_name": {
             "anyOf": [
               {
@@ -385,8 +603,45 @@
             "default": ""
           }
         },
+        "additionalProperties": false,
         "type": "object",
+        "required": [
+          "eligibility_confirmed"
+        ],
         "title": "ClaimPackRequest"
+      },
+      "DeleteDataIn": {
+        "properties": {
+          "confirm_delete": {
+            "type": "boolean",
+            "const": true,
+            "title": "Confirm Delete",
+            "description": "The user explicitly confirms deleting their local records and generated documents."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "confirm_delete"
+        ],
+        "title": "DeleteDataIn"
+      },
+      "FeeQuoteIn": {
+        "properties": {
+          "amount": {
+            "type": "number",
+            "maximum": 1000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "The actual recovered amount to quote; this operation does not charge."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "amount"
+        ],
+        "title": "FeeQuoteIn"
       },
       "HTTPValidationError": {
         "properties": {
@@ -414,6 +669,7 @@
             "title": "Payload"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "event_type"
@@ -422,35 +678,103 @@
       },
       "PayoutConfirmRequest": {
         "properties": {
+          "confirm_fee": {
+            "type": "boolean",
+            "const": true,
+            "title": "Confirm Fee",
+            "description": "The user explicitly approved this exact fee after reviewing it."
+          },
+          "fee_amount_cents": {
+            "type": "integer",
+            "maximum": 100000000.0,
+            "minimum": 1.0,
+            "title": "Fee Amount Cents",
+            "description": "The exact disclosed fee approved by the user, in cents."
+          },
           "amount": {
             "type": "number",
+            "maximum": 1000000.0,
             "exclusiveMinimum": 0.0,
             "title": "Amount",
             "description": "Confirmed payout received, in dollars"
           },
           "currency": {
             "type": "string",
-            "maxLength": 3,
+            "const": "USD",
             "title": "Currency",
             "default": "USD"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
+          "confirm_fee",
+          "fee_amount_cents",
           "amount"
         ],
         "title": "PayoutConfirmRequest"
+      },
+      "ReceiptIn": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 120,
+            "title": "Id",
+            "default": ""
+          },
+          "sender": {
+            "type": "string",
+            "maxLength": 300,
+            "title": "Sender",
+            "default": ""
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Subject",
+            "default": ""
+          },
+          "date": {
+            "type": "string",
+            "maxLength": 40,
+            "title": "Date",
+            "default": ""
+          },
+          "snippet": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Snippet"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "snippet"
+        ],
+        "title": "ReceiptIn"
       },
       "ScanRequest": {
         "properties": {
           "source": {
             "type": "string",
-            "pattern": "^(gmail|fixtures)$",
+            "enum": [
+              "receipts",
+              "fixtures"
+            ],
             "title": "Source",
-            "description": "'gmail' scans the connected mailbox (read-only); 'fixtures' uses demo receipts",
-            "default": "gmail"
+            "default": "receipts"
+          },
+          "receipts": {
+            "items": {
+              "$ref": "#/components/schemas/ReceiptIn"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Receipts"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "title": "ScanRequest"
       },
@@ -494,11 +818,19 @@
         ],
         "title": "ValidationError"
       }
+    },
+    "securitySchemes": {
+      "UserApiKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Qull per-user API key",
+        "description": "An operator-provisioned opaque API key belonging to one customer. Never use a Stripe secret key here."
+      }
     }
   },
-  "servers": [
+  "security": [
     {
-      "url": "https://5.78.152.6.nip.io/class-action-cash/api"
+      "UserApiKey": []
     }
   ]
 }

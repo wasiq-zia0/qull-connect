@@ -1,126 +1,116 @@
-# Unclaimed Property Finder
+# Found Money
 
-Finds unclaimed money held by U.S. states in your name, builds per-state claim
-packs you file yourself, and earns a 10% (state-capped) contingency fee on user-confirmed
-recoveries — via Stripe.
+Build a state-by-state checklist of official unclaimed-property portals and the information needed to search and file your own claims.
 
-The agent is the UI. **Every response carries a `user_message` field** — a
-warm, ready-to-speak sentence the agent can say verbatim — alongside the
-machine JSON. Every flow is demoable in a plain chat transcript.
+**Current scope:** Official portal directory for U.S. states and DC. Billing setup and recovery-fee collection are disabled pending a compliant agreement flow.
 
-Golden path: **trigger → one tap → done.**
-1. A `move` life event arrives on the shared bus → `POST /api/life-events`
-   pre-fills old/new states into a draft search and returns the proactive nudge.
-2. User replies with their full legal name → `PATCH /api/searches/{id}` —
-   the one tap. Claim packs are ready.
-3. User files on each state's official portal. Statuses tracked per state.
-4. Card saved via Stripe (with the exact fee stated first). On the user's
-   recovery confirmation, up to 10% is charged off-session (state-capped).
+## Deliverables
 
-## Run
+- Official state portal links for the states you select.
+- A claim-preparation checklist and cover sheet using the details you provide.
+- A tracker for claim steps and outcomes you report.
 
-```bash
-.venv/bin/python run.py
-# REST: http://127.0.0.1:8477
-# MCP:  http://127.0.0.1:8577/mcp
-```
+## What the user supplies
 
-Setup (first time):
-```bash
-python3 -m venv .venv && .venv/bin/pip install fastapi uvicorn pydantic "mcp>=2"
-```
+- Full legal name and optional former names
+- States where you lived
+- Contact information for your claim pack
+- Optional date of birth only with explicit consent; never a Social Security number
 
-## REST endpoints
+## Customer workflow
 
-| Method | Path | What it does |
+1. **List your states.** Add the states where you have lived and the names under which property may be held.
+2. **Search official portals.** Open the state links and run the searches yourself. A checklist is not evidence that money was found.
+3. **Prepare your claim.** Use the document checklist and follow the state's official filing instructions.
+4. **Track the result.** Record claim progress and actual recoveries. No recovery fee is collected in this release.
+
+## Price and collection
+
+The current release provides portal guides and claim preparation without collecting a fee. Paid recovery assistance is unavailable while state-specific agreements and eligibility requirements are unresolved. A proposed future fee of up to 10% is not active or authorized.
+
+Searching and filing directly through an official state program is free. This release does not collect a Qull recovery fee.
+
+You can search and claim your own property through official state programs for free.
+
+Billing setup requires explicit fee-term acceptance (`accept_fee_terms: true`)
+and returns Stripe's hosted setup URL. A return redirect does not establish
+that a payment method is ready; poll the authenticated billing-status endpoint.
+The charge call requires a fresh confirmation (`confirm_fee: true`), the exact
+expected `fee_amount_cents`, and the operation's outcome data. The server
+calculates the amount and verifies the saved payment method. Never treat a
+local customer ID, a sample response, or a health response as proof of payment.
+
+No test may create a live charge without separate explicit authorization.
+Use Stripe test mode for end-to-end payment verification. There is no automatic
+renewal, generic subscription, or automated tax calculation in this release.
+
+## Authentication and access
+
+REST calls use `Authorization: Bearer <opaque Qull user API key>`.
+Each credential maps to one server-controlled owner in `QULL_API_KEYS_FILE`.
+A caller-supplied platform/user header is not production authentication.
+Life-event intake follows the same owner-bound authentication.
+See [integration guide](../../docs/INTEGRATION.md) and
+[deployment documentation](../deploy/DEPLOY.md) for provisioning and hosting.
+
+Public `/health` is process liveness. `/ready` is configuration readiness, not
+confirmation that a customer workflow or payment was completed. No OAuth flow
+or Meta-specific credential exchange is implemented; confirm that integration
+contract before describing the service as connected to Muse.
+
+## Run and develop
+
+From this service directory, install `requirements.txt` in an isolated Python
+environment. Run `python run.py` to start the REST/MCP processes according to
+the checked-in ports, or `uvicorn app:app --host 127.0.0.1 --port 8000` for REST.
+Use the deploy scripts and their current environment documentation for the
+production configuration. Keep databases and credentials out of Git.
+
+## REST operations
+
+| Method | Path | Operation |
 |---|---|---|
-| GET | `/health` | Service status, state count |
-| GET | `/api/states` | All 50 states + DC with official portal URLs |
-| POST | `/api/life-events` | Receive a fanned-out life event (`{"event_type","payload"}`); a `move` creates a draft search and returns the nudge as `user_message` |
-| POST | `/api/searches` | Full intake (name, email, states lived in) → per-state claim checklist |
-| PATCH | `/api/searches/{id}` | Conversational step: complete a draft (the one tap) or update a search |
-| GET | `/api/searches/{id}` | Search detail, per-state statuses, recoveries |
-| GET | `/api/searches/{id}/claim-pack?state=XX` | Claim pack: portal link, filing steps, document checklist, pre-filled cover sheet |
-| PATCH | `/api/searches/{id}/states/{abbr}` | Update claim status (`not_started`/`in_progress`/`filed`/`paid`/`denied`) |
-| POST | `/api/searches/{id}/billing/setup` | Stripe customer + SetupIntent; states the exact fee **before** card save |
-| POST | `/api/searches/{id}/recovery-confirmed` | `{amount}` → up to 10% off-session charge via Stripe (state-capped) |
+| `GET` | `/health` | Health |
+| `GET` | `/api/states` | List states |
+| `POST` | `/api/life-events` | Receive a fanned-out life event from the shared bus. |
+| `POST` | `/api/searches` | Create search |
+| `PATCH` | `/api/searches/{search_id}` | Conversational step: complete a draft search (the 'one tap' after the nudge) |
+| `GET` | `/api/searches/{search_id}` | Get search |
+| `GET` | `/api/searches/{search_id}/claim-pack` | Claim pack |
+| `PATCH` | `/api/searches/{search_id}/states/{abbr}` | Update state status |
+| `POST` | `/api/searches/{search_id}/billing/setup` | Billing setup |
+| `GET` | `/api/searches/{search_id}/billing/status` | Pollable billing state: card state + whether the recovery fee is done. |
+| `POST` | `/api/searches/{search_id}/recovery-confirmed` | Recovery confirmed |
+| `DELETE` | `/api/data` | Delete the authenticated user's operational data. Payment/accounting records remain with the processor and protected billing ledger. |
 
-All responses include `user_message`. Errors are JSON with `error`, `message`,
-and `user_message`.
+The OpenAPI spec in `../../openapi/unclaimed-property.json` supplies exact request
+models. The public server origin is `https://5.78.152.6.nip.io/unclaimed-property`; operation paths
+already contain `/api`. Do not compose `/api/api`.
 
-## MCP endpoint + tools
+## Important limits
 
-`http://127.0.0.1:8577/mcp` (streamable HTTP), served by `mcp_server.py`
-(`mcp` SDK v2 `MCPServer`, `@server.tool()`, `server.run(transport="streamable-http")`).
+- Qull does not search state databases automatically, verify a property match, file claims, or receive recovered money for you.
+- A single percentage cap does not establish compliance. Agreement timing, registration, disclosures, and other state requirements may apply.
+- Do not send Qull Social Security numbers, identity-document scans, or bank-account credentials.
 
-Tools: `list_states`, `start_search`, `handle_life_event`, `complete_search`,
-`get_claim_pack`, `update_claim_status`, `setup_billing`, `confirm_recovery`.
-Every tool result carries `user_message`.
+Claim-preparation information; no legal advice or assurance that unclaimed funds exist.
 
-## Money flow
+## Data handled
 
-- **What:** up to 10% of confirmed recovered unclaimed funds (state finder-fee caps). Nothing else.
-- **When:** only after the user confirms the recovery and the amount in chat.
-- **How:** card saved earlier via Stripe SetupIntent (off-session); on
-  confirmation the connector charges a Stripe PaymentIntent off-session.
-- **Disclosure:** before the card is saved, the user is told verbatim:
-  "You will be charged 10% of the recovered unclaimed funds (or your state's lower legal maximum), only if you
-  confirm the recovery. No charge otherwise."
-- **Cancellation/refund:** cancel any time before a charge by not confirming a
-  recovery; fee charged in error is reviewable/refundable within 30 days.
-  Full terms: `connector/TERMS.md`.
+Legal/former names, selected states, contact details, optional consented birth date, claim statuses, reported recovery, and Stripe references if billing is available.
 
-## Suite compounding (shared life-event bus)
+User records are scoped to the authenticated owner. Use documented deletion
+operations where available. Local record deletion does not reverse payments
+or erase Stripe's independent records. A final retention/backup policy and
+support process remain operational launch requirements.
 
-Integrates with `~/workspace/connectors/life-events/` per its contract:
-- **Receives** `POST /api/life-events` — a `move` event fans out from the bus
-  (deposit-recovery, moving-concierge, and this connector all get it).
-- **Emits** — intake accepts an optional `recent_move {from_state, to_state}`;
-  when present, the connector emits `move` on the bus so sibling connectors can act.
-- **Ships** `connector/triggers.yaml` with the watched event, signal, prefill,
-  and exact nudge copy.
+## Links
 
-## Data provenance + refresh
+- [Product overview](https://qull.io/connect/found-money/)
+- [Integration and schema reference](https://qull.io/connect/found-money/api-docs/)
+- [Privacy policy — draft](https://qull.io/connect/found-money/privacy/)
+- [Terms — draft](https://qull.io/connect/found-money/terms/)
+- Contact: wasiq@qull.io (existing Qull contact; mailbox delivery not verified here).
 
-- `data/state_claims.json`: 51 entries (50 states + DC). Portal URLs sourced
-  from the FDIC's unclaimed-property state list (derived from
-  missingmoney.com / NAUPA), retrieved 2026-09-19; FL and KS spot-verified
-  against official state sources the same day.
-- **Portal URLs and claim processes change without notice.** Re-verify links
-  against unclaimed.org / missingmoney.com before any public release, and
-  re-check whenever a user reports a dead link. Each entry carries
-  `last_verified`; states flagged with stale or redirect links carry a `note`.
-- Regenerate: `python3 data/build_states.py`.
-
-## PII minimization
-
-- Intake collects: full legal name, prior names, email, states of residence.
-- Date of birth is collected **only** with explicit `dob_consent=true` (some
-  states ask for it at filing); without consent the API refuses to store it.
-- **SSN is never collected or stored** — states may ask for it at filing, but
-  the connector never touches it.
-- Stored data is used only to build claim packs and track status.
-
-## Security notes (review-ready)
-
-- No secrets in code or logs. Stripe auth rides the `custom.stripe-billing`
-  credential through `~/workspace/skills/stripe/bin/stripe`; deployment must
-  use a least-privilege restricted Stripe key (Customers, SetupIntents, and
-  PaymentIntents write-only).
-- All inputs validated via pydantic (length caps, state-abbr allowlist, date
-  and amount bounds).
-- All user-supplied text is treated as untrusted data: length-capped, stripped
-  of control characters, and HTML-escaped before being rendered into claim
-  packs, nudges, or tool outputs. User input can never alter queries or
-  instructions.
-- The connector never files claims and never sends personal data to any state
-  or third party.
-
-## Storage
-
-SQLite at `data/app.db` (never in-memory). Tables: `searches`, `search_states`,
-`recoveries`.
-
-## Hosting
-
-TBD.
+A functioning local test is not Meta approval. See [review status](../../STATUS.md)
+for the distinction between source changes, tests, deployment, and review.

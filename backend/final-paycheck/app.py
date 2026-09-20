@@ -13,13 +13,14 @@ after the user confirms a recovery. Nothing is ever sent externally by
 this service; demand letters are generated PDFs the user sends themselves.
 """
 import os
+from typing import Literal
 import sys
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
-from pydantic import BaseModel, Field, field_validator
+from pydantic import ConfigDict, ValidationError, BaseModel, Field, field_validator
 
 import billing
 import db
@@ -38,9 +39,9 @@ app = FastAPI(title="final-paycheck", version="0.2.0",
 
 # Middleware: added last runs first, so IdentityMiddleware enforces identity
 # before rate limiting or body-size checks see the request.
-app.add_middleware(BodySizeLimitMiddleware)
-app.add_middleware(RateLimitMiddleware)
 app.add_middleware(IdentityMiddleware)
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(BodySizeLimitMiddleware)
 
 FEE_DISCLOSURE = (
     "You will be charged 25% of the recovered wages, only if you confirm "
@@ -62,7 +63,39 @@ async def _identity_error(request: Request, exc: IdentityError):  # noqa: ARG001
 
 # ---------------------------------------------------------------- models
 
-class Intake(BaseModel):
+class StrictModel(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True, allow_inf_nan=False)
+
+
+class BillingConsentIn(StrictModel):
+    accept_fee_terms: Literal[True] = Field(description="The user accepted the disclosed fee terms before opening Stripe checkout.")
+
+
+class FeeConsentIn(StrictModel):
+    confirm_fee: Literal[True] = Field(description="The user explicitly approved this exact fee after reviewing it.")
+    fee_amount_cents: int = Field(ge=1, le=100_000_000, description="The exact disclosed fee approved by the user, in cents.")
+
+
+def _validate_input(model, data):
+    try:
+        return model.model_validate(data)
+    except ValidationError as exc:
+        raise HTTPException(422, "Invalid or incomplete fields: " + ", ".join(".".join(map(str, e["loc"])) for e in exc.errors()))
+
+
+def _billing_failure(result):
+    # Only authenticated owners receive any payment-action token.
+    safe = {k: result[k] for k in ("error", "code", "status", "payment_intent_id", "authorization_url", "setup_url", "currency", "amount_cents") if k in result}
+    code = result.get("code")
+    status = (202 if code == "payment_processing" else
+              402 if code in {"payment_action_required", "payment_declined", "setup_required", "setup_incomplete", "payment_not_completed"} else
+              409 if code in {"billing_conflict", "payment_not_captured", "payment_pending"} else
+              422 if code in {"invalid_fee", "consent_required"} else 503)
+    return JSONResponse(status_code=status,
+                        content={**safe, "user_message": result.get("error", "The payment has not been confirmed. Check billing status before retrying.")})
+
+
+class Intake(StrictModel):
     employee_name: str = Field(min_length=1, max_length=120)
     employee_email: str = Field(default="", max_length=120)
     employer_name: str = Field(min_length=1, max_length=120)
@@ -92,7 +125,7 @@ class Intake(BaseModel):
         return v
 
 
-class ConfirmDraft(BaseModel):
+class ConfirmDraft(StrictModel):
     """One-tap activation of a draft case; fill any fields still missing."""
     employee_name: str | None = Field(default=None, max_length=120)
     employer_name: str | None = Field(default=None, max_length=120)
@@ -104,11 +137,11 @@ class ConfirmDraft(BaseModel):
     forwarding_address: str | None = Field(default=None, max_length=500)
 
 
-class RecoveryConfirmed(BaseModel):
+class RecoveryConfirmed(FeeConsentIn):
     amount: float = Field(gt=0, lt=10_000_000)
 
 
-class LifeEvent(BaseModel):
+class LifeEvent(StrictModel):
     event_type: str
     payload: dict = Field(default_factory=dict)
 
@@ -146,6 +179,8 @@ def _card_state(case: dict) -> str:
 
 
 def _law_for(case: dict) -> dict:
+    if case.get("is_draft"):
+        return {"status": "draft", "state_name": (deadlines.get_state(case["state"]) or {}).get("name"), "missing": [k for k in ("employee_name", "employer_name", "last_day_worked", "wages_owed_cents") if not case.get(k)]}
     law = deadlines.compute_deadline(
         case["state"],
         case["termination_type"] or "fired",
@@ -221,6 +256,10 @@ def _status_message(case: dict, law: dict) -> str:
     employer = case["employer_name"] or "your former employer"
     state_name = law.get("state_name") or case["state"]
     status = law.get("status")
+    if status == "draft":
+        return "This draft is incomplete. Supply the missing intake fields before preparing a letter or setting up billing."
+    if status == "needs_review":
+        return "Your case is saved. The state deadline needs review; I can prepare a factual unpaid-wages request for you to send."
     if status == "overdue":
         d = law["days_overdue"]
         return (f"Your {wages} final paycheck from {employer} is {d} day{'s' if d != 1 else ''} "
@@ -228,7 +267,7 @@ def _status_message(case: dict, law: dict) -> str:
     if status == "waiting":
         d = law["days_remaining"]
         return (f"Watching your {wages} from {employer}: {state_name} law says it's due "
-                f"in {d} day{'s' if d != 1 else ''}. I'll nudge you the moment it's overdue.")
+                f"in {d} day{'s' if d != 1 else ''}. Check the case again after that date.")
     if status == "needs_info":
         return (f"To pin down your {state_name} deadline I need your next regular payday date — "
                 f"what was it?")
@@ -256,7 +295,7 @@ def state_laws():
         "last_verified": laws["last_verified"],
         "disclaimer": laws["disclaimer"],
         "states": laws["states"],
-    }, "I know the final-paycheck deadline rules for all 50 states plus DC — ask me about any of them.")
+    }, "Factual wage-request letters are available nationwide; source-reviewed deadline support is currently limited to Nevada discharge cases.")
 
 
 @app.get("/api/state-laws/{abbr}")
@@ -267,9 +306,7 @@ def state_law(abbr: str):
         raise HTTPException(404, f"unknown state abbreviation: {abbr.upper()}")
     fired = _describe_rule(state, "fired")
     quit_ = _describe_rule(state, "quit")
-    return msg(state,
-               f"In {state['name']}, a final paycheck after being fired is {fired}; "
-               f"after quitting it's {quit_}.")
+    return msg(state, "This reference requires review before relying on a deadline. Review status: " + state["review_status"])
 
 
 @app.post("/api/cases", status_code=201)
@@ -300,7 +337,7 @@ def create_case(intake: Intake):
     return msg(_public_case(case, law),
                f"Got it — I'm watching your {wages} final paycheck from {case['employer_name']}. "
                f"{law.get('state_name')} law says it was due {dl}. I'll draft the demand letter "
-               f"the moment it's overdue.")
+               f"after you request it and the verified deadline has passed.")
 
 
 @app.get("/api/cases/{case_id}")
@@ -316,6 +353,8 @@ def confirm_case(case_id: str, body: ConfirmDraft):
     """One-tap activation of a draft case (created from a job_change life event)."""
     owner = require_owner()
     case = _case_or_404(case_id, owner)
+    if not case.get("is_draft"):
+        raise HTTPException(409, "Only an incomplete draft can be confirmed. Open a new case to correct completed intake.")
     patch = {}
     if body.employee_name: patch["employee_name"] = body.employee_name.strip()
     if body.employer_name: patch["employer_name"] = body.employer_name.strip()
@@ -333,8 +372,14 @@ def confirm_case(case_id: str, body: ConfirmDraft):
     if body.wages_owed is not None: patch["wages_owed_cents"] = int(round(body.wages_owed * 100))
     if body.next_payday: patch["next_payday"] = body.next_payday.isoformat()
     if body.forwarding_address: patch["forwarding_address"] = body.forwarding_address.strip()
+    merged = {**case, **patch}
+    full = {k: merged.get(k) for k in Intake.model_fields if k in merged}
+    full["wages_owed"] = (merged.get("wages_owed_cents") or 0) / 100
+    _validate_input(Intake, full)
     patch["is_draft"] = 0
-    case = db.update_case(case_id, patch, owner)
+    if not db.activate_draft(case_id, owner, patch):
+        raise HTTPException(409, "The draft was already activated or changed.")
+    case = db.get_case(case_id, owner)
     law = _law_for(case)
     db.update_case(case_id, {"deadline": law.get("deadline"), "status": law.get("status")}, owner)
     case = db.get_case(case_id, owner)
@@ -349,12 +394,12 @@ def demand_letter(case_id: str):
     owner = require_owner()
     case = _case_or_404(case_id, owner)
     law = _law_for(case)
-    if law.get("status") != "overdue":
+    if law.get("status") not in ("overdue", "needs_review"):
         return JSONResponse(status_code=400, content=msg(
             {"ok": False, "status": law.get("status")},
             f"Not yet — your paycheck isn't overdue under {law.get('state_name')} law "
             f"(due {law.get('deadline') or 'once I know your next payday'}). "
-            f"I'll draft the demand letter the day it is."))
+            f"Request a draft once the verified deadline has passed."))
     path = letters.generate_demand_letter(case, law)
     db.update_case(case_id, {"demand_letter_path": str(path),
                              "demand_letter_at": deadlines.today().isoformat()}, owner)
@@ -363,53 +408,51 @@ def demand_letter(case_id: str):
 
 
 @app.post("/api/cases/{case_id}/billing/setup")
-def billing_setup(case_id: str):
-    """Create a Stripe customer + SetupIntent so the employee can save a card
-    for the later 25% contingency charge. Never invoked by automated tests."""
+def billing_setup(case_id: str, consent: BillingConsentIn):
+    """Open Stripe-hosted card setup after the user accepts the disclosed fee. No charge."""
     owner = require_owner()
     case = _case_or_404(case_id, owner)
+    if not case:
+        raise HTTPException(404, "Unknown case")
+    if case.get("fee_status") == "charged":
+        raise HTTPException(409, "The fee is already settled.")
+    if case.get("is_draft"):
+        raise HTTPException(409, "Complete the intake before setting up billing.")
     setup_key = f"{billing.CONNECTOR}-setup-{owner}-{case_id}"
     customer_id = case.get("stripe_customer_id")
     if not customer_id:
-        res = billing.setup_customer(case["employee_name"], case.get("employee_email", ""),
-                                     idempotency_key=setup_key)
-        if "error" in res:
-            raise HTTPException(502, f"stripe customer creation failed: {res['error']}")
-        customer_id = res["customer_id"]
+        customer = billing.setup_customer(case["employee_name"], case.get("employee_email", ""), idempotency_key=setup_key)
+        if "error" in customer:
+            return _billing_failure(customer)
+        customer_id = customer["customer_id"]
         db.update_case(case_id, {"stripe_customer_id": customer_id}, owner)
     setup = billing.create_card_setup(customer_id, idempotency_key=setup_key)
     if "error" in setup:
-        raise HTTPException(502, f"stripe setup intent failed: {setup['error']}")
-    db.update_case(case_id, {"stripe_setup_intent_id": setup["setup_intent_id"]}, owner)
-    return msg({
-        "customer_id": customer_id,
-        "setup_intent_id": setup["setup_intent_id"],
-        "client_secret": setup["client_secret"],
-        "fee_disclosure": FEE_DISCLOSURE,
-        "fee_rate": billing.FEE_RATE,
-    }, f"Almost done — save your card, and remember: {FEE_DISCLOSURE}")
+        return _billing_failure(setup)
+    db.update_case(case_id, {"stripe_setup_intent_id": setup.get("setup_intent_id"), "checkout_session_id": setup.get("checkout_session_id"), "fee_status": "card_pending", "fee_terms_accepted_at": datetime.now(timezone.utc).isoformat()}, owner)
+    return {"case_id": case_id, "stripe_customer_id": customer_id,
+            "setup_url": setup.get("setup_url"), "checkout_session_id": setup.get("checkout_session_id"),
+            "setup_intent_id": setup.get("setup_intent_id"), "fee_disclosure": FEE_DISCLOSURE,
+            "user_message": FEE_DISCLOSURE + " Open setup_url to save a payment method securely with Stripe. Saving it does not charge a fee."}
 
 
 @app.get("/api/cases/{case_id}/billing/status")
 def billing_status(case_id: str):
-    """Pollable card-save status: billing state, derived card_state, and the
-    fee disclosure — the agent's signal for whether a charge can be attempted."""
+    """Verify saved-card setup with Stripe; a pending checkout is never a saved card."""
     owner = require_owner()
     case = _case_or_404(case_id, owner)
-    card_state = _card_state(case)
-    return msg({
-        "case_id": case_id,
-        "billing_status": case.get("fee_status"),
-        "card_state": card_state,
-        "stripe_customer_id": case.get("stripe_customer_id"),
-        "fee_rate": billing.FEE_RATE,
-        "fee_cents": case.get("fee_cents"),
-        "fee_disclosure": FEE_DISCLOSURE,
-    }, ("Your card is saved and ready — I'll only charge the 25% fee after you "
-        "confirm a recovery." if card_state == "ready"
-        else "No card on file yet — set up billing and save a card first."
-        if card_state == "none"
-        else f"Billing status: {case.get('fee_status')}. {FEE_DISCLOSURE}"))
+    if not case:
+        raise HTTPException(404, "Unknown case")
+    verified = {"status": "none"}
+    if case.get("stripe_customer_id"):
+        verified = billing.retrieve_card_setup(case["stripe_customer_id"],
+            setup_intent_id=case.get("stripe_setup_intent_id"),
+            checkout_session_id=case.get("checkout_session_id"))
+    state = "ready" if verified.get("status") == "succeeded" and "error" not in verified else "none" if not case.get("stripe_customer_id") else "pending"
+    return {"case_id": case_id, "billing_status": case.get("fee_status") or "none",
+            "card_state": state, "setup_status": verified.get("status"),
+            "fee_disclosure": FEE_DISCLOSURE,
+            "user_message": "Your payment method is saved. Review and explicitly approve the fee before payment." if state == "ready" else "Card setup has not been confirmed. Open the Stripe setup link and complete it."}
 
 
 @app.post("/api/cases/{case_id}/recovery-confirmed")
@@ -419,7 +462,7 @@ def recovery_confirmed(case_id: str, body: RecoveryConfirmed):
 
     The charge always goes to the case's STORED stripe_customer_id — the
     request carries only the recovered amount, never card details. The fee is
-    25% of the asserted recovery, sanity-bounded at 2x the wages owed stored
+    25% of the actual received wages, bounded at the wages owed stored
     on the case: a larger assertion is rejected (400) rather than charged."""
     owner = require_owner()
     case = _case_or_404(case_id, owner)
@@ -434,21 +477,30 @@ def recovery_confirmed(case_id: str, body: RecoveryConfirmed):
             {"ok": False},
             "The 25% fee for this case was already charged — nothing more to do."))
     owed = (case.get("wages_owed_cents") or 0) / 100
-    if owed > 0 and body.amount > 2 * owed:
+    if owed <= 0 or body.amount > owed:
         return JSONResponse(status_code=400, content=msg(
             {"ok": False, "asserted_amount": body.amount, "wages_owed": owed},
             f"That recovery amount ({money(int(round(body.amount * 100)))}) is more than "
-            f"twice the {money(case['wages_owed_cents'])} owed on this case — I won't charge "
+            f"the {money(case['wages_owed_cents'])} owed on this case — I won't charge "
             "against that number. Double-check the amount you received and try again."))
     amount_cents = int(round(body.amount * 100))
     fee_cents = billing.contingency_cents(body.amount)
+    if body.fee_amount_cents != fee_cents:
+        raise HTTPException(409, {"error": "fee_changed", "expected_fee_amount_cents": fee_cents, "user_message": "Review the current fee and explicitly approve that amount."})
+    if not case.get("fee_terms_accepted_at"):
+        raise HTTPException(409, "Accept the fee terms through billing setup first.")
+    db.update_case(case_id, {"fee_confirmed_at": datetime.now(timezone.utc).isoformat()}, owner)
     res = billing.charge_fee(
         customer_id, fee_cents,
         f"final-paycheck contingency fee (25%) for case {case_id}",
         idempotency_key=f"{billing.CONNECTOR}-fee-{owner}-{case_id}",
+        setup_intent_id=case.get("stripe_setup_intent_id"),
+        checkout_session_id=case.get("checkout_session_id"), consent=body.confirm_fee,
     )
+    if res.get("status") != "succeeded" and "error" not in res:
+        res = {**res, "error": "Payment has not succeeded.", "code": "payment_pending"}
     if "error" in res:
-        raise HTTPException(502, f"stripe charge failed: {res['error']}")
+        return _billing_failure(res)
     db.update_case(case_id, {
         "recovered_amount_cents": amount_cents,
         "fee_cents": fee_cents,
@@ -473,7 +525,8 @@ def life_events(body: LifeEvent):
     from a job_change payload and returns the proactive nudge as user_message."""
     if body.event_type != "job_change":
         raise HTTPException(400, f"unsupported event_type for this connector: {body.event_type}")
-    p = body.payload or {}
+    owner = require_owner()
+    p = _validate_input(ConfirmDraft, body.payload or {}).model_dump(mode="json", exclude_none=True)
     state = (p.get("state") or "").upper()
     if not state or deadlines.get_state(state) is None:
         return msg({"ok": False, "draft": False},
@@ -502,7 +555,7 @@ def life_events(body: LifeEvent):
         "deadline": None,
         "status": "draft",
         "is_draft": 1,
-    })
+    }, owner_id=owner)
 
     rule_phrase = _describe_rule(law_state, tt)
     missing = [f for f, v in {
@@ -540,3 +593,53 @@ async def _unhandled(request, exc):  # noqa: ARG001
     return JSONResponse({"error": "internal server error", "user_message":
                          "Hmm, something went wrong on my end. Give me a moment and try again."},
                         status_code=500)
+
+
+class DeleteDataIn(StrictModel):
+    confirm_delete: Literal[True] = Field(description="The user explicitly confirms deleting their local records and generated documents.")
+
+
+@app.get("/api/me/data")
+def export_my_data():
+    """Export only the authenticated caller's local records."""
+    return {"records": db.export_owner(require_owner()), "user_message": "This export contains your local service records."}
+
+
+@app.delete("/api/me/data")
+def delete_my_data(consent: DeleteDataIn):
+    """Delete local records and documents. Stripe/payment audit records remain separately retained."""
+    deleted = db.delete_owner(require_owner())
+    for row in deleted.get("cases", []):
+        (letters.LETTERS_DIR / f"demand_letter_{row['id']}.pdf").unlink(missing_ok=True)
+    return {"deleted": {table: len(rows) for table, rows in deleted.items()},
+            "user_message": "Your local records and generated documents have been deleted. Stripe transaction records and the payment audit ledger are retained separately; contact support for related requests."}
+
+
+class FeeQuoteIn(StrictModel):
+    amount: float = Field(gt=0, le=1_000_000, description="The actual recovered amount to quote; this operation does not charge.")
+
+
+@app.post("/api/cases/{case_id}/billing/quote")
+def quote_fee(case_id: str, payload: FeeQuoteIn):
+    """Show the exact rounded fee for review; no card setup, confirmation or payment occurs."""
+    owner = require_owner()
+    case = _case_or_404(case_id, owner)
+    if not case:
+        raise HTTPException(404, "Unknown case")
+    if payload.amount > case["wages_owed_cents"] / 100:
+        raise HTTPException(400, "The recovery amount exceeds the recorded case amount.")
+    fee = billing.contingency_cents(payload.amount)
+    return {"case_id": case_id, "currency": "USD", "recovery_amount": payload.amount,
+            "fee_rate": 0.25, "fee_amount_cents": fee, "charged": False,
+            "user_message": f"The fee would be {fee / 100:.2f} USD. Review it, then explicitly approve this exact amount if you want to pay."}
+
+
+# Shared authenticated API schema and payment return page.
+try:
+    from api_support import install_api_contract
+except ImportError:
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from api_support import install_api_contract
+install_api_contract(app, "final-paycheck", app.title)

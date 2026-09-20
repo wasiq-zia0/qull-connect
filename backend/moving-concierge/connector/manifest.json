@@ -1,1 +1,240 @@
-{"actions_on_install":"none","auth":{"type":"stripe_customer","why":"To save a payment method for the one-time flat $49 pack fee, charged off-session only after you confirm."},"description":"The address-change circus, handled in one pack. Builds a state-specific moving checklist (USPS mail forwarding, DMV deadline, voter registration, banks, employer, insurance, IRS, utilities, subscriptions), printable as PDF, for a flat $49 per move. The agent is the UI — everything happens in chat. We never file an address change on your behalf; you complete each step through the official links.","display_name":"Moving Concierge","proactive_triggers":[{"action":"create_draft_move","description":"Lease, mover confirmation, or USPS change-of-address email in Gmail","event":"move","needs_user_confirmation":true,"nudge":"Looks like you moved from {from_address} to {to_address}. I can handle the whole address-change circus — USPS, banks, voter registration — in one $49 pack. Want it? One tap."}],"tools":[{"description":"Start a move pack: name, email, old/new address, move date, new state. Builds the checklist and fans the move out to the suite.","input_schema":{"properties":{"draft_id":{"type":"string"},"email":{"type":"string"},"move_date":{"format":"date","type":"string"},"name":{"type":"string"},"new_address":{"type":"string"},"old_address":{"type":"string"},"state":{"maxLength":2,"minLength":2,"type":"string"}},"required":["name","email","old_address","new_address","move_date","state"],"type":"object"},"name":"create_move"},{"description":"Get move details, checklist progress, and items","input_schema":{"properties":{"move_id":{"type":"string"}},"required":["move_id"],"type":"object"},"name":"get_move"},{"description":"Fetch the address-change pack (markdown + PDF link). Unlocks after the $49 fee is paid.","input_schema":{"properties":{"move_id":{"type":"string"}},"required":["move_id"],"type":"object"},"name":"get_pack"},{"description":"Update checklist item statuses","input_schema":{"properties":{"items":{"items":{"properties":{"item_id":{"type":"integer"},"status":{"enum":["pending","done","na"],"type":"string"}},"required":["item_id","status"],"type":"object"},"type":"array"},"move_id":{"type":"string"}},"required":["move_id","items"],"type":"object"},"name":"update_checklist"},{"description":"Set up billing for the $49 pack fee: creates the Stripe customer and card SetupIntent. Returns the client_secret for card collection. No charge happens here.","input_schema":{"properties":{"move_id":{"type":"string"}},"required":["move_id"],"type":"object"},"name":"setup_billing"},{"description":"Charge the flat $49.00 pack fee off-session against the saved card, then deliver the pack. Idempotent — never double-charges.","input_schema":{"properties":{"move_id":{"type":"string"}},"required":["move_id"],"type":"object"},"name":"pay"},{"description":"Receive a fanned-out life event from the shared bus. A 'move' creates a draft move and the proactive nudge.","input_schema":{"properties":{"event_type":{"type":"string"},"payload":{"type":"object"}},"required":["event_type","payload"],"type":"object"},"name":"receive_life_event"}],"version":"0.1.0","webhooks":{}}
+{
+  "actions_on_install": "none",
+  "auth": {
+    "type": "api_key",
+    "header": "Authorization",
+    "scheme": "Bearer",
+    "description": "Operator-provisioned opaque key for one user. No OAuth or confirmed Muse identity exchange is implemented."
+  },
+  "description": "Turn your move details into an address-change pack with a checklist, relevant official links, and a PDF you can work through at your own pace. USD $49 once for the complete address-change pack for one move. It is not a subscription, a mover booking, or payment of third-party fees.",
+  "display_name": "Moving Concierge",
+  "proactive_triggers": [],
+  "tools": [
+    {
+      "name": "create_move",
+      "description": "Prepare a move checklist; the user completes all address changes themselves. $49 one-time unlock.",
+      "input_schema": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "old_address": {
+            "title": "Old Address",
+            "type": "string"
+          },
+          "new_address": {
+            "title": "New Address",
+            "type": "string"
+          },
+          "move_date": {
+            "title": "Move Date",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Draft Id"
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "old_address",
+          "new_address",
+          "move_date",
+          "state"
+        ],
+        "title": "create_moveArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_move",
+      "description": "Read the user's move status. Pack details require payment.",
+      "input_schema": {
+        "properties": {
+          "move_id": {
+            "title": "Move Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "move_id"
+        ],
+        "title": "get_moveArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_pack",
+      "description": "Return the paid checklist in Markdown and its authenticated PDF endpoint.",
+      "input_schema": {
+        "properties": {
+          "move_id": {
+            "title": "Move Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "move_id"
+        ],
+        "title": "get_packArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "update_checklist",
+      "description": "Record completed or inapplicable steps on the user's paid checklist.",
+      "input_schema": {
+        "properties": {
+          "move_id": {
+            "title": "Move Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "move_id",
+          "items"
+        ],
+        "title": "update_checklistArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "setup_billing",
+      "description": "Return the secure card-save URL and disclose the one-time $49 fee. No charge.",
+      "input_schema": {
+        "properties": {
+          "move_id": {
+            "title": "Move Id",
+            "type": "string"
+          },
+          "accept_fee_terms": {
+            "title": "Accept Fee Terms",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "move_id",
+          "accept_fee_terms"
+        ],
+        "title": "setup_billingArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "pay",
+      "description": "Charge $49 and unlock this move only after the user explicitly consents to the fee.",
+      "input_schema": {
+        "properties": {
+          "move_id": {
+            "title": "Move Id",
+            "type": "string"
+          },
+          "confirm_fee": {
+            "title": "Confirm Fee",
+            "type": "boolean"
+          },
+          "fee_amount_cents": {
+            "title": "Fee Amount Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "move_id",
+          "confirm_fee",
+          "fee_amount_cents"
+        ],
+        "title": "payArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "billing_status",
+      "description": "Verify saved-card state and paid status.",
+      "input_schema": {
+        "properties": {
+          "move_id": {
+            "title": "Move Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "move_id"
+        ],
+        "title": "billing_statusArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "receive_life_event",
+      "description": "Create a move draft bound to the authenticated user.",
+      "input_schema": {
+        "properties": {
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          }
+        },
+        "required": [
+          "event_type",
+          "payload"
+        ],
+        "title": "receive_life_eventArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "delete_my_data",
+      "description": "Delete this user's operational records after explicit confirmation. Required payment records are retained separately.",
+      "input_schema": {
+        "properties": {
+          "consent": {
+            "title": "Consent",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "consent"
+        ],
+        "title": "delete_my_dataArguments",
+        "type": "object"
+      }
+    }
+  ],
+  "version": "1.0.0",
+  "webhooks": {},
+  "documentation_url": "https://qull.io/connect/moving-concierge/api-docs/",
+  "privacy_policy_url": "https://qull.io/connect/moving-concierge/privacy/",
+  "terms_of_service_url": "https://qull.io/connect/moving-concierge/terms/",
+  "support_email": "wasiq@qull.io"
+}

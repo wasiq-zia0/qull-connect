@@ -1,4 +1,4 @@
-"""Negotiation script generator: loads researched per-provider talking points and
+"""Negotiation script generator: loads general, conditional talking points and
 assembles a call script + chat script pack for the user.
 
 The USER makes the call/chat; this connector never contacts providers.
@@ -58,8 +58,8 @@ def script_pack(provider: str, service_type: str, current_monthly_bill: float,
         "before_you_call": [
             tenure_line,
             f"Know your current bill: ${current_monthly_bill:,.2f}/mo for {service_type}.",
-            "Find one real competitor price for equivalent service in your area to name-drop.",
-            "Call near month-end or right after a promo expires — reps have more latitude.",
+            "If available, compare one real competitor offer for equivalent service, including fees and contract terms.",
+            "Check the current offer terms; no time of month or escalation is guaranteed to produce a discount.",
         ],
         "call_script": entry.get("call_script") or generic["call_script"],
         "chat_script": entry.get("chat_script") or generic["chat_script"],

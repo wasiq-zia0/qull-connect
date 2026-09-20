@@ -1,45 +1,37 @@
-# Qull Connect — Pricing Audit (2026-09-19)
+# Current pricing and payment boundaries
 
-Founder directive: pricing must "make sense" — competitive, defensible, legally viable.
-Researched against real competitors/market comparables. Nothing here is legal advice;
-percentage-of-recovery models need counsel sign-off before Meta submission or launch.
+This replaces the historical competitor comparison and claims that a fee was
+legally viable. No competitor price proves legality, demand or equivalence of
+service. These connectors deliver the specific assisted work described below.
 
-**Tax handling (all connectors):** All prices are exclusive of applicable tax. The final
-fee and any tax are shown to the user before authorization, and no charge occurs without
-explicit user confirmation after verified recovery/savings.
+| Connector | Fee | Example |
+|---|---|---|
+| Deposit Recovery | 25% of the recovered deposit amount you confirm. No recovery confirmation means no recovery fee. | If you confirm that $1,800 was returned, the fee is $450 and you keep $1,350. |
+| FlightPay | 30% of the actual compensation payout you confirm, billed in EUR. The fee is shown before you authorize payment. | If an airline pays €400 and you confirm it, the fee is €120 and you keep €280. |
+| Subscription Slayer | USD $10 for each completed cancellation you select and explicitly confirm for billing. No recurring Qull subscription fee. | If you confirm two completed cancellations, the total fee is $20. Cancelling with the merchants remains your responsibility. |
+| BillCut | 35% of the documented savings you confirm: (old monthly bill − new monthly bill) × agreed months, capped at 12 months. No positive confirmed savings means no fee. | A bill reduced from $120 to $85 for 12 months saves $420. The fee is $147 and the remaining savings are $273. |
+| Final Paycheck Recovery | 25% of the actual recovered wages you confirm. No recovery confirmation means no recovery fee. | If you confirm $2,000 in recovered wages, the fee is $500 and you keep $1,500. |
+| Class Action Cash | 20% of the actual settlement payout you confirm for this service. Filing directly with a settlement administrator is free. | If you confirm a $100 settlement payout, the fee is $20 and you keep $80. An estimate in a claim pack is not a promised payout. |
+| Found Money | The current release provides portal guides and claim preparation without collecting a fee. Paid recovery assistance is unavailable while state-specific agreements and eligibility requirements are unresolved. A proposed future fee of up to 10% is not active or authorized. | Searching and filing directly through an official state program is free. This release does not collect a Qull recovery fee. |
+| Moving Concierge | USD $49 once for the complete address-change pack for one move. It is not a subscription, a mover booking, or payment of third-party fees. | One move pack costs $49. USPS, movers, utilities, and other organizations may have separate fees paid directly to them. |
+| MatchMax | USD $99 once for a plan's detailed analysis and action pack. No automatic annual renewal or recurring billing is included. | For a $120,000 salary with a 50% match up to 6% of pay, contributing 4% models a $2,400 match; contributing 6% models $3,600 before plan-specific limits and timing. |
+| Medical Bill Fighter | 25% of the actual bill reduction you report and confirm. A flagged item is not a verified error or a guaranteed saving. | If a provider reduces your bill by $800 and you confirm that reduction, the fee is $200 and the net saving is $600. |
 
-| # | Connector | Current pricing | Real comparables | Recommendation | Legal flag |
-|---|-----------|-----------------|------------------|----------------|------------|
-| 1 | Deposit Recovery | 25% of recovered deposit | Employment/tenant attorneys: ~33–40% contingency (1/3 standard); small-claims filing $50–150; no direct %-fee competitor (novel category) | **KEEP 25%** — undercuts attorney contingency; novel category with no price anchor to beat | ⚠️ YES — demand-letter drafting + % fee is UPL-adjacent; needs counsel review before submission |
-| 2 | FlightPay (EU261) | 30% of payout | AirHelp 35% (+15% more if legal action); Compensair 25–30% (+10% legal); Flightright ~30% | **KEEP 30%** — dead center of the market, below AirHelp headline rate | Low — standard claims-assignment paperwork |
-| 3 | Subscription Slayer | 30% of first-year documented savings | BillShark: **$9 flat per cancelled subscription**; Rocket Money: cancellation bundled in Premium ($7–14/mo), no % fee | **CHANGE → flat $9–12 per cancellation** — 30% of first-year savings is 3–6x BillShark (cancel a $15/mo sub = $180/yr savings → $54 fee vs $9). % model overcharges cheap subs and is hard to explain | Low |
-| 4 | BillCut | 35% of documented savings, capped at 12 months | Rocket Money 35–60% of first-year savings; BillShark 40% (capped at 24 months); BillCutterz 50% | **KEEP 35%** — at/below every major competitor; 12-month cap is more consumer-friendly than BillShark's 24-month cap | Low |
-| 5 | Final Paycheck Recovery | 25% of recovered wages | Employment attorneys: ~33–40% contingency typical | **KEEP 25%** — undercuts attorneys; wage recovery is high-trust, contingency is the expected model | ⚠️ YES — wage-claim % fee; UPL/claims-management risk; counsel review required |
-| 6 | Class Action Cash | 20% of settlement payout | Filing directly with administrators is **FREE** (openclassactions.com explicitly warns against paying third parties a cut); TheClassActionLawsuit.com free directory; MCAG charges contingent % but B2B only | **KEEP 20% ONLY with guardrails** — defensible solely as a proactive-matching fee ("money you'd never have claimed"), never as a filing fee. Marketing must never imply filing costs money | ⚠️ YES — consumer-protection/deceptive-practice risk; counsel must clear copy |
-| 7 | Found Money (Unclaimed Property) | 15% of recovered funds | **CA Code Civ. Proc. §1582: 10% max**; IN IC 32-34-1-46: 10% max; NE §69-1317: 10% max; most states cap finder fees ~10%. Agreements also void if signed inside 12–24 month windows; must be written; must disclose free self-claim | **CHANGE → 10% max, with per-state rule engine enforcing lower caps** — 15% is unlawful in California and other states | 🔴 RED — hard statutory caps; current 15% blocks Meta submission |
-| 8 | Moving Concierge | $49 flat per move | White-glove moving concierges $10k–200k (different market); Move Concierge (utility setup) is free to consumers, provider-paid | **KEEP $49** — impulse price, no direct competitor at this tier; upsell room later | Low |
-| 9 | MatchMax (401k) | $99/year flat | Robo-advisors 0.25–0.50% AUM/yr; human advisors ~1% AUM; flat-fee planners $2,000–7,500/yr; one-time plan $1,000–3,000 | **KEEP $99/yr** — an order of magnitude below human advisors; priced as a no-brainer | ⚠️ MEDIUM — must remain calculations/education; avoid triggering fiduciary investment-advice obligations |
-| 10 | Medical Bill Fighter | 25% of documented reduction | Medical Cost Advocate 35%; Resolve Medical Bills 25% ($5–15k bills), 10% on bills $15k+; independent patient advocates typically 25–30% | **KEEP 25%** — exactly market rate; consider a large-bill tier later (10–15% above $15k, like Resolve) so big bills don't look extractive | ⚠️ MEDIUM — health-data sensitivity (HIPAA-adjacent handling); contingency on medical debt needs counsel review |
+## Conditions before collection
 
-## The 3 pricing changes that matter most (ranked)
+The user must understand and receive the actual service, accept its fee terms,
+complete hosted payment-method setup, see the exact amount and currency, and
+explicitly authorize that fee. Outcome fees depend on actual user-confirmed
+recovery, reduction or completed cancellation, not the estimated amount in a
+letter or eligibility calculation. Bank authentication and provider settlement
+must succeed before a fee is marked paid.
 
-1. **Found Money: 15% → 10% (legally required).** California, Indiana, Nebraska and
-   most other states cap finder fees at 10%; 15% is unlawful there. This is a launch
-   blocker, not a preference. Ship with a per-state cap engine and written-agreement
-   flow that discloses free self-claim.
-2. **Subscription Slayer: 30% of first-year savings → flat $9–12 per cancellation.**
-   BillShark's $9 flat is the price anchor; a % model charges $54 to cancel a $15/mo
-   subscription and reads as a bad deal. Flat fee is simpler, competitive, and easier
-   to disclose pre-authorization.
-3. **Medical Bill Fighter: add a large-bill tier later (10–15% above $15k).** 25% is
-   market-correct for typical bills, but 25% of a $50k hospital bill ($12,500 fee)
-   invites sticker shock and press risk; Resolve already tiers down to 10% on large
-   bills. Not a launch blocker — phase 2.
+MatchMax is a one-time analysis/pack purchase, not an automatic annual renewal.
+Found Money currently provides free portal/claim guidance and blocks paid setup
+and collection. A universal10% cap is not a state-specific agreement engine.
 
-## Pre-submission legal review queue (priority order)
-
-1. Found Money — statutory fee caps + agreement timing/disclosure rules (blocking).
-2. Deposit Recovery + Final Paycheck — contingency-fee/UPL exposure (blocking).
-3. Class Action Cash — consumer-protection/marketing copy clearance.
-4. Medical Bill Fighter — health-data handling + contingency-on-medical-debt.
-5. MatchMax — confirm scope stays clear of fiduciary investment advice.
+The implementation does not calculate taxes automatically. Establish and disclose
+any required tax treatment before live transactions. Final refund policies and
+retention/legal terms must be approved and operated; draft wording is not signoff.
+See [DOMAIN_REVIEW.md](../../docs/DOMAIN_REVIEW.md) for source-supported concerns
+and [COMMERCIAL_LAUNCH.md](../../docs/COMMERCIAL_LAUNCH.md) for the revenue path.

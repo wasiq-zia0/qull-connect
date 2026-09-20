@@ -1,0 +1,48 @@
+name: Verify connectors
+on:
+  pull_request:
+  push:
+    branches: [main, codex/full-review]
+permissions:
+  contents: read
+jobs:
+  contracts-and-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            backend/*/requirements.txt
+            requirements-review.txt
+      - run: python tools/install_review_environment.py
+      - run: python -m pytest tests backend/tests -q
+      - run: python tools/export_openapi.py
+      - run: git diff --exit-code -- openapi backend/*/connector/manifest.json
+      - run: python -m compileall -q backend tools
+  containers:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        connector: [deposit-recovery, eu261-flight-comp, subscription-slayer, bill-negotiator, final-paycheck, class-action-cash, unclaimed-property, moving-concierge, 401k-match, medical-bill-fighter]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Build isolated service image
+        env:
+          CONNECTOR: ${{ matrix.connector }}
+        run: docker build --tag qull-review --file "backend/$CONNECTOR/Dockerfile" backend
+      - name: Verify startup and fail-closed configuration
+        run: |
+          docker run --detach --name qull-review qull-review
+          trap 'docker logs qull-review; docker rm -f qull-review' EXIT
+          for attempt in $(seq 1 30); do
+            if docker exec qull-review python -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ['REST_PORT']+'/health',timeout=2)"; then
+              break
+            fi
+            sleep 1
+          done
+          docker exec qull-review python -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ['REST_PORT']+'/health',timeout=2)"
+          docker exec qull-review python -c "import os,urllib.request,urllib.error; r=urllib.request.Request('http://127.0.0.1:'+os.environ['REST_PORT']+'/api/not-a-route'); exec('try:\n urllib.request.urlopen(r)\n raise AssertionError(\"Anonymous API request was accepted\")\nexcept urllib.error.HTTPError as e:\n assert e.code == 401')"

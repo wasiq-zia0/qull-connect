@@ -1,54 +1,31 @@
-# life-events — shared event bus for the connector suite
+# Life-event routing suggestions
 
-One life event fans out to every connector that can act on it. The ten
-connectors feel like one intelligence because they share this trigger layer.
+`events.py` provides a mapping from an explicitly supplied event to potentially
+relevant connectors. It does not monitor a mailbox, schedule work, send requests,
+persist customer payloads, or share a global history.
 
-## How it works
+| Event | Suggested connectors |
+|---|---|
+| `move` | Deposit Recovery, Moving Concierge, Found Money |
+| `flight_delayed` | FlightPay |
+| `job_change` | Final Paycheck Recovery, MatchMax |
+| `bill_spike` | BillCut |
+| `recurring_charge_detected` | Subscription Slayer |
+| `medical_bill_received` | Medical Bill Fighter |
+| `settlement_match` | Class Action Cash |
 
-`events.py` holds an append-only JSONL log (`events.jsonl`) plus the fan-out map:
+`emit(event_type, payload, source)` returns an event identifier and suggested
+connector slugs with `dispatched: false`, an empty `fanned_out_to` list and
+`user_authorization_required: true`. `recent()` returns an empty list because
+there is no shared event log.
 
-| Life event                | Fans out to                                              |
-|---------------------------|----------------------------------------------------------|
-| `move`                    | deposit-recovery, moving-concierge, unclaimed-property    |
-| `flight_delayed`          | eu261-flight-comp                                         |
-| `job_change`              | final-paycheck                                            |
-| `bill_spike`              | bill-negotiator                                           |
-| `recurring_charge_detected`| subscription-slayer                                      |
-| `medical_bill_received`   | medical-bill-fighter                                      |
-| `settlement_match`        | class-action-cash                                         |
+An integrator may offer the relevant service to the user. Only after appropriate
+user authorization should it send the required event data to the destination's
+`POST /api/life-events`, authenticated with that user's scoped bearer credential.
+The destination derives ownership from authentication, never the payload.
 
-No server, no dependencies — just `import events`.
-
-## Connector integration contract
-
-Every connector MUST:
-
-1. **Emit** — when it detects a life event, call:
-   ```python
-   import sys
-   from pathlib import Path
-   sys.path.insert(0, str(Path.home() / "workspace/connectors/life-events"))
-   import events as life_events
-   life_events.emit("move", {"state": "TX", "deposit": 1800, "move_out": "2026-07-06"})
-   ```
-   The return value lists which connectors were fanned out to.
-
-2. **Receive** — expose `POST /api/life-events` accepting
-   `{"event_type": "...", "payload": {...}}`. Create a draft case from the
-   payload (pre-fill every field the payload provides; ask for the rest
-   conversationally) and return the proactive nudge in a `user_message` field:
-   a warm, speakable sentence with realistic specifics, e.g.
-   "Your Texas landlord had 30 days to return your $1,800 deposit. It's day 42.
-   Want me to send the demand letter? One tap."
-
-3. **Ship `triggers.yaml`** in the connector dir:
-   ```yaml
-   life_event: move
-   signal: "lease, mover confirmation, or USPS change-of-address email in Gmail"
-   nudge: "Your Texas landlord had 30 days to return your $1,800 deposit. It's day 42. Want me to send the demand letter? One tap."
-   ```
-
-## Design rule
-
-The golden path is **trigger → one tap → done**. If a flow needs more than a
-trigger plus one confirmation, simplify until it doesn't.
+A suggestion is not permission to forward rental, employment, medical, receipt,
+or financial details to another connector. Do not promise automatic mailbox
+watching, reminders, dispatch, cross-service action, or letter sending. Historical
+`triggers.yaml` files describe product ideas; they are not deployed schedulers.
+See the per-service README for the current supported draft/intake behavior.

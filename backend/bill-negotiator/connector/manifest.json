@@ -1,1 +1,299 @@
-{"actions_on_install":"none","auth":{"type":"oauth2_user","why":"To manage the user's negotiation cases and charge the 35% fee on user-confirmed documented savings."},"description":"Negotiates down internet/cable/phone bills. Generates per-provider call and chat scripts for the user to use with their provider's retention department, tracks reported outcomes, and charges a 35% fee on user-confirmed documented savings. The connector never contacts providers.","display_name":"Bill Negotiator","proactive_triggers":[{"action":"create_negotiation_case","description":"A provider bill, renewal notice, or promo-expiry email detected","event":"user's internet/cable/phone bill increased or a promotion is expiring","needs_user_confirmation":true}],"tools":[{"description":"Open a bill-negotiation case for an internet/cable/phone provider","input_schema":{"properties":{"account_tenure_months":{"type":"integer"},"current_monthly_bill":{"type":"number"},"prior_monthly_bill":{"type":"number"},"promo_end_date":{"format":"date","type":"string"},"provider":{"type":"string"},"service_type":{"type":"string"},"user_name":{"type":"string"}},"required":["provider","service_type","current_monthly_bill"],"type":"object"},"name":"create_negotiation_case"},{"description":"Get the per-provider call + chat negotiation script pack","input_schema":{"properties":{"case_id":{"type":"string"}},"required":["case_id"],"type":"object"},"name":"get_negotiation_script"},{"description":"Receive a shared life-events bus event; bill_spike creates a draft case and returns the proactive nudge","input_schema":{"properties":{"event_type":{"type":"string"},"payload":{"type":"object"}},"required":["event_type"],"type":"object"},"name":"receive_life_event"},{"description":"Record the user's reported negotiation outcome; computes documented savings","input_schema":{"properties":{"case_id":{"type":"string"},"months_locked":{"type":"integer"},"new_monthly_bill":{"type":"number"},"success":{"type":"boolean"}},"required":["case_id","success"],"type":"object"},"name":"report_negotiation_outcome"},{"description":"Create the Stripe customer and card SetupIntent for the 35% fee","input_schema":{"properties":{"case_id":{"type":"string"}},"required":["case_id"],"type":"object"},"name":"setup_negotiation_billing"},{"description":"Charge the 35% fee off-session on user-confirmed documented savings","input_schema":{"properties":{"case_id":{"type":"string"}},"required":["case_id"],"type":"object"},"name":"charge_negotiation_fee"},{"description":"List providers with researched negotiation scripts","input_schema":{},"name":"list_supported_providers"}],"version":"0.2.0","webhooks":{"savings_confirmed":"Fired when the user confirms documented savings; agent charges the 35% fee off-session via the saved card."}}
+{
+  "actions_on_install": "none",
+  "auth": {
+    "type": "api_key",
+    "header": "Authorization",
+    "scheme": "Bearer",
+    "description": "Operator-provisioned opaque key for one user. No OAuth or confirmed Muse identity exchange is implemented."
+  },
+  "description": "Turn your current internet, cable, or phone bill into a practical call-and-chat script, then track a lower rate you negotiate yourself. 35% of the documented savings you confirm: (old monthly bill − new monthly bill) × agreed months, capped at 12 months. No positive confirmed savings means no fee.",
+  "display_name": "BillCut",
+  "proactive_triggers": [],
+  "tools": [
+    {
+      "name": "create_negotiation_case",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "service_type": {
+            "title": "Service Type",
+            "type": "string"
+          },
+          "current_monthly_bill": {
+            "title": "Current Monthly Bill",
+            "type": "number"
+          },
+          "promo_end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Promo End Date"
+          },
+          "account_tenure_months": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Account Tenure Months"
+          },
+          "user_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "User Name"
+          },
+          "prior_monthly_bill": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Prior Monthly Bill"
+          }
+        },
+        "required": [
+          "provider",
+          "service_type",
+          "current_monthly_bill"
+        ],
+        "title": "create_negotiation_caseArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_negotiation_script",
+      "description": "Get scripts to use yourself. This service never calls the provider.",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id"
+        ],
+        "title": "get_negotiation_scriptArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "report_negotiation_outcome",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          },
+          "new_monthly_bill": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "New Monthly Bill"
+          },
+          "months_locked": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Months Locked"
+          }
+        },
+        "required": [
+          "case_id",
+          "success"
+        ],
+        "title": "report_negotiation_outcomeArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "setup_negotiation_billing",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "accept_fee_terms": {
+            "title": "Accept Fee Terms",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "case_id",
+          "accept_fee_terms"
+        ],
+        "title": "setup_negotiation_billingArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "billing_status",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id"
+        ],
+        "title": "billing_statusArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "charge_negotiation_fee",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "confirm_fee": {
+            "title": "Confirm Fee",
+            "type": "boolean"
+          },
+          "fee_amount_cents": {
+            "title": "Fee Amount Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "case_id",
+          "confirm_fee",
+          "fee_amount_cents"
+        ],
+        "title": "charge_negotiation_feeArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "receive_life_event",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          }
+        },
+        "required": [
+          "event_type",
+          "payload"
+        ],
+        "title": "receive_life_eventArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "list_supported_providers",
+      "description": "",
+      "input_schema": {
+        "properties": {},
+        "title": "list_supported_providersArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "export_my_data",
+      "description": "Export the caller's local service records.",
+      "input_schema": {
+        "properties": {},
+        "title": "export_my_dataArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "delete_my_data",
+      "description": "Delete the caller's local cases and generated documents after explicit confirmation. Financial records may be retained by Stripe and the payment ledger.",
+      "input_schema": {
+        "properties": {
+          "confirm_delete": {
+            "title": "Confirm Delete",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "confirm_delete"
+        ],
+        "title": "delete_my_dataArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "quote_fee",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id"
+        ],
+        "title": "quote_feeArguments",
+        "type": "object"
+      }
+    }
+  ],
+  "version": "1.0.0",
+  "webhooks": {},
+  "documentation_url": "https://qull.io/connect/billcut/api-docs/",
+  "privacy_policy_url": "https://qull.io/connect/billcut/privacy/",
+  "terms_of_service_url": "https://qull.io/connect/billcut/terms/",
+  "support_email": "wasiq@qull.io"
+}

@@ -11,7 +11,7 @@ needs more than a trigger plus one confirmation.
 import base64
 import os
 import uuid
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
@@ -19,7 +19,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field, field_validator
+from pydantic import ConfigDict, ValidationError, BaseModel, Field, field_validator
 from typing import Literal
 
 from src.laws import get_state, list_states, requires_forwarding_date
@@ -28,15 +28,15 @@ from src.letters import build_pdf
 from src import db
 from src.bus import emit_move
 from src.billing import (
-    setup_customer, create_card_setup, charge_fee,
+    setup_customer, create_card_setup, charge_fee, retrieve_card_setup,
     contingency_cents, FEE_RATE, CONNECTOR,
 )
 from src.identity import IdentityMiddleware, IdentityError, require_owner
 from src.limits import RateLimitMiddleware, BodySizeLimitMiddleware
 
 ROOT = Path(__file__).resolve().parent
-LETTER_DIR = ROOT / "letters_out"
-LETTER_DIR.mkdir(exist_ok=True)
+LETTER_DIR = Path(os.environ.get("DATA_DIR", ROOT / "data")) / "letters"
+LETTER_DIR.mkdir(parents=True, exist_ok=True)
 
 FEE_DISCLOSURE = (
     "You will be charged 25% of the recovered deposit, only if you confirm "
@@ -63,9 +63,9 @@ app = FastAPI(
 )
 
 # Added last runs first: identity is checked before rate/body limits.
-app.add_middleware(BodySizeLimitMiddleware)
-app.add_middleware(RateLimitMiddleware)
 app.add_middleware(IdentityMiddleware)
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(BodySizeLimitMiddleware)
 
 
 # ---------------------------------------------------------------- errors ---
@@ -104,12 +104,45 @@ async def _validation_exc(request: Request, exc: RequestValidationError):
 
 
 # ----------------------------------------------------------------- models ---
-class CaseIn(BaseModel):
+class StrictModel(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True, allow_inf_nan=False)
+
+
+class BillingConsentIn(StrictModel):
+    accept_fee_terms: Literal[True] = Field(description="The user accepted the disclosed fee terms before opening Stripe checkout.")
+
+
+class FeeConsentIn(StrictModel):
+    confirm_fee: Literal[True] = Field(description="The user explicitly approved this exact fee after reviewing it.")
+    fee_amount_cents: int = Field(ge=1, le=100_000_000, description="The exact disclosed fee approved by the user, in cents.")
+
+
+def _validate_input(model, data):
+    try:
+        return model.model_validate(data)
+    except ValidationError as exc:
+        raise HTTPException(422, "Invalid or incomplete fields: " + ", ".join(".".join(map(str, e["loc"])) for e in exc.errors()))
+
+
+def _billing_failure(result):
+    # Only authenticated owners receive any payment-action token.
+    safe = {k: result[k] for k in ("error", "code", "status", "payment_intent_id", "authorization_url", "setup_url", "currency", "amount_cents") if k in result}
+    code = result.get("code")
+    status = (202 if code == "payment_processing" else
+              402 if code in {"payment_action_required", "payment_declined", "setup_required", "setup_incomplete", "payment_not_completed"} else
+              409 if code in {"billing_conflict", "payment_not_captured", "payment_pending"} else
+              422 if code in {"invalid_fee", "consent_required"} else 503)
+    return JSONResponse(status_code=status,
+                        content={**safe, "user_message": result.get("error", "The payment has not been confirmed. Check billing status before retrying.")})
+
+
+class CaseIn(StrictModel):
     tenant_name: str = Field(min_length=1, max_length=200)
     tenant_forwarding_address: str = Field(min_length=1, max_length=300)
     state: str = Field(min_length=2, max_length=2, description="US state abbreviation")
-    move_out: date
-    forwarding_date: date | None = None
+    move_out: date = Field(description="Date you vacated and surrendered possession of the rental property.")
+    tenancy_end: date | None = Field(default=None, description="Date the tenancy legally ended; required for a Connecticut deadline estimate.")
+    forwarding_date: date | None = Field(default=None, description="Date the landlord received your written forwarding address, not merely the date you sent it.")
     deposit: float = Field(gt=0, le=100_000_000)
     landlord_name: str = Field(min_length=1, max_length=200)
     landlord_address: str = Field(min_length=1, max_length=300)
@@ -127,28 +160,31 @@ class CaseIn(BaseModel):
         return v.strip()
 
 
-class RecoveryIn(BaseModel):
+
+
+class RecoveryIn(FeeConsentIn):
     amount_recovered: float = Field(gt=0, le=100_000_000,
                                     description="Deposit amount the tenant got back")
 
 
-class LifeEventIn(BaseModel):
+class LifeEventIn(StrictModel):
     event_type: str = Field(min_length=1, max_length=50)
     payload: dict = Field(default_factory=dict)
 
 
-class LetterStatusIn(BaseModel):
+class LetterStatusIn(StrictModel):
     """The user reviews the prepared demand letter, then confirms it was sent."""
     status: Literal["approved", "sent-confirmed-by-user"]
 
 
-class PromoteIn(BaseModel):
+class PromoteIn(StrictModel):
     """Fields the agent collected conversationally to complete a draft."""
     tenant_name: str | None = Field(default=None, max_length=200)
     tenant_forwarding_address: str | None = Field(default=None, max_length=300)
     state: str | None = Field(default=None, max_length=2)
     move_out: date | None = None
-    forwarding_date: date | None = None
+    tenancy_end: date | None = None
+    forwarding_date: date | None = Field(default=None, description="Date the landlord received your written forwarding address, not merely the date you sent it.")
     deposit: float | None = Field(default=None, gt=0, le=100_000_000)
     landlord_name: str | None = Field(default=None, max_length=200)
     landlord_address: str | None = Field(default=None, max_length=300)
@@ -165,37 +201,30 @@ def _status_for(case: dict) -> dict:
         return case_status(
             case["state"], date.fromisoformat(case["move_out"]), case["deposit"],
             date.fromisoformat(case["forwarding_date"]) if case.get("forwarding_date") else None,
+            tenancy_end=date.fromisoformat(case["tenancy_end"]) if case.get("tenancy_end") else None,
         )
     except ValueError as e:
         raise HTTPException(400, str(e))
 
 
 def _case_nudge(status: dict) -> str:
-    """The proactive sentence for a freshly computed case status."""
-    state, dep = status["state"], _money(status["deposit"])
-    days = status.get("deadline_days")
-    if status["status"] == "overdue":
-        overdue = -status["days_remaining"]
-        return (f"Your {state} landlord had {days} days to return your {dep} deposit. "
-                f"It's day {overdue + (days or 0)} — the deadline passed "
-                f"{overdue} days ago. Want me to prepare the demand letter? "
-                "You'll review and send it.")
+    if status["status"] == "needs_review":
+        return f"Your {status['state']} case is saved. The legal deadline needs review; I can prepare a factual request for return and accounting for you to send."
     if status["status"] == "waiting":
-        return (f"I'm tracking your {dep} deposit in {state}. Your landlord has until "
-                f"{status['deadline']} ({status['days_remaining']} days) to return it. "
-                "I'll draft the demand letter the moment that passes — nothing for you to do.")
-    return (f"{state} doesn't set a fixed return deadline, so I've logged your case and "
-            "we'll follow the notification process in the statute instead.")
+        return f"The preliminary return/accounting deadline is {status['deadline']}. Check the case after that date; no automatic monitoring or sending is scheduled."
+    return f"The preliminary deadline {status['deadline']} has passed. Review any deductions or notices received, then request a draft letter to send yourself."
 
 
 def _check_forwarding(state_abbr: str, forwarding_date) -> None:
-    if requires_forwarding_date(state_abbr) and not forwarding_date:
-        raise HTTPException(400, FORWARDING_MSG.format(abbr=state_abbr))
+    # Missing timing is surfaced as needs_review, not invented.
+    get_state(state_abbr)
 
 
 def _row_to_case_fields(payload: CaseIn) -> dict:
     row = payload.model_dump()
     row["move_out"] = row["move_out"].isoformat()
+    if row.get("tenancy_end"):
+        row["tenancy_end"] = row["tenancy_end"].isoformat()
     if row["forwarding_date"]:
         row["forwarding_date"] = row["forwarding_date"].isoformat()
     return row
@@ -203,12 +232,11 @@ def _row_to_case_fields(payload: CaseIn) -> dict:
 
 def _create_case_row(fields: dict, emit: bool = False,
                      owner: str | None = None) -> tuple[str, dict]:
-    cid = uuid.uuid4().hex[:12]
+    fields = _row_to_case_fields(_validate_input(CaseIn, {k: fields[k] for k in CaseIn.model_fields if fields.get(k) is not None}))
+    status = _status_for(fields)
+    cid = uuid.uuid4().hex
     db.insert_case(cid, fields, owner_id=owner)
-    if emit:
-        emit_move({"state": fields["state"], "move_out": fields["move_out"],
-                   "deposit": fields["deposit"], "case_id": cid})
-    return cid, _status_for(fields)
+    return cid, status
 
 
 def _card_state(case: dict) -> str:
@@ -220,15 +248,7 @@ def _card_state(case: dict) -> str:
 
 
 def _draft_visible(draft: dict | None, owner: str) -> dict | None:
-    """A draft is visible unless it is owned by someone else.
-
-    Service-created drafts (owner_id NULL) stay visible until claimed.
-    """
-    if not draft:
-        return None
-    if draft.get("owner_id") and draft["owner_id"] != owner:
-        return None
-    return draft
+    return draft if draft and draft.get("owner_id") == owner else None
 
 
 # ------------------------------------------------------------- state laws ---
@@ -236,10 +256,11 @@ def _draft_visible(draft: dict | None, owner: str) -> dict | None:
 def api_list_states():
     owner = require_owner()
     states = [{"abbr": s["abbr"], "state": s["state"],
-               "deadline_days": s["deadline_days"],
-               "statute": s["statute"]} for s in list_states()]
+               "deadline_days": s["deadline_days"] if s.get("deadline_verified") else None,
+               "deadline_verified": s.get("deadline_verified", False), "review_status": s["review_status"],
+               "official_source_url": s["official_source_url"], "statute": s["statute"]} for s in list_states()]
     return {"states": states,
-            "user_message": "I know the deposit-return deadline for all 50 states plus DC — tell me which state you moved out of."}
+            "user_message": "I provide case intake and factual request letters nationwide. Verified deadline calculations currently cover limited CA, CT and TX rules; other jurisdictions need review."}
 
 
 @app.get("/api/state-laws/{abbr}")
@@ -249,11 +270,8 @@ def api_get_state(abbr: str):
         law = get_state(abbr)
     except KeyError:
         raise HTTPException(404, "Unknown state")
-    basis = ("from the day you gave your landlord a forwarding address"
-             if requires_forwarding_date(law["abbr"]) else "from your move-out day")
-    return {**law,
-            "user_message": (f"In {law['state']}, landlords get {law['deadline_days']} days "
-                             f"{basis} to return your deposit ({law['statute']}).")}
+    return {**law, "user_message": "Review the official source and rule scope before relying on this reference. Deadline verification status: " + law["review_status"]}
+
 
 
 # ------------------------------------------------------------------- cases --
@@ -287,12 +305,12 @@ def api_demand_letter(cid: str):
         raise HTTPException(404, "I don't have a case with that ID — want me to open one?")
     _check_forwarding(case["state"], case.get("forwarding_date"))
     status = _status_for(case)
-    if status["status"] != "overdue":
+    if status["status"] == "waiting":
         raise HTTPException(
             400,
             f"Not yet — your {status['state']} deadline is {status.get('deadline') or 'not fixed'}, "
             f"and the demand letter goes out the day after it passes (status: {status['status']}). "
-            "I'm watching the clock; I'll nudge you when it's time.")
+            "Check the case again after the deadline.")
     path = LETTER_DIR / f"demand-letter-{cid}.pdf"
     try:
         build_pdf(case, str(path))
@@ -306,11 +324,8 @@ def api_demand_letter(cid: str):
         "filename": f"demand-letter-{cid}.pdf",
         "pdf_base64": pdf_b64,
         "letter_status": "draft",
-        "user_message": (
-            f"Your demand letter is ready — it cites {law['statute']} and gives your landlord "
-            f"10 days to return your {_money(case['deposit'])}. Review it and send it yourself, "
-            "then tell me the moment your deposit lands so I can close your case. "
-            "This is template automation, not legal advice."),
+        "letter_type": "factual_return_request",
+        "user_message": "Your return-and-accounting request is ready. Review the facts, then send it yourself. No liability or penalty entitlement is asserted.",
     }
 
 
@@ -326,58 +341,60 @@ def api_letter_status(cid: str, payload: LetterStatusIn):
     case = db.get_case(cid, owner_id=owner)
     if not case:
         raise HTTPException(404, "I don't have a case with that ID — want me to open one?")
+    if not case.get("letter_status"):
+        raise HTTPException(409, "Generate and review the letter before updating its status.")
     db.update_case(cid, {"letter_status": payload.status}, owner_id=owner)
     msg = ("Got it — the letter is approved and ready for you to send."
            if payload.status == "approved"
-           else "Confirmed — the letter is sent. I'll keep watching for your deposit.")
+           else "Recorded that you sent the letter. Return here to report any recovery.")
     return {"case_id": cid, "letter_status": payload.status, "user_message": msg}
 
 
 # ----------------------------------------------------------------- billing --
 @app.post("/api/cases/{cid}/billing/setup")
-def api_billing_setup(cid: str):
-    """Create the Stripe customer and a card-setup intent for the contingency fee."""
+def api_billing_setup(cid: str, consent: BillingConsentIn):
+    """Open Stripe-hosted card setup after the user accepts the disclosed fee. No charge."""
     owner = require_owner()
     case = db.get_case(cid, owner_id=owner)
     if not case:
-        raise HTTPException(404, "I don't have a case with that ID — want me to open one?")
-    if case.get("stripe_customer_id"):
-        raise HTTPException(400, "Billing is already set up for this case — no need to do it twice.")
-    cust = setup_customer(case["tenant_name"])
-    if "error" in cust:
-        raise HTTPException(502, f"Stripe customer creation failed: {cust['error']}")
-    setup = create_card_setup(
-        cust["customer_id"],
-        idempotency_key=f"{CONNECTOR}-setup-{owner}-{cid}")
+        raise HTTPException(404, "Unknown case")
+    if case.get("billing_status") == "fee_charged":
+        raise HTTPException(409, "The fee is already settled.")
+    setup_key = f"{CONNECTOR}-setup-{owner}-{cid}"
+    customer_id = case.get("stripe_customer_id")
+    if not customer_id:
+        customer = setup_customer(case["tenant_name"], "", idempotency_key=setup_key)
+        if "error" in customer:
+            return _billing_failure(customer)
+        customer_id = customer["customer_id"]
+        db.update_case(cid, {"stripe_customer_id": customer_id}, owner_id=owner)
+    setup = create_card_setup(customer_id, idempotency_key=setup_key)
     if "error" in setup:
-        raise HTTPException(502, f"Stripe card setup failed: {setup['error']}")
-    db.update_case(cid, {"stripe_customer_id": cust["customer_id"],
-                         "billing_status": "card_pending"}, owner_id=owner)
-    return {"case_id": cid, "stripe_customer_id": cust["customer_id"],
-            "client_secret": setup["client_secret"],
-            "fee_disclosure": FEE_DISCLOSURE,
-            "user_message": ("Here's the deal, in plain terms: " + FEE_DISCLOSURE +
-                             " Save your card below and you're done — nothing happens until you tell me the deposit came back.")}
+        return _billing_failure(setup)
+    db.update_case(cid, {"setup_intent_id": setup.get("setup_intent_id"), "checkout_session_id": setup.get("checkout_session_id"), "billing_status": "card_pending", "fee_terms_accepted_at": datetime.now(timezone.utc).isoformat()}, owner_id=owner)
+    return {"case_id": cid, "stripe_customer_id": customer_id,
+            "setup_url": setup.get("setup_url"), "checkout_session_id": setup.get("checkout_session_id"),
+            "setup_intent_id": setup.get("setup_intent_id"), "fee_disclosure": FEE_DISCLOSURE,
+            "user_message": FEE_DISCLOSURE + " Open setup_url to save a payment method securely with Stripe. Saving it does not charge a fee."}
 
 
 @app.get("/api/cases/{cid}/billing/status")
 def api_billing_status(cid: str):
-    """Pollable card-save + billing state for a case."""
+    """Verify saved-card setup with Stripe; a pending checkout is never a saved card."""
     owner = require_owner()
     case = db.get_case(cid, owner_id=owner)
     if not case:
-        raise HTTPException(404, "I don't have a case with that ID — want me to open one?")
-    billing_status = case.get("billing_status") or "none"
-    card_state = _card_state(case)
-    state_msg = {
-        "none": "No card on file yet — set up billing when you're ready.",
-        "pending": "Your card is saved and ready. Nothing is charged until you confirm the recovery.",
-        "ready": "Your card is saved and the fee for this case is settled.",
-        "failed": "The last fee charge failed — your card was not billed. We can retry once you've confirmed.",
-    }.get(card_state, "Billing state unknown — ask me to check.")
-    return {"case_id": cid, "billing_status": billing_status,
-            "card_state": card_state, "fee_disclosure": FEE_DISCLOSURE,
-            "user_message": state_msg}
+        raise HTTPException(404, "Unknown case")
+    verified = {"status": "none"}
+    if case.get("stripe_customer_id"):
+        verified = retrieve_card_setup(case["stripe_customer_id"],
+            setup_intent_id=case.get("setup_intent_id"),
+            checkout_session_id=case.get("checkout_session_id"))
+    state = "ready" if verified.get("status") == "succeeded" and "error" not in verified else "none" if not case.get("stripe_customer_id") else "pending"
+    return {"case_id": cid, "billing_status": case.get("billing_status") or "none",
+            "card_state": state, "setup_status": verified.get("status"),
+            "fee_disclosure": FEE_DISCLOSURE,
+            "user_message": "Your payment method is saved. Review and explicitly approve the fee before payment." if state == "ready" else "Card setup has not been confirmed. Open the Stripe setup link and complete it."}
 
 
 @app.post("/api/cases/{cid}/recovery-confirmed")
@@ -400,15 +417,24 @@ def api_recovery_confirmed(cid: str, payload: RecoveryIn):
                  f"but the deposit on this case is {_money(case['deposit'])}. "
                  "Mind double-checking the amount?")
     fee_cents = contingency_cents(payload.amount_recovered)
+    if payload.fee_amount_cents != fee_cents:
+        raise HTTPException(409, {"error": "fee_changed", "expected_fee_amount_cents": fee_cents, "user_message": "Review the current fee and explicitly approve that amount."})
+    if not case.get("fee_terms_accepted_at"):
+        raise HTTPException(409, "Accept the fee terms through billing setup first.")
+    db.update_case(cid, {"fee_confirmed_at": datetime.now(timezone.utc).isoformat()}, owner_id=owner)
     result = charge_fee(customer_id, fee_cents,
                         f"Deposit recovery fee ({int(FEE_RATE*100)}% of {_money(payload.amount_recovered)}) - case {cid}",
-                        idempotency_key=f"{CONNECTOR}-fee-{owner}-{cid}")
+                        idempotency_key=f"{CONNECTOR}-fee-{owner}-{cid}",
+        setup_intent_id=case.get("setup_intent_id"),
+        checkout_session_id=case.get("checkout_session_id"), consent=payload.confirm_fee)
+    if result.get("status") != "succeeded" and "error" not in result:
+        result = {**result, "error": "Payment has not succeeded.", "code": "payment_pending"}
     if "error" in result:
         db.update_case(cid, {"billing_status": "fee_failed"}, owner_id=owner)
-        raise HTTPException(502, f"The fee charge didn't go through: {result['error']}")
+        return _billing_failure(result)
     db.update_case(cid, {"billing_status": "fee_charged",
                          "amount_recovered": payload.amount_recovered,
-                         "fee_charged_cents": fee_cents}, owner_id=owner)
+                         "fee_charged_cents": fee_cents, "payment_intent_id": result["payment_intent_id"]}, owner_id=owner)
     return {"case_id": cid, "amount_recovered": payload.amount_recovered,
             "fee_rate": FEE_RATE, "fee_charged_cents": fee_cents,
             "payment_intent_id": result["payment_intent_id"],
@@ -419,7 +445,7 @@ def api_recovery_confirmed(cid: str, payload: RecoveryIn):
 
 # ------------------------------------------------------------- life events --
 DRAFT_FIELDS = ("tenant_name", "tenant_forwarding_address", "state", "move_out",
-                "forwarding_date", "deposit", "landlord_name",
+                "forwarding_date", "tenancy_end", "deposit", "landlord_name",
                 "landlord_address", "rental_address")
 
 _DRAFT_LABELS = {
@@ -427,7 +453,8 @@ _DRAFT_LABELS = {
     "tenant_forwarding_address": "your forwarding address",
     "state": "the state you moved out of",
     "move_out": "your move-out date",
-    "forwarding_date": "the date you gave your landlord your forwarding address",
+    "tenancy_end": "the date your tenancy legally ended",
+    "forwarding_date": "the date the landlord received your written forwarding address, if known",
     "deposit": "your deposit amount",
     "landlord_name": "your landlord's name",
     "landlord_address": "your landlord's address",
@@ -449,9 +476,7 @@ def _missing_fields(fields: dict) -> list[str]:
     # forwarding_date is only required where the legal clock runs from it
     # (TX, CT, MN, WY); everywhere else the clock runs from move-out.
     state = fields.get("state")
-    required = [f for f in DRAFT_FIELDS
-                if f != "forwarding_date"
-                or (state and requires_forwarding_date(state))]
+    required = [f for f in DRAFT_FIELDS if f not in ("forwarding_date", "tenancy_end")]
     return [f for f in required if not fields.get(f)]
 
 
@@ -462,16 +487,6 @@ def _draft_nudge(draft_id: str, fields: dict, missing: list[str]) -> str:
         state_name = get_state(state)["state"] if state else None
     except KeyError:
         pass
-    if missing == ["forwarding_date"] and state:
-        days = ""
-        try:
-            days = f" {(date.today() - date.fromisoformat(fields['move_out'])).days} days ago"
-        except Exception:
-            pass
-        dep = f" with your {_money(fields['deposit'])} deposit on the line" if fields.get("deposit") else ""
-        return (f"Quick one — I see you moved out of {state_name or state}{days}{dep}. "
-                f"In {state_name or state}, the landlord's {get_state(state)['deadline_days']}-day clock "
-                "starts the day you gave them your forwarding address. When did you send it?")
     labels = [_DRAFT_LABELS[m] for m in missing]
     where = f" from {state_name}" if state_name else ""
     return (f"I caught your move{where} — let me get your deposit back on the radar. "
@@ -483,9 +498,8 @@ def _draft_nudge(draft_id: str, fields: dict, missing: list[str]) -> str:
 def api_life_events(event: LifeEventIn):
     """Receive a fan-out life event from the shared bus.
 
-    Service-key authenticated (see IdentityMiddleware) — there is no user
-    owner here, so drafts/cases created from the bus store owner_id=NULL.
-    The promote endpoint stamps the caller's owner when the draft is claimed.
+    The caller's verified API key determines ownership. Client-supplied
+    owner IDs and legacy records without an owner are never claimable.
     Creates a real case when the payload is complete, otherwise a draft case
     pre-filled with everything the payload provides. Always returns the
     proactive nudge in `user_message`.
@@ -493,7 +507,9 @@ def api_life_events(event: LifeEventIn):
     if event.event_type != "move":
         raise HTTPException(
             400, f"I don't act on '{event.event_type}' events yet — I watch for moves.")
-    fields = _draft_from_payload("move", event.payload or {})
+    owner = require_owner()
+    validated = _validate_input(PromoteIn, event.payload or {})
+    fields = _draft_from_payload("move", validated.model_dump(mode="json", exclude_none=True))
     if fields.get("state"):
         try:
             get_state(fields["state"])
@@ -501,11 +517,11 @@ def api_life_events(event: LifeEventIn):
             raise HTTPException(400, f"Unknown state abbreviation: {fields['state']}")
     missing = _missing_fields(fields)
     if not missing:
-        cid, status = _create_case_row(fields, emit=False, owner=None)  # came from the bus; don't re-emit
+        cid, status = _create_case_row(fields, emit=False, owner=owner)
         return {"case_id": cid, "draft": False, **status,
                 "user_message": _case_nudge(status)}
-    draft_id = uuid.uuid4().hex[:12]
-    db.insert_draft(draft_id, fields, owner_id=None)  # bus-created: unclaimed until promote
+    draft_id = uuid.uuid4().hex
+    db.insert_draft(draft_id, fields, owner_id=owner)
     return {"draft_id": draft_id, "draft": True,
             "missing": missing,
             "prefilled": {k: v for k, v in fields.items() if k in DRAFT_FIELDS and v},
@@ -548,13 +564,66 @@ def api_promote_draft(draft_id: str, extra: PromoteIn):
     if missing:
         labels = [_DRAFT_LABELS[m] for m in missing]
         raise HTTPException(400, f"Still need {', '.join(labels)} before I can open your case.")
-    cid, status = _create_case_row(fields, emit=False, owner=owner)
-    db.delete_draft(draft_id)
+    fields = _row_to_case_fields(_validate_input(CaseIn, {k: fields[k] for k in CaseIn.model_fields if fields.get(k) is not None}))
+    status = _status_for(fields)
+    cid = uuid.uuid4().hex
+    if not db.promote_draft(draft_id, owner, cid, fields):
+        raise HTTPException(409, "The draft has already been promoted or deleted.")
     return {"case_id": cid, "draft": False, **status,
             "user_message": _case_nudge(status)}
+
+
+class DeleteDataIn(StrictModel):
+    confirm_delete: Literal[True] = Field(description="The user explicitly confirms deleting their local records and generated documents.")
+
+
+@app.get("/api/me/data")
+def export_my_data():
+    """Export only the authenticated caller's local records."""
+    return {"records": db.export_owner(require_owner()), "user_message": "This export contains your local service records."}
+
+
+@app.delete("/api/me/data")
+def delete_my_data(consent: DeleteDataIn):
+    """Delete local records and documents. Stripe/payment audit records remain separately retained."""
+    deleted = db.delete_owner(require_owner())
+    for row in deleted.get("cases", []):
+        (LETTER_DIR / f"demand-letter-{row['id']}.pdf").unlink(missing_ok=True)
+    return {"deleted": {table: len(rows) for table, rows in deleted.items()},
+            "user_message": "Your local records and generated documents have been deleted. Stripe transaction records and the payment audit ledger are retained separately; contact support for related requests."}
+
+
+class FeeQuoteIn(StrictModel):
+    amount_recovered: float = Field(gt=0, le=1_000_000, description="The actual recovered amount to quote; this operation does not charge.")
+
+
+@app.post("/api/cases/{cid}/billing/quote")
+def quote_fee(cid: str, payload: FeeQuoteIn):
+    """Show the exact rounded fee for review; no card setup, confirmation or payment occurs."""
+    owner = require_owner()
+    case = db.get_case(cid, owner_id=owner)
+    if not case:
+        raise HTTPException(404, "Unknown case")
+    if payload.amount_recovered > case["deposit"]:
+        raise HTTPException(400, "The recovery amount exceeds the recorded case amount.")
+    fee = contingency_cents(payload.amount_recovered)
+    return {"case_id": cid, "currency": "USD", "recovery_amount": payload.amount_recovered,
+            "fee_rate": 0.25, "fee_amount_cents": fee, "charged": False,
+            "user_message": f"The fee would be {fee / 100:.2f} USD. Review it, then explicitly approve this exact amount if you want to pay."}
 
 
 # Public marketing site is only servable in dev; in production this
 # process serves the authenticated API only.
 if not _PROD:
     app.mount("/", StaticFiles(directory=str(ROOT / "static"), html=True), name="static")
+
+
+# Shared authenticated API schema and payment return page.
+try:
+    from api_support import install_api_contract
+except ImportError:
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from api_support import install_api_contract
+install_api_contract(app, "deposit-recovery", app.title)

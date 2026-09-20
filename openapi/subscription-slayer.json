@@ -2,8 +2,18 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Subscription Slayer",
-    "version": "0.2.0"
+    "description": "Qull Connect API. Supply a per-user API key in Authorization: Bearer <key>. Keys identify one customer; arbitrary platform/user-id headers are not accepted. Payment setup opens hosted Stripe Checkout and does not charge a service fee. Use the record's billing/status operation to verify setup, then explicitly authorize the applicable fee. See the linked guide for workflow and service limits.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Qull, Inc.",
+      "email": "wasiq@qull.io"
+    }
   },
+  "servers": [
+    {
+      "url": "https://5.78.152.6.nip.io/subscription-slayer"
+    }
+  ],
   "paths": {
     "/health": {
       "get": {
@@ -18,12 +28,14 @@
               }
             }
           }
-        }
+        },
+        "security": []
       }
     },
     "/api/scan": {
       "post": {
         "summary": "Scan",
+        "description": "Fixture-only demonstration. Gmail integration requires per-user OAuth and is unavailable.",
         "operationId": "scan_api_scan_post",
         "requestBody": {
           "content": {
@@ -53,11 +65,110 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
+          }
+        }
+      }
+    },
+    "/api/receipts": {
+      "post": {
+        "summary": "Import Receipts",
+        "description": "Detect recurring charges from user-provided receipt text. Raw receipts are not stored.",
+        "operationId": "import_receipts_api_receipts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiptImport"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
     },
     "/api/subscriptions": {
+      "post": {
+        "summary": "Add Subscription",
+        "description": "Track a recurring charge supplied by the user; does not contact the merchant.",
+        "operationId": "add_subscription_api_subscriptions_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualSubscription"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
+          }
+        }
+      },
       "get": {
         "summary": "List Subscriptions",
         "operationId": "list_subscriptions_api_subscriptions_get",
@@ -97,6 +208,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -144,6 +264,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -181,6 +310,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -218,6 +356,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -235,6 +382,65 @@
                 "schema": {}
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
+          }
+        }
+      }
+    },
+    "/api/savings/fee-quote": {
+      "post": {
+        "summary": "Savings Fee Quote",
+        "description": "Read-only quote for the exact completed cancellation IDs. Does not reserve or charge.",
+        "operationId": "savings_fee_quote_api_savings_fee_quote_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavingsQuoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Savings Fee Quote Api Savings Fee Quote Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -272,6 +478,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -279,7 +494,7 @@
     "/api/life-events": {
       "post": {
         "summary": "Receive Life Event",
-        "description": "Bus receiver: turn a fanned-out life event into a draft case + nudge.\n\nService-key authenticated (see IdentityMiddleware) \u2014 there is no user\nowner here, so created subscriptions store owner_id=NULL.\n\nContract: pre-fill every field the payload provides, return the proactive\nnudge as `user_message`.",
+        "description": "Receive user-authorized charge metadata; never a shared service-key draft.",
         "operationId": "receive_life_event_api_life_events_post",
         "requestBody": {
           "content": {
@@ -309,6 +524,45 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
+          }
+        }
+      }
+    },
+    "/api/data": {
+      "delete": {
+        "summary": "Delete My Data",
+        "description": "Delete the authenticated user's operational data. Payment/accounting records remain with the processor and protected billing ledger.",
+        "operationId": "delete_my_data_api_data_delete",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Delete My Data Api Data Delete"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or disabled per-user API key."
+          },
+          "413": {
+            "description": "Request body exceeds the configured limit."
+          },
+          "429": {
+            "description": "Request rate limit exceeded. Wait for the Retry-After interval."
           }
         }
       }
@@ -318,6 +572,11 @@
     "schemas": {
       "BillingSetupRequest": {
         "properties": {
+          "accept_fee_terms": {
+            "type": "boolean",
+            "const": true,
+            "title": "Accept Fee Terms"
+          },
           "name": {
             "type": "string",
             "maxLength": 100,
@@ -331,8 +590,10 @@
             "default": ""
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
+          "accept_fee_terms",
           "name"
         ],
         "title": "BillingSetupRequest"
@@ -364,13 +625,146 @@
             "title": "Payload"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "event_type"
         ],
         "title": "LifeEventRequest"
       },
+      "ManualSubscription": {
+        "properties": {
+          "merchant": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Merchant"
+          },
+          "amount": {
+            "type": "number",
+            "maximum": 100000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "USD",
+              "EUR",
+              "GBP",
+              "CAD"
+            ],
+            "title": "Currency",
+            "default": "USD"
+          },
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "monthly",
+              "yearly"
+            ],
+            "title": "Frequency",
+            "default": "monthly"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "merchant",
+          "amount"
+        ],
+        "title": "ManualSubscription"
+      },
+      "Receipt": {
+        "properties": {
+          "subject": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Subject",
+            "default": ""
+          },
+          "sender": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Sender",
+            "default": ""
+          },
+          "snippet": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Snippet",
+            "default": ""
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 8000,
+            "title": "Body",
+            "default": ""
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "title": "Date"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "date"
+        ],
+        "title": "Receipt"
+      },
+      "ReceiptImport": {
+        "properties": {
+          "receipts": {
+            "items": {
+              "$ref": "#/components/schemas/Receipt"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Receipts"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "receipts"
+        ],
+        "title": "ReceiptImport"
+      },
       "SavingsConfirmRequest": {
+        "properties": {
+          "fee_amount_cents": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Fee Amount Cents"
+          },
+          "confirm_fee": {
+            "type": "boolean",
+            "const": true,
+            "title": "Confirm Fee"
+          },
+          "subscription_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Subscription Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "fee_amount_cents",
+          "confirm_fee",
+          "subscription_ids"
+        ],
+        "title": "SavingsConfirmRequest"
+      },
+      "SavingsQuoteRequest": {
         "properties": {
           "subscription_ids": {
             "items": {
@@ -382,11 +776,12 @@
             "title": "Subscription Ids"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "subscription_ids"
         ],
-        "title": "SavingsConfirmRequest"
+        "title": "SavingsQuoteRequest"
       },
       "ScanRequest": {
         "properties": {
@@ -404,6 +799,7 @@
             "default": 100
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "title": "ScanRequest"
       },
@@ -446,6 +842,7 @@
             "title": "Notes"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "title": "SubscriptionUpdate"
       },
@@ -489,11 +886,19 @@
         ],
         "title": "ValidationError"
       }
+    },
+    "securitySchemes": {
+      "UserApiKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Qull per-user API key",
+        "description": "An operator-provisioned opaque API key belonging to one customer. Never use a Stripe secret key here."
+      }
     }
   },
-  "servers": [
+  "security": [
     {
-      "url": "https://5.78.152.6.nip.io/subscription-slayer/api"
+      "UserApiKey": []
     }
   ]
 }

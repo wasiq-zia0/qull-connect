@@ -1,1 +1,358 @@
-{"actions_on_install":"none","auth":{"type":"none","why":"No user accounts or third-party access needed. The user talks to the agent in chat; billing uses the connected Stripe credential only when the user confirms a payout."},"description":"Turns EU flight delays into money. Detects delayed, cancelled, or overbooked flights, checks them against EU Regulation 261/2004, and drafts the claim letter — €250/€400/€600. Contingency: 30% of the confirmed payout, charged only if the airline pays.","display_name":"EU261 Flight Comp","proactive_triggers":[{"action":"handle_life_event","description":"Delay/cancellation email in Gmail, or boarding pass plus a schedule-change notice","event":"flight_delayed","needs_user_confirmation":true}],"tools":[{"description":"Check a flight disruption against EU261/2004 and get the eligibility verdict + compensation amount","input_schema":{"properties":{"airline":{"type":"string"},"airline_eu_licensed":{"type":"boolean"},"arrival_delay_h":{"type":"number"},"disruption":{"enum":["delay","cancellation","denied_boarding"],"type":"string"},"extraordinary_circumstances":{"type":"boolean"},"flight_date":{"format":"date","type":"string"},"flight_number":{"type":"string"},"from_iata":{"maxLength":3,"minLength":3,"type":"string"},"passenger_email":{"format":"email","type":"string"},"passenger_name":{"type":"string"},"to_iata":{"maxLength":3,"minLength":3,"type":"string"}},"required":["passenger_name","passenger_email","flight_number","flight_date","airline","from_iata","to_iata","disruption"],"type":"object"},"name":"check_eligibility"},{"description":"Get the stored eligibility verdict, tier, and amount for a claim","input_schema":{"properties":{"claim_id":{"type":"string"}},"required":["claim_id"],"type":"object"},"name":"get_claim"},{"description":"Generate the Regulation 261/2004 claim letter pack PDF (only for eligible claims)","input_schema":{"properties":{"claim_id":{"type":"string"}},"required":["claim_id"],"type":"object"},"name":"generate_claim_pack"},{"description":"Set up billing: create the Stripe customer and card SetupIntent. No charge is made; returns the plain-English 30% fee disclosure first","input_schema":{"properties":{"claim_id":{"type":"string"}},"required":["claim_id"],"type":"object"},"name":"setup_billing"},{"description":"Confirm the airline paid out; charge the 30% contingency fee off-session","input_schema":{"properties":{"amount_eur":{"type":"number"},"claim_id":{"type":"string"}},"required":["claim_id","amount_eur"],"type":"object"},"name":"confirm_payout"},{"description":"Receive a fanned-out flight_delayed life event; creates a draft claim and returns the proactive nudge","input_schema":{"properties":{"event_type":{"type":"string"},"payload":{"type":"object"}},"required":["event_type","payload"],"type":"object"},"name":"handle_life_event"}],"version":"0.1.0","webhooks":{"flight_delayed":"Fired when a qualifying EU261 disruption is detected; agent sends the proactive nudge with the compensation amount."}}
+{
+  "actions_on_install": "none",
+  "auth": {
+    "type": "api_key",
+    "header": "Authorization",
+    "scheme": "Bearer",
+    "description": "Operator-provisioned opaque key for one user. No OAuth or confirmed Muse identity exchange is implemented."
+  },
+  "description": "Check a flight disruption against the supported EU261 rules and prepare a claim pack to send to the airline yourself. 30% of the actual compensation payout you confirm, billed in EUR. The fee is shown before you authorize payment.",
+  "display_name": "FlightPay",
+  "proactive_triggers": [],
+  "tools": [
+    {
+      "name": "check_eligibility",
+      "description": "Preliminary EU261 assessment; unknown conditions require review, never guaranteed payout.",
+      "input_schema": {
+        "properties": {
+          "passenger_name": {
+            "title": "Passenger Name",
+            "type": "string"
+          },
+          "passenger_email": {
+            "title": "Passenger Email",
+            "type": "string"
+          },
+          "flight_number": {
+            "title": "Flight Number",
+            "type": "string"
+          },
+          "flight_date": {
+            "title": "Flight Date",
+            "type": "string"
+          },
+          "airline": {
+            "title": "Airline",
+            "type": "string"
+          },
+          "from_iata": {
+            "title": "From Iata",
+            "type": "string"
+          },
+          "to_iata": {
+            "title": "To Iata",
+            "type": "string"
+          },
+          "disruption": {
+            "title": "Disruption",
+            "type": "string"
+          },
+          "arrival_delay_h": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Arrival Delay H"
+          },
+          "airline_eu_licensed": {
+            "default": false,
+            "title": "Airline Eu Licensed",
+            "type": "boolean"
+          },
+          "extraordinary_circumstances": {
+            "default": false,
+            "title": "Extraordinary Circumstances",
+            "type": "boolean"
+          },
+          "notice_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Notice Days"
+          },
+          "rerouted": {
+            "default": false,
+            "title": "Rerouted",
+            "type": "boolean"
+          },
+          "reroute_dep_early_h": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Reroute Dep Early H"
+          },
+          "reroute_arr_delay_h": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Reroute Arr Delay H"
+          },
+          "denied_boarding_involuntary": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Denied Boarding Involuntary"
+          },
+          "valid_travel_documents": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Valid Travel Documents"
+          }
+        },
+        "required": [
+          "passenger_name",
+          "passenger_email",
+          "flight_number",
+          "flight_date",
+          "airline",
+          "from_iata",
+          "to_iata",
+          "disruption"
+        ],
+        "title": "check_eligibilityArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_claim",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "claim_id": {
+            "title": "Claim Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "claim_id"
+        ],
+        "title": "get_claimArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "generate_claim_pack",
+      "description": "Prepare PDF bytes for a user-reviewed claim. The user submits it to the airline.",
+      "input_schema": {
+        "properties": {
+          "claim_id": {
+            "title": "Claim Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "claim_id"
+        ],
+        "title": "generate_claim_packArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "setup_billing",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "claim_id": {
+            "title": "Claim Id",
+            "type": "string"
+          },
+          "accept_fee_terms": {
+            "title": "Accept Fee Terms",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "claim_id",
+          "accept_fee_terms"
+        ],
+        "title": "setup_billingArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "billing_status",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "claim_id": {
+            "title": "Claim Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "claim_id"
+        ],
+        "title": "billing_statusArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "confirm_payout",
+      "description": "Confirm the actual EUR payout and the exact EUR-cent fee approved by the user.",
+      "input_schema": {
+        "properties": {
+          "claim_id": {
+            "title": "Claim Id",
+            "type": "string"
+          },
+          "amount_eur": {
+            "title": "Amount Eur",
+            "type": "number"
+          },
+          "confirm_fee": {
+            "title": "Confirm Fee",
+            "type": "boolean"
+          },
+          "fee_amount_cents": {
+            "title": "Fee Amount Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "claim_id",
+          "amount_eur",
+          "confirm_fee",
+          "fee_amount_cents"
+        ],
+        "title": "confirm_payoutArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "handle_life_event",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          }
+        },
+        "required": [
+          "event_type",
+          "payload"
+        ],
+        "title": "handle_life_eventArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "confirm_claim",
+      "description": "",
+      "input_schema": {
+        "properties": {
+          "claim_id": {
+            "title": "Claim Id",
+            "type": "string"
+          },
+          "fields": {
+            "additionalProperties": true,
+            "title": "Fields",
+            "type": "object"
+          }
+        },
+        "required": [
+          "claim_id",
+          "fields"
+        ],
+        "title": "confirm_claimArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "export_my_data",
+      "description": "Export the caller's local service records.",
+      "input_schema": {
+        "properties": {},
+        "title": "export_my_dataArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "delete_my_data",
+      "description": "Delete the caller's local cases and generated documents after explicit confirmation. Financial records may be retained by Stripe and the payment ledger.",
+      "input_schema": {
+        "properties": {
+          "confirm_delete": {
+            "title": "Confirm Delete",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "confirm_delete"
+        ],
+        "title": "delete_my_dataArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "quote_fee",
+      "description": "Calculate the exact fee without charging, for the user to review.",
+      "input_schema": {
+        "properties": {
+          "cid": {
+            "title": "Cid",
+            "type": "string"
+          },
+          "amount_eur": {
+            "title": "Amount Eur",
+            "type": "number"
+          }
+        },
+        "required": [
+          "cid",
+          "amount_eur"
+        ],
+        "title": "quote_feeArguments",
+        "type": "object"
+      }
+    }
+  ],
+  "version": "1.0.0",
+  "webhooks": {},
+  "documentation_url": "https://qull.io/connect/flightpay/api-docs/",
+  "privacy_policy_url": "https://qull.io/connect/flightpay/privacy/",
+  "terms_of_service_url": "https://qull.io/connect/flightpay/terms/",
+  "support_email": "wasiq@qull.io"
+}

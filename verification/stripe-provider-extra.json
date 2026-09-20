@@ -1,0 +1,46 @@
+{
+  "checked_at": "2026-09-20T19:15:34.752459+00:00",
+  "environment": "isolated Stripe sandbox",
+  "real_money_moved": false,
+  "checks": [
+    {
+      "check": "Saved test payment method successfully established before decline test",
+      "passed": true
+    },
+    {
+      "check": "Provider-declined charge returned requires_payment_method and payment_not_completed",
+      "passed": true
+    },
+    {
+      "check": "Declined charge was not reported paid",
+      "passed": true
+    },
+    {
+      "check": "Authentication-required test SetupIntent returned requires_action; no fee was attempted",
+      "passed": true
+    },
+    {
+      "check": "Hosted Checkout visibly identifies Sandbox and no real payments",
+      "passed": true
+    },
+    {
+      "check": "Hosted Checkout summary reports livemode=false and amount due=0",
+      "passed": true
+    },
+    {
+      "check": "Hosted Checkout displays save-for-later disclosure and test card form",
+      "passed": true
+    }
+  ],
+  "blocked_checks": [
+    {
+      "check": "Hosted Checkout final setup submission and completion redirect",
+      "reason": "Automatic browser approval review rejected the final sandbox checkout submission as a financial/setup action requiring user handoff. No alternate submission method was attempted."
+    },
+    {
+      "check": "Interactive bank authentication and final app handoff",
+      "reason": "Not reached because final hosted setup submission was blocked. Existing production return route has not been upgraded, so production callback behavior is not asserted."
+    }
+  ],
+  "limits": "This is source/shared billing test evidence, not production verification or Muse approval. No application API requests or live charges were executed. No credentials, test card records, session links, or client secrets are included."
+}

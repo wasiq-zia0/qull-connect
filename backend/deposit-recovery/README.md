@@ -1,121 +1,120 @@
-# Deposit Recovery — Muse connector
+# Deposit Recovery
 
-Recovers wrongfully withheld rental security deposits. The agent detects a
-move, diaries the state's legal return deadline, generates a statute-citing
-demand letter the day the deadline passes, and charges a 25% contingency fee
-only when the tenant confirms the deposit came back.
+Organize your tenancy details, review an estimated state return deadline, and prepare a demand-letter PDF you can send to your landlord.
 
-**The agent is the UI.** Every API response carries a `user_message` field — a
-warm, ready-to-speak sentence the agent can say verbatim — alongside the
-machine JSON. Every flow is demoable inside a plain chat transcript. Golden
-path: trigger → one tap → done.
+**Current scope:** U.S. residential rental deposits. Limited deadline estimates are currently supported for reviewed California, Connecticut, and Texas rules; other states require review and use factual request letters.
 
-## What it does
+## Deliverables
 
-1. **Detects the move** — via the shared life-event bus (`POST /api/life-events`
-   receives the `move` fan-out) or a directly opened case.
-2. **Diaries the deadline** — 50 states + DC table; the clock runs from
-   move-out, except TX, CT, MN, WY where it runs from the date the tenant gave
-   the landlord a forwarding address (that date is *required* there — the API
-   returns 400 without it, never falls back to move-out).
-3. **Generates the demand letter** — statute-citing PDF, only once the deadline
-   has passed.
-4. **Charges 25% on confirmed recovery** — and only then. No recovery, no charge.
+- A case summary with the information used to estimate the return deadline.
+- A letter PDF using your tenancy details; unreviewed state rules produce a neutral request without unsupported legal assertions.
+- A record of your letter status, reported recovery, and fee status.
 
-Proactive triggers live in `triggers.yaml` (life event, detection signal, exact
-nudge copy). Suite integration follows the contract in
-`~/workspace/connectors/life-events/README.md`: this connector emits `move`
-events it detects and receives the bus fan-out.
+## What the user supplies
 
-## Run it
+- Tenant name and forwarding address
+- Rental property and landlord names/addresses
+- State, move-out date, and forwarding-address date where relevant
+- Deposit amount and any amount later recovered
 
-```bash
-cd ~/workspace/deposit-recovery
-.venv/bin/python run.py            # REST :8471 + MCP :8571
-# overrides:
-.venv/bin/python run.py --rest-port 8471 --mcp-port 8571 --host 127.0.0.1
-# or: DEPOSIT_REST_PORT=8471 DEPOSIT_MCP_PORT=8571 .venv/bin/python run.py
-```
+## Customer workflow
 
-REST only: `.venv/bin/uvicorn app:app --port 8471`
-MCP only: `.venv/bin/python mcp_server.py --port 8571`
+1. **Record the tenancy.** Enter the dates, addresses, and deposit amount. Check the details against your lease and move-out records.
+2. **Review the deadline.** Read the estimate and its assumptions. Check the current official rule before relying on it.
+3. **Send your letter.** Review the generated PDF, make any needed corrections, and send it yourself. Keep evidence of delivery.
+4. **Confirm the outcome.** If money is returned, record the actual amount and review the fee before authorizing payment.
 
-Open http://127.0.0.1:8471 for the thin demo page.
+## Price and collection
 
-## REST API (http://127.0.0.1:8471)
+25% of the recovered deposit amount you confirm. No recovery confirmation means no recovery fee.
 
-| Method | Path | What |
+If you confirm that $1,800 was returned, the fee is $450 and you keep $1,350.
+
+You can contact your landlord yourself and use your state or local tenant resources without paying Qull.
+
+Billing setup requires explicit fee-term acceptance (`accept_fee_terms: true`)
+and returns Stripe's hosted setup URL. A return redirect does not establish
+that a payment method is ready; poll the authenticated billing-status endpoint.
+The charge call requires a fresh confirmation (`confirm_fee: true`), the exact
+expected `fee_amount_cents`, and the operation's outcome data. The server
+calculates the amount and verifies the saved payment method. Never treat a
+local customer ID, a sample response, or a health response as proof of payment.
+
+No test may create a live charge without separate explicit authorization.
+Use Stripe test mode for end-to-end payment verification. There is no automatic
+renewal, generic subscription, or automated tax calculation in this release.
+
+## Authentication and access
+
+REST calls use `Authorization: Bearer <opaque Qull user API key>`.
+Each credential maps to one server-controlled owner in `QULL_API_KEYS_FILE`.
+A caller-supplied platform/user header is not production authentication.
+Life-event intake follows the same owner-bound authentication.
+See [integration guide](../../docs/INTEGRATION.md) and
+[deployment documentation](../deploy/DEPLOY.md) for provisioning and hosting.
+
+Public `/health` is process liveness. `/ready` is configuration readiness, not
+confirmation that a customer workflow or payment was completed. No OAuth flow
+or Meta-specific credential exchange is implemented; confirm that integration
+contract before describing the service as connected to Muse.
+
+## Run and develop
+
+From this service directory, install `requirements.txt` in an isolated Python
+environment. Run `python run.py` to start the REST/MCP processes according to
+the checked-in ports, or `uvicorn app:app --host 127.0.0.1 --port 8000` for REST.
+Use the deploy scripts and their current environment documentation for the
+production configuration. Keep databases and credentials out of Git.
+
+## REST operations
+
+| Method | Path | Operation |
 |---|---|---|
-| GET | `/api/state-laws` | all states: deadline, statute |
-| GET | `/api/state-laws/{abbr}` | one state's law |
-| POST | `/api/cases` | open a case (400 if `forwarding_date` missing in TX/CT/MN/WY) |
-| GET | `/api/cases/{id}` | status: deadline, days remaining/overdue, max recovery, next action |
-| POST | `/api/cases/{id}/demand-letter` | demand-letter PDF as base64 JSON — only when overdue (400 otherwise) |
-| POST | `/api/cases/{id}/billing/setup` | Stripe customer + SetupIntent `client_secret` for the card |
-| POST | `/api/cases/{id}/recovery-confirmed` | `{"amount_recovered": N}` → charges 25% off-session |
-| POST | `/api/life-events` | receive bus fan-out `{"event_type","payload"}` → case or draft + nudge |
-| GET | `/api/drafts/{id}` | inspect a draft case |
-| POST | `/api/drafts/{id}/promote` | merge conversationally collected fields → open the case |
+| `GET` | `/health` | Public liveness probe (orchestrator). |
+| `GET` | `/api/state-laws` | Api list states |
+| `GET` | `/api/state-laws/{abbr}` | Api get state |
+| `POST` | `/api/cases` | Api create case |
+| `GET` | `/api/cases/{cid}` | Api get case |
+| `POST` | `/api/cases/{cid}/demand-letter` | Api demand letter |
+| `POST` | `/api/cases/{cid}/letter-status` | Record the user's review/send decision on the prepared demand letter. |
+| `POST` | `/api/cases/{cid}/billing/setup` | Open Stripe-hosted card setup after the user accepts the disclosed fee. No charge. |
+| `GET` | `/api/cases/{cid}/billing/status` | Verify saved-card setup with Stripe; a pending checkout is never a saved card. |
+| `POST` | `/api/cases/{cid}/recovery-confirmed` | Tenant confirms the deposit came back: charge the 25% contingency fee off-session. |
+| `POST` | `/api/life-events` | Receive a fan-out life event from the shared bus. |
+| `GET` | `/api/drafts/{draft_id}` | Api get draft |
+| `POST` | `/api/drafts/{draft_id}/promote` | Merge conversationally collected fields into a draft and open the case. |
+| `GET` | `/api/me/data` | Export only the authenticated caller's local records. |
+| `DELETE` | `/api/me/data` | Delete local records and documents. Stripe/payment audit records remain separately retained. |
+| `POST` | `/api/cases/{cid}/billing/quote` | Show the exact rounded fee for review; no card setup, confirmation or payment occurs. |
 
-Every response includes `user_message`. Errors too (`{"detail", "user_message"}`).
+The OpenAPI spec in `../../openapi/deposit-recovery.json` supplies exact request
+models. The public server origin is `https://5.78.152.6.nip.io/deposit-recovery`; operation paths
+already contain `/api`. Do not compose `/api/api`.
 
-## MCP (http://127.0.0.1:8571/mcp, streamable HTTP)
+## Important limits
 
-Tools (same rules as REST, `user_message` included):
+- The service prepares documents; it does not contact your landlord, mail letters, negotiate, file in court, or provide representation.
+- Only specifically reviewed rule paths provide deadline estimates. Other states or incomplete facts require manual review; lease terms, notices, local rules, and exceptions can change the result.
+- Deadline status is calculated when requested. A live email watcher, scheduled mailing service, and automated reminders are not included.
 
-- `create_case` — open a case; `forwarding_date` required in TX/CT/MN/WY
-- `get_case_status` — deadline, days remaining/overdue, max recovery, next action
-- `generate_demand_letter` — PDF (base64) once overdue; error explains the wait
-- `get_state_law` — deadline, statute, penalty multiple, forwarding-date requirement
+Document preparation and general information; no legal advice or attorney–client relationship.
 
-## Money flow
+## Data handled
 
-1. Case opened → `POST /api/cases/{id}/billing/setup` creates the Stripe
-   customer and returns a SetupIntent `client_secret`. The tenant saves a card.
-   **No charge.** The response states, before the card is saved: *"You will be
-   charged 25% of the recovered deposit, only if you confirm the recovery. No
-   charge otherwise."*
-2. Deadline passes → demand letter (template, not legal advice).
-3. Tenant confirms the deposit landed → `POST /api/cases/{id}/recovery-confirmed`
-   charges 25% of the confirmed amount off-session against the saved card.
-   Example: $1,800 recovered → $450.00 fee.
-4. No recovery confirmed → $0, forever. Cancel any time before confirming.
+Names, rental and forwarding addresses, landlord details, tenancy dates, deposit/recovery amounts, generated letters, case status, and Stripe references.
 
-Full terms: `TERMS.md`.
+User records are scoped to the authenticated owner. Use documented deletion
+operations where available. Local record deletion does not reverse payments
+or erase Stripe's independent records. A final retention/backup policy and
+support process remain operational launch requirements.
 
-## Data
+## Links
 
-- `data/state_laws.json` — all 50 states + DC: return deadline, basis
-  (move-out vs forwarding address), statute, penalty multiples where verified.
-  Deadlines from Nolo's 50-state chart; penalties from Apartments.com's
-  rental-manager chart (both retrieved Sep 2026).
-- `data/app.db` — SQLite case + draft storage (created on startup). Cases
-  persist across restarts.
-- `triggers.yaml` — proactive trigger definitions and exact nudge copy.
+- [Product overview](https://qull.io/connect/deposit-recovery/)
+- [Integration and schema reference](https://qull.io/connect/deposit-recovery/api-docs/)
+- [Privacy policy — draft](https://qull.io/connect/deposit-recovery/privacy/)
+- [Terms — draft](https://qull.io/connect/deposit-recovery/terms/)
+- Contact: wasiq@qull.io (existing Qull contact; mailbox delivery not verified here).
 
-## Security
-
-- No secrets in code or logs. Stripe goes through the `stripe` workspace skill,
-  which uses a **least-privilege restricted key (Customers / SetupIntents /
-  PaymentIntents write only)** — no raw keys anywhere.
-- All inputs validated with pydantic (length caps, state normalization,
-  positive deposit).
-- All SQL is parameterized; user input never touches query structure.
-- All user-supplied text is treated as untrusted data: control characters are
-  stripped before rendering into letters/PDFs, and user input is never
-  interpreted as markup or instructions.
-- The demand letter is labeled **template automation, NOT legal advice**, in
-  the letter itself and in every surface that presents it.
-
-## Disclaimer
-
-**Template automation, NOT legal advice.** Statutes change; verify the cited
-statute against current law in your state before sending anything. See
-`TERMS.md`.
-
-## Status
-
-Private VM currently — **public hosting is TBD**. The connector is built to
-Meta's connector review bar (functional end-to-end, security, honest fee
-disclosure, legal labels); submission notes live in
-`~/workspace/connectors/submissions/deposit-recovery.md`.
+A functioning local test is not Meta approval. See [review status](../../STATUS.md)
+for the distinction between source changes, tests, deployment, and review.

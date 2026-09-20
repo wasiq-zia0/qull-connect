@@ -1,154 +1,288 @@
 {
   "actions_on_install": "none",
   "auth": {
-    "type": "oauth2_user",
-    "why": "To read your receipt and invoice emails so recurring subscriptions can be detected. Read-only: the connector never sends, replies to, forwards, labels, archives, or deletes any email."
+    "type": "api_key",
+    "header": "Authorization",
+    "scheme": "Bearer",
+    "description": "Operator-provisioned opaque key for one user. No OAuth or confirmed Muse identity exchange is implemented."
   },
-  "description": "Finds every recurring subscription hiding in your Gmail receipts, walks you through cancelling the ones you don't want, and tracks what you save. Flat fee: $10 per completed cancellation, charged only when you confirm the savings.",
+  "description": "Identify recurring charges in receipts you provide, get merchant-specific cancellation instructions, and track the cancellations you complete. USD $10 for each completed cancellation you select and explicitly confirm for billing. No recurring Qull subscription fee.",
   "display_name": "Subscription Slayer",
-  "proactive_triggers": [
-    {
-      "action": "scan_and_nudge",
-      "description": "Repeat receipt emails from the same merchant detected in Gmail",
-      "event": "recurring_charge_detected",
-      "needs_user_confirmation": true
-    }
-  ],
+  "proactive_triggers": [],
   "tools": [
     {
-      "description": "Scan Gmail for subscription receipts and detect recurring subscriptions",
+      "name": "scan_subscriptions",
+      "description": "Run a clearly marked fixture demo. Import user-supplied receipts for real detection; Gmail OAuth is not connected.",
       "input_schema": {
         "properties": {
+          "source": {
+            "default": "fixtures",
+            "title": "Source",
+            "type": "string"
+          },
           "max_results": {
             "default": 100,
-            "maximum": 500,
-            "minimum": 1,
+            "title": "Max Results",
             "type": "integer"
-          },
-          "source": {
-            "default": "gmail",
-            "enum": [
-              "gmail",
-              "fixtures"
-            ],
-            "type": "string"
           }
         },
-        "required": []
-      },
-      "name": "scan_subscriptions"
+        "title": "scan_subscriptionsArguments",
+        "type": "object"
+      }
     },
     {
-      "description": "List tracked subscriptions, optionally filtered by status",
+      "name": "import_receipts",
+      "description": "Detect recurring charges from receipts supplied by this user. No mailbox access.",
       "input_schema": {
         "properties": {
-          "status": {
-            "enum": [
-              "new",
-              "reviewing",
-              "keep",
-              "cancel_requested",
-              "cancelled"
-            ],
-            "type": "string"
+          "receipts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Receipts",
+            "type": "array"
           }
         },
-        "required": []
-      },
-      "name": "list_subscriptions"
+        "required": [
+          "receipts"
+        ],
+        "title": "import_receiptsArguments",
+        "type": "object"
+      }
     },
     {
-      "description": "Update a subscription: status, confirmed monthly savings, or notes",
+      "name": "add_subscription",
+      "description": "Track a recurring charge manually; the user reviews and cancels it themselves.",
       "input_schema": {
         "properties": {
-          "notes": {
-            "maxLength": 500,
+          "merchant": {
+            "title": "Merchant",
             "type": "string"
           },
-          "savings_monthly": {
-            "maximum": 100000,
-            "minimum": 0,
+          "amount": {
+            "title": "Amount",
             "type": "number"
           },
+          "currency": {
+            "default": "USD",
+            "title": "Currency",
+            "type": "string"
+          },
+          "frequency": {
+            "default": "monthly",
+            "title": "Frequency",
+            "type": "string"
+          }
+        },
+        "required": [
+          "merchant",
+          "amount"
+        ],
+        "title": "add_subscriptionArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "list_subscriptions",
+      "description": "List only the authenticated user's tracked subscriptions.",
+      "input_schema": {
+        "properties": {
           "status": {
-            "enum": [
-              "new",
-              "reviewing",
-              "keep",
-              "cancel_requested",
-              "cancelled"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "type": "string"
-          },
+            "default": null,
+            "title": "Status"
+          }
+        },
+        "title": "list_subscriptionsArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "update_subscription",
+      "description": "Record the user's cancellation status and monthly saving; does not cancel with a merchant.",
+      "input_schema": {
+        "properties": {
           "subscription_id": {
+            "title": "Subscription Id",
+            "type": "integer"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "savings_monthly": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Savings Monthly"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Notes"
+          }
+        },
+        "required": [
+          "subscription_id"
+        ],
+        "title": "update_subscriptionArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_cancel_pack",
+      "description": "Get a cancellation guide; the user completes the merchant's steps.",
+      "input_schema": {
+        "properties": {
+          "subscription_id": {
+            "title": "Subscription Id",
             "type": "integer"
           }
         },
         "required": [
           "subscription_id"
         ],
+        "title": "get_cancel_packArguments",
         "type": "object"
-      },
-      "name": "update_subscription"
+      }
     },
     {
-      "description": "Get the step-by-step cancellation pack (curated steps + direct link) for a subscription",
+      "name": "setup_billing",
+      "description": "Return a secure hosted card-save URL and the $10 per cancellation fee disclosure. No charge.",
       "input_schema": {
         "properties": {
-          "subscription_id": {
-            "type": "integer"
-          }
-        },
-        "required": [
-          "subscription_id"
-        ],
-        "type": "object"
-      },
-      "name": "get_cancel_pack"
-    },
-    {
-      "description": "Set up billing: Stripe customer + SetupIntent to save a card (no charge taken)",
-      "input_schema": {
-        "properties": {
-          "email": {
-            "type": "string"
-          },
           "name": {
-            "maxLength": 100,
-            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "accept_fee_terms": {
+            "title": "Accept Fee Terms",
+            "type": "boolean"
+          },
+          "email": {
+            "default": "",
+            "title": "Email",
             "type": "string"
           }
         },
         "required": [
-          "name"
+          "name",
+          "accept_fee_terms"
         ],
+        "title": "setup_billingArguments",
         "type": "object"
-      },
-      "name": "setup_billing"
+      }
     },
     {
-      "description": "Confirm savings for cancelled subscriptions; charges the $10-per-cancellation fee off-session",
+      "name": "billing_status",
+      "description": "Verify whether the authenticated user's payment method setup is complete.",
+      "input_schema": {
+        "properties": {},
+        "title": "billing_statusArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "confirm_savings",
+      "description": "Charge $10 per completed cancellation only after the user explicitly agrees to the displayed fee.",
       "input_schema": {
         "properties": {
           "subscription_ids": {
             "items": {
               "type": "integer"
             },
-            "maxItems": 100,
-            "minItems": 1,
+            "title": "Subscription Ids",
+            "type": "array"
+          },
+          "confirm_fee": {
+            "title": "Confirm Fee",
+            "type": "boolean"
+          },
+          "fee_amount_cents": {
+            "title": "Fee Amount Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "subscription_ids",
+          "confirm_fee",
+          "fee_amount_cents"
+        ],
+        "title": "confirm_savingsArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "fee_quote",
+      "description": "Read the exact USD fee for a batch of completed cancellations before asking for payment consent.",
+      "input_schema": {
+        "properties": {
+          "subscription_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Subscription Ids",
             "type": "array"
           }
         },
         "required": [
           "subscription_ids"
         ],
+        "title": "fee_quoteArguments",
         "type": "object"
-      },
-      "name": "confirm_savings"
+      }
+    },
+    {
+      "name": "delete_my_data",
+      "description": "Delete this user's operational records after explicit confirmation. Required payment records are retained separately.",
+      "input_schema": {
+        "properties": {
+          "consent": {
+            "title": "Consent",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "consent"
+        ],
+        "title": "delete_my_dataArguments",
+        "type": "object"
+      }
     }
   ],
-  "version": "0.2.0",
-  "webhooks": {
-    "recurring_charge_detected": "Fired when repeat receipt emails from the same merchant are detected; agent sends the proactive nudge and offers the one-tap cancel walkthrough."
-  }
+  "version": "1.0.0",
+  "webhooks": {},
+  "documentation_url": "https://qull.io/connect/subscription-slayer/api-docs/",
+  "privacy_policy_url": "https://qull.io/connect/subscription-slayer/privacy/",
+  "terms_of_service_url": "https://qull.io/connect/subscription-slayer/terms/",
+  "support_email": "wasiq@qull.io"
 }

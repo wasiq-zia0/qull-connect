@@ -1,11 +1,12 @@
 """SQLite storage for the bill-negotiator connector. File-backed only (data/app.db)."""
 import json
 import sqlite3
+import os
 import uuid
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = BASE_DIR / "data" / "app.db"
+DB_PATH = Path(os.environ.get("DATA_DIR", BASE_DIR / "data")) / "app.db"
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS cases (
     id TEXT PRIMARY KEY,
@@ -50,33 +51,27 @@ def init_db() -> None:
 def _migrate(conn: sqlite3.Connection) -> None:
     """Tenant isolation: every case belongs to exactly one owner."""
     cols = [r[1] for r in conn.execute("PRAGMA table_info(cases)").fetchall()]
+    if "checkout_session_id" not in cols:
+        conn.execute("ALTER TABLE cases ADD COLUMN checkout_session_id TEXT")
+    if "fee_terms_accepted_at" not in cols:
+        conn.execute("ALTER TABLE cases ADD COLUMN fee_terms_accepted_at TEXT")
+    if "fee_confirmed_at" not in cols:
+        conn.execute("ALTER TABLE cases ADD COLUMN fee_confirmed_at TEXT")
     if "owner_id" not in cols:
         conn.execute("ALTER TABLE cases ADD COLUMN owner_id TEXT")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_cases_owner ON cases(owner_id)")
 
 
 def claim_case(cid: str, owner_id: str) -> dict | None:
-    """Bind an ownerless (life-event draft) case to the first owner who
-    presents its unguessable ID. Returns the case, or None if it does not
-    exist or is already owned by someone else."""
-    conn = _connect()
-    try:
-        conn.execute("UPDATE cases SET owner_id = ? WHERE id = ? AND owner_id IS NULL",
-                     (owner_id, cid))
-        conn.commit()
-    finally:
-        conn.close()
+    """Legacy rows without a verified owner are never claimable by record ID."""
     return get_case(cid, owner_id)
 
 
-# Columns update_case may write (defense in depth: no caller can ever set an
-# arbitrary column; see the **fields SQL pattern noted in the security audit).
 _UPDATE_ALLOWED = frozenset({
-    "provider", "service_type", "current_monthly_bill", "promo_end_date",
-    "account_tenure_months", "user_name", "stripe_customer_id",
-    "setup_intent_id", "billing_status", "new_monthly_bill",
-    "outcome_reported_at", "months_locked", "savings", "fee_cents",
-    "payment_intent_id",
+    "provider", "service_type", "current_monthly_bill", "promo_end_date", "account_tenure_months",
+    "user_name", "stripe_customer_id", "setup_intent_id", "billing_status", "new_monthly_bill",
+    "outcome_reported_at", "months_locked", "savings", "fee_cents", "payment_intent_id",
+    "checkout_session_id", "fee_terms_accepted_at", "fee_confirmed_at",
 })
 
 
@@ -88,7 +83,7 @@ def create_case(provider: str, service_type: str, current_monthly_bill: float,
                 promo_end_date: str | None, account_tenure_months: int | None,
                 user_name: str | None, owner_id: str | None = None) -> dict:
     from datetime import datetime, timezone
-    cid = uuid.uuid4().hex[:12]
+    cid = uuid.uuid4().hex
     conn = _connect()
     try:
         conn.execute(
@@ -133,6 +128,8 @@ def update_case(cid: str, owner_id: str | None = None, **fields) -> dict | None:
         if owner_id is not None:
             sql += " AND owner_id = ?"
             params = (*params, owner_id)
+        if fields.get("billing_status") and fields["billing_status"] != "fee_charged":
+            sql += " AND (billing_status IS NULL OR billing_status != 'fee_charged')"
         conn.execute(sql, params)
         conn.commit()
     finally:
@@ -167,3 +164,39 @@ def serialize(case: dict) -> dict:
 
 def summary_json(case: dict) -> str:
     return json.dumps(serialize(case), sort_keys=True)
+
+
+def export_owner(owner_id: str) -> dict:
+    if not owner_id:
+        raise ValueError("An owner is required")
+    with _connect() as conn:
+        return {table: [dict(row) for row in conn.execute(f"SELECT * FROM {table} WHERE owner_id = ?", (owner_id,)).fetchall()]
+                for table in ('cases',)}
+
+
+def delete_owner(owner_id: str) -> dict:
+    if not owner_id:
+        raise ValueError("An owner is required")
+    with _connect() as conn:
+        rows = {table: [dict(row) for row in conn.execute(f"SELECT * FROM {table} WHERE owner_id = ?", (owner_id,)).fetchall()]
+                for table in ('cases',)}
+        for table in ('cases',):
+            conn.execute(f"DELETE FROM {table} WHERE owner_id = ?", (owner_id,))
+        conn.commit()
+    return rows
+
+
+def update_outcome(cid: str, owner_id: str, **fields) -> bool:
+    if set(fields) - {"new_monthly_bill", "months_locked", "savings", "outcome_reported_at"}:
+        raise ValueError("Invalid outcome fields")
+    with _connect() as conn:
+        result = conn.execute(f"UPDATE cases SET {', '.join(f'{k} = ?' for k in fields)} WHERE id = ? AND owner_id = ? AND fee_confirmed_at IS NULL AND billing_status != 'fee_charged'", [*fields.values(), cid, owner_id])
+        conn.commit()
+        return result.rowcount == 1
+
+
+def reserve_fee(cid: str, owner_id: str, outcome_version: str, confirmed_at: str) -> bool:
+    with _connect() as conn:
+        result = conn.execute("UPDATE cases SET fee_confirmed_at = ? WHERE id = ? AND owner_id = ? AND outcome_reported_at = ?", (confirmed_at, cid, owner_id, outcome_version))
+        conn.commit()
+        return result.rowcount == 1

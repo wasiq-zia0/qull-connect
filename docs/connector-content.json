@@ -1,0 +1,739 @@
+[
+  {
+    "slug": "deposit-recovery",
+    "folder": "deposit-recovery",
+    "name": "Deposit Recovery",
+    "category": "Rental deposits",
+    "headline": "A clear next step for an overdue deposit.",
+    "summary": "Organize your tenancy details, review an estimated state return deadline, and prepare a demand-letter PDF you can send to your landlord.",
+    "price": "25%",
+    "price_basis": "of the deposit recovery you confirm",
+    "fee": "25% of the recovered deposit amount you confirm. No recovery confirmation means no recovery fee.",
+    "example": "If you confirm that $1,800 was returned, the fee is $450 and you keep $1,350.",
+    "deliverables": [
+      "A case summary with the information used to estimate the return deadline.",
+      "A letter PDF using your tenancy details; unreviewed state rules produce a neutral request without unsupported legal assertions.",
+      "A record of your letter status, reported recovery, and fee status."
+    ],
+    "inputs": [
+      "Tenant name and forwarding address",
+      "Rental property and landlord names/addresses",
+      "State, move-out date, and forwarding-address date where relevant",
+      "Deposit amount and any amount later recovered"
+    ],
+    "steps": [
+      [
+        "Record the tenancy",
+        "Enter the dates, addresses, and deposit amount. Check the details against your lease and move-out records."
+      ],
+      [
+        "Review the deadline",
+        "Read the estimate and its assumptions. Check the current official rule before relying on it."
+      ],
+      [
+        "Send your letter",
+        "Review the generated PDF, make any needed corrections, and send it yourself. Keep evidence of delivery."
+      ],
+      [
+        "Confirm the outcome",
+        "If money is returned, record the actual amount and review the fee before authorizing payment."
+      ]
+    ],
+    "limits": [
+      "The service prepares documents; it does not contact your landlord, mail letters, negotiate, file in court, or provide representation.",
+      "Only specifically reviewed rule paths provide deadline estimates. Other states or incomplete facts require manual review; lease terms, notices, local rules, and exceptions can change the result.",
+      "Deadline status is calculated when requested. A live email watcher, scheduled mailing service, and automated reminders are not included."
+    ],
+    "scope": "U.S. residential rental deposits. Limited deadline estimates are currently supported for reviewed California, Connecticut, and Texas rules; other states require review and use factual request letters.",
+    "data": "Names, rental and forwarding addresses, landlord details, tenancy dates, deposit/recovery amounts, generated letters, case status, and Stripe references.",
+    "disclaimer": "Document preparation and general information; no legal advice or attorney–client relationship.",
+    "workflow": [
+      "POST /api/cases",
+      "GET /api/cases/{cid}",
+      "POST /api/cases/{cid}/demand-letter",
+      "POST /api/cases/{cid}/billing/setup",
+      "POST /api/cases/{cid}/billing/quote",
+      "POST /api/cases/{cid}/recovery-confirmed"
+    ],
+    "prompts": [
+      "Help me organize the facts about my overdue rental deposit.",
+      "Prepare a deposit demand letter for me to review and send.",
+      "Show me the estimated return deadline and the assumptions behind it."
+    ],
+    "free_alternative": "You can contact your landlord yourself and use your state or local tenant resources without paying Qull.",
+    "example_path": "/api/cases",
+    "example_intake": {
+      "tenant_name": "Alex Example",
+      "tenant_forwarding_address": "100 Example Road",
+      "state": "CA",
+      "move_out": "2026-01-01",
+      "deposit": 1200,
+      "landlord_name": "Example Property Company",
+      "landlord_address": "200 Example Road",
+      "rental_address": "300 Example Street"
+    }
+  },
+  {
+    "slug": "eu261-flight-comp",
+    "folder": "flightpay",
+    "name": "FlightPay",
+    "category": "Flight disruption",
+    "headline": "Get your airline claim in order.",
+    "summary": "Check a flight disruption against the supported EU261 rules and prepare a claim pack to send to the airline yourself.",
+    "price": "30%",
+    "price_basis": "of the compensation payout you confirm",
+    "fee": "30% of the actual compensation payout you confirm, billed in EUR. The fee is shown before you authorize payment.",
+    "example": "If an airline pays €400 and you confirm it, the fee is €120 and you keep €280.",
+    "deliverables": [
+      "An initial eligibility result based on the route, carrier, disruption, and facts you provide.",
+      "A claim-letter PDF and supporting checklist.",
+      "Claim and billing status linked to your case."
+    ],
+    "inputs": [
+      "Passenger name and contact information",
+      "Flight number, airline, route, and travel date",
+      "Delay or cancellation details and the carrier's stated reason",
+      "Booking reference and actual payout if received"
+    ],
+    "steps": [
+      [
+        "Describe the disruption",
+        "Supply the flight details and what happened, using your booking and airline messages."
+      ],
+      [
+        "Check the assessment",
+        "Review coverage assumptions and missing facts. The airline may reach a different conclusion."
+      ],
+      [
+        "Submit the pack",
+        "Review the PDF and submit it directly through the airline's claim channel."
+      ],
+      [
+        "Confirm actual payment",
+        "Only record compensation you received. Review the resulting EUR fee before authorizing it."
+      ]
+    ],
+    "limits": [
+      "This is a preliminary rules-based assessment, not a legal determination or guaranteed compensation.",
+      "The connector does not monitor live flight data, submit claims to airlines, negotiate, or handle litigation.",
+      "The current rules focus on supported EU261 scenarios. Connecting itineraries, extraordinary circumstances, rerouting, and other regimes can require separate review."
+    ],
+    "scope": "Supported EU261 flight-disruption scenarios; coverage depends on route, operating carrier, timing, and circumstances.",
+    "data": "Passenger/contact details, itinerary, booking reference, disruption facts, generated claim documents, reported payout, and Stripe references.",
+    "disclaimer": "General claim-preparation information; no legal advice or representation.",
+    "workflow": [
+      "POST /api/claims",
+      "GET /api/claims/{cid}",
+      "POST /api/claims/{cid}/claim-pack",
+      "POST /api/claims/{cid}/billing/setup",
+      "POST /api/claims/{cid}/billing/quote",
+      "POST /api/claims/{cid}/payout-confirmed"
+    ],
+    "prompts": [
+      "Check whether my delayed flight fits the EU261 rules this service supports.",
+      "Prepare a flight-compensation claim pack for me to send to the airline.",
+      "Explain which facts I need before assessing my cancelled flight."
+    ],
+    "free_alternative": "You can submit an EU261 claim directly to the airline without using Qull.",
+    "example_path": "/api/claims",
+    "example_intake": {
+      "passenger_name": "Alex Example",
+      "passenger_email": "alex@example.com",
+      "flight_number": "AF123",
+      "flight_date": "2026-01-01",
+      "airline": "Air France",
+      "from_iata": "CDG",
+      "to_iata": "JFK",
+      "disruption": "delay",
+      "arrival_delay_h": 4
+    }
+  },
+  {
+    "slug": "subscription-slayer",
+    "folder": "subscription-slayer",
+    "name": "Subscription Slayer",
+    "category": "Recurring subscriptions",
+    "headline": "Know what repeats. Cancel what you choose.",
+    "summary": "Identify recurring charges in receipts you provide, get merchant-specific cancellation instructions, and track the cancellations you complete.",
+    "price": "$10",
+    "price_basis": "per completed cancellation you confirm",
+    "fee": "USD $10 for each completed cancellation you select and explicitly confirm for billing. No recurring Qull subscription fee.",
+    "example": "If you confirm two completed cancellations, the total fee is $20. Cancelling with the merchants remains your responsibility.",
+    "deliverables": [
+      "A list of likely recurring subscriptions detected from your supplied receipts.",
+      "A cancellation guide and merchant link where available, with a generic guide for unsupported merchants.",
+      "A record of subscription status and the monthly savings you report."
+    ],
+    "inputs": [
+      "Receipt subject, sender, snippet/body, and date; or merchant, amount, currency, and billing frequency entered directly",
+      "Subscriptions you want to track",
+      "Cancellation status and monthly savings you report",
+      "Billing contact information if you choose the paid service"
+    ],
+    "steps": [
+      [
+        "Provide receipts",
+        "Supply the relevant receipts. This release does not connect to your Gmail account."
+      ],
+      [
+        "Review recurring charges",
+        "Confirm that each detected charge is a subscription and that the amount is correct."
+      ],
+      [
+        "Cancel with the merchant",
+        "Follow the guide yourself and keep the merchant's confirmation."
+      ],
+      [
+        "Confirm completed work",
+        "Select the cancellations you completed and review the $10-per-item total before authorizing payment."
+      ]
+    ],
+    "limits": [
+      "Receipt matching can miss subscriptions or mistake repeated purchases for subscriptions. Review every result.",
+      "Qull does not log into merchant accounts, cancel on your behalf, guarantee refunds, or override merchant terms.",
+      "Live Gmail access is unavailable. Import your own receipts or enter subscriptions directly; fixture scans are development demonstrations and do not establish real subscriptions."
+    ],
+    "scope": "Supported receipt data and merchant guides. Merchant procedures, notice periods, and cancellation fees vary.",
+    "data": "Receipt content you provide, merchant names, charge amounts/dates, detected subscriptions, cancellation notes/status, reported savings, and Stripe references.",
+    "disclaimer": "Cancellation guidance and tracking. Merchant charges and terms remain separate from Qull's fee.",
+    "workflow": [
+      "POST /api/receipts",
+      "GET /api/subscriptions",
+      "GET /api/subscriptions/{sub_id}/cancel-pack",
+      "PATCH /api/subscriptions/{sub_id}",
+      "POST /api/billing/setup",
+      "POST /api/savings/fee-quote",
+      "POST /api/savings/confirmed"
+    ],
+    "prompts": [
+      "Find likely recurring subscriptions in these receipts.",
+      "Show me how to cancel this subscription myself.",
+      "Track the subscriptions I have cancelled and the savings I report."
+    ],
+    "free_alternative": "You can cancel directly with the merchant without using or paying Qull.",
+    "example_path": "/api/subscriptions",
+    "example_intake": {
+      "merchant": "Example Streaming",
+      "amount": 15,
+      "currency": "USD",
+      "frequency": "monthly"
+    }
+  },
+  {
+    "slug": "bill-negotiator",
+    "folder": "billcut",
+    "name": "BillCut",
+    "category": "Recurring bills",
+    "headline": "Go into the retention call prepared.",
+    "summary": "Turn your current internet, cable, or phone bill into a practical call-and-chat script, then track a lower rate you negotiate yourself.",
+    "price": "35%",
+    "price_basis": "of confirmed savings, over at most 12 months",
+    "fee": "35% of the documented savings you confirm: (old monthly bill − new monthly bill) × agreed months, capped at 12 months. No positive confirmed savings means no fee.",
+    "example": "A bill reduced from $120 to $85 for 12 months saves $420. The fee is $147 and the remaining savings are $273.",
+    "deliverables": [
+      "Provider-specific call and chat scripts where available.",
+      "Talking points for asking about promotions, retention offers, and avoidable fees.",
+      "A savings calculation based on the outcome and rate duration you report."
+    ],
+    "inputs": [
+      "Provider, service type, and current monthly charge",
+      "Optional promotion expiry and account tenure",
+      "New monthly charge after your conversation",
+      "Number of months the new rate is confirmed to last"
+    ],
+    "steps": [
+      [
+        "Describe the bill",
+        "Record the provider and current recurring amount, excluding amounts that will not repeat."
+      ],
+      [
+        "Get the script",
+        "Review the call/chat guide and adapt it to your actual service and alternatives."
+      ],
+      [
+        "Contact the provider",
+        "Make the call or use the provider's chat yourself. Confirm any new fees or contract term."
+      ],
+      [
+        "Record the agreed rate",
+        "Enter the new charge and confirmed duration. Review the savings and fee before authorizing payment."
+      ]
+    ],
+    "limits": [
+      "Qull supplies scripts; it does not call providers, access your account, or negotiate on your behalf.",
+      "Savings are based on the figures you report, not an independent connection to provider billing.",
+      "A lower headline rate may come with taxes, equipment charges, termination fees, or a new contract. Check the full offer."
+    ],
+    "scope": "Internet, cable, and phone bills supported by the script library or generic fallback.",
+    "data": "Provider, service type, bill amounts, promotion dates, account tenure, negotiation outcome, savings, and Stripe references.",
+    "disclaimer": "Negotiation guidance; no guaranteed rate or saving.",
+    "workflow": [
+      "GET /api/providers",
+      "POST /api/cases",
+      "GET /api/cases/{cid}/script",
+      "POST /api/cases/{cid}/outcome",
+      "POST /api/cases/{cid}/billing/setup",
+      "GET /api/cases/{cid}/billing/quote",
+      "POST /api/cases/{cid}/savings-confirmed"
+    ],
+    "prompts": [
+      "Help me prepare a call about my higher internet bill.",
+      "Give me a retention-chat script for my provider.",
+      "Calculate savings from the new rate my provider offered."
+    ],
+    "free_alternative": "You can ask your provider for a lower rate directly without paying Qull.",
+    "example_path": "/api/cases",
+    "example_intake": {
+      "provider": "Comcast",
+      "service_type": "internet",
+      "current_monthly_bill": 100,
+      "user_name": "Alex Example"
+    }
+  },
+  {
+    "slug": "final-paycheck",
+    "folder": "final-paycheck",
+    "name": "Final Paycheck Recovery",
+    "category": "Unpaid wages",
+    "headline": "Put an unpaid final paycheck on record.",
+    "summary": "Organize your separation and wage details, review a deadline estimate, and prepare a final-pay demand letter you can send yourself.",
+    "price": "25%",
+    "price_basis": "of recovered wages you confirm",
+    "fee": "25% of the actual recovered wages you confirm. No recovery confirmation means no recovery fee.",
+    "example": "If you confirm $2,000 in recovered wages, the fee is $500 and you keep $1,500.",
+    "deliverables": [
+      "A case record with unpaid amount and job-separation details.",
+      "A deadline estimate only for the reviewed Nevada discharge scenario; other cases show that review is required.",
+      "A demand-letter PDF for you to check and send."
+    ],
+    "inputs": [
+      "Employee and employer names/addresses",
+      "State, last day, separation type, and relevant notice/payday dates",
+      "Unpaid wage amount and supporting facts",
+      "Actual recovered amount, if received"
+    ],
+    "steps": [
+      [
+        "Record what is owed",
+        "Check your pay records and enter the unpaid amount and separation facts."
+      ],
+      [
+        "Review the scope",
+        "Read the supported rule and its assumptions. Other states or separation situations remain factual requests, without an asserted legal deadline."
+      ],
+      [
+        "Send your letter",
+        "Review the PDF and send it yourself. Keep your pay records and proof of delivery."
+      ],
+      [
+        "Confirm recovered wages",
+        "Record only money received and review the proposed fee before authorizing payment."
+      ]
+    ],
+    "limits": [
+      "Qull does not send letters, contact employers, file wage claims, represent you, or calculate every available penalty.",
+      "The compiled deadline data is not a complete legal analysis. Coverage depends on the employment facts and current law.",
+      "You can use government wage-claim channels or seek qualified advice without using Qull."
+    ],
+    "scope": "U.S. final-paycheck document preparation. A limited reviewed Nevada discharge rule supports a deadline estimate; other state/separation scenarios require review and produce factual wage requests.",
+    "data": "Employee/employer names and addresses, employment/separation dates, state, unpaid and recovered amounts, generated letters, and Stripe references.",
+    "disclaimer": "General information and document preparation; no legal advice or attorney–client relationship.",
+    "workflow": [
+      "POST /api/cases",
+      "GET /api/cases/{case_id}",
+      "POST /api/cases/{case_id}/demand-letter",
+      "POST /api/cases/{case_id}/billing/setup",
+      "POST /api/cases/{case_id}/billing/quote",
+      "POST /api/cases/{case_id}/recovery-confirmed"
+    ],
+    "prompts": [
+      "Help me organize an unpaid final paycheck case.",
+      "Prepare a final-pay demand letter for me to review and send.",
+      "Explain the assumptions in this state's final-pay deadline estimate."
+    ],
+    "free_alternative": "State and federal labor agencies may offer wage-claim information and filing channels without a Qull fee.",
+    "example_path": "/api/cases",
+    "example_intake": {
+      "employee_name": "Alex Example",
+      "employer_name": "Example Employer",
+      "state": "NV",
+      "last_day_worked": "2026-01-01",
+      "termination_type": "fired",
+      "wages_owed": 1000
+    }
+  },
+  {
+    "slug": "class-action-cash",
+    "folder": "class-action-cash",
+    "name": "Class Action Cash",
+    "category": "Settlement claims",
+    "headline": "Check the fit before you file a claim.",
+    "summary": "Match receipts you provide against the available settlement catalog and prepare a claim-information pack for you to review and file on the official site.",
+    "price": "20%",
+    "price_basis": "of the settlement payout you confirm",
+    "fee": "20% of the actual settlement payout you confirm for this service. Filing directly with a settlement administrator is free.",
+    "example": "If you confirm a $100 settlement payout, the fee is $20 and you keep $80. An estimate in a claim pack is not a promised payout.",
+    "deliverables": [
+      "Candidate matches to current, supported entries in the settlement catalog.",
+      "An eligibility checklist, official filing link, and claim-information sheet.",
+      "A record of the match and any payout you later confirm."
+    ],
+    "inputs": [
+      "Relevant receipt merchant, purchase date, amount, and text",
+      "Name and contact/address details needed for a claim-information sheet",
+      "Your answers to the settlement's eligibility criteria",
+      "Actual payout amount if received"
+    ],
+    "steps": [
+      [
+        "Provide relevant receipts",
+        "Supply the purchases you want checked. This release does not access Gmail."
+      ],
+      [
+        "Review candidate matches",
+        "Read the dates and eligibility criteria on the administrator's official website."
+      ],
+      [
+        "File directly",
+        "Use the pack to help complete the official claim yourself. Make only truthful declarations."
+      ],
+      [
+        "Confirm any payout",
+        "A submitted claim may be denied or pay a different amount. Authorize a fee only on the amount actually received."
+      ]
+    ],
+    "limits": [
+      "The catalog is curated, not a live or exhaustive feed. Only entries with a currently verified official source and an open deadline are considered; availability changes as entries expire.",
+      "A receipt match does not establish eligibility, certify your claim, or guarantee payment.",
+      "Qull does not submit claims, sign declarations, send email, or communicate with administrators for you."
+    ],
+    "scope": "Only current, supported catalog entries. Closed, stale, or unverified entries must not be treated as active opportunities.",
+    "data": "Supplied receipt information, candidate matches, contact/address details for claim sheets, reported payout, and Stripe references.",
+    "disclaimer": "Claim-organization assistance; no legal advice and no guarantee of settlement eligibility or payment.",
+    "workflow": [
+      "GET /api/settlements",
+      "POST /api/scan",
+      "GET /api/matches",
+      "POST /api/matches/{match_id}/claim-pack",
+      "POST /api/matches/{match_id}/billing/setup",
+      "POST /api/matches/{match_id}/billing/quote",
+      "POST /api/matches/{match_id}/payout-confirmed"
+    ],
+    "prompts": [
+      "Check these receipts against the currently supported settlement catalog.",
+      "Explain this settlement's eligibility checklist before I file.",
+      "Prepare a claim-information sheet for me to use on the official site."
+    ],
+    "free_alternative": "Official settlement claim filing is free. You can find and file eligible claims directly without paying Qull.",
+    "example_path": "/api/scan",
+    "example_intake": {
+      "source": "receipts",
+      "receipts": [
+        {
+          "id": "example-receipt-1",
+          "sender": "Kroger",
+          "subject": "Prescription receipt",
+          "date": "2020-01-01",
+          "snippet": "Kroger prescription receipt"
+        }
+      ]
+    }
+  },
+  {
+    "slug": "unclaimed-property",
+    "folder": "found-money",
+    "name": "Found Money",
+    "category": "Unclaimed property",
+    "headline": "Know where to check for unclaimed money.",
+    "summary": "Build a state-by-state checklist of official unclaimed-property portals and the information needed to search and file your own claims.",
+    "price": "Free preview",
+    "price_basis": "official portal guides and claim preparation",
+    "fee": "The current release provides portal guides and claim preparation without collecting a fee. Paid recovery assistance is unavailable while state-specific agreements and eligibility requirements are unresolved. A proposed future fee of up to 10% is not active or authorized.",
+    "example": "Searching and filing directly through an official state program is free. This release does not collect a Qull recovery fee.",
+    "deliverables": [
+      "Official state portal links for the states you select.",
+      "A claim-preparation checklist and cover sheet using the details you provide.",
+      "A tracker for claim steps and outcomes you report."
+    ],
+    "inputs": [
+      "Full legal name and optional former names",
+      "States where you lived",
+      "Contact information for your claim pack",
+      "Optional date of birth only with explicit consent; never a Social Security number"
+    ],
+    "steps": [
+      [
+        "List your states",
+        "Add the states where you have lived and the names under which property may be held."
+      ],
+      [
+        "Search official portals",
+        "Open the state links and run the searches yourself. A checklist is not evidence that money was found."
+      ],
+      [
+        "Prepare your claim",
+        "Use the document checklist and follow the state's official filing instructions."
+      ],
+      [
+        "Track the result",
+        "Record claim progress and actual recoveries. No recovery fee is collected in this release."
+      ]
+    ],
+    "limits": [
+      "Qull does not search state databases automatically, verify a property match, file claims, or receive recovered money for you.",
+      "A single percentage cap does not establish compliance. Agreement timing, registration, disclosures, and other state requirements may apply.",
+      "Do not send Qull Social Security numbers, identity-document scans, or bank-account credentials."
+    ],
+    "scope": "Official portal directory for U.S. states and DC. Billing setup and recovery-fee collection are disabled pending a compliant agreement flow.",
+    "data": "Legal/former names, selected states, contact details, optional consented birth date, claim statuses, reported recovery, and Stripe references if billing is available.",
+    "disclaimer": "Claim-preparation information; no legal advice or assurance that unclaimed funds exist.",
+    "workflow": [
+      "GET /api/states",
+      "POST /api/searches",
+      "GET /api/searches/{search_id}/claim-pack",
+      "PATCH /api/searches/{search_id}/states/{abbr}"
+    ],
+    "prompts": [
+      "Show me the official unclaimed-property sites for states where I lived.",
+      "Build a checklist for filing an unclaimed-property claim myself.",
+      "Help me track a claim I filed with the state."
+    ],
+    "free_alternative": "You can search and claim your own property through official state programs for free.",
+    "example_path": "/api/searches",
+    "example_intake": {
+      "full_legal_name": "Alex Example",
+      "email": "alex@example.com",
+      "states_of_residence": [
+        {
+          "abbr": "NY"
+        }
+      ]
+    }
+  },
+  {
+    "slug": "moving-concierge",
+    "folder": "moving-concierge",
+    "name": "Moving Concierge",
+    "category": "Address changes",
+    "headline": "One checklist for the addresses you need to change.",
+    "summary": "Turn your move details into an address-change pack with a checklist, relevant official links, and a PDF you can work through at your own pace.",
+    "price": "$49",
+    "price_basis": "one-time, per move pack",
+    "fee": "USD $49 once for the complete address-change pack for one move. It is not a subscription, a mover booking, or payment of third-party fees.",
+    "example": "One move pack costs $49. USPS, movers, utilities, and other organizations may have separate fees paid directly to them.",
+    "deliverables": [
+      "An address-change checklist tailored to the move information you provide.",
+      "Official links and instructions for common address updates.",
+      "A downloadable pack and a tracker for pending, completed, or inapplicable tasks."
+    ],
+    "inputs": [
+      "Name and contact email",
+      "Old and new addresses",
+      "Move date and destination state",
+      "Checklist items you complete or mark inapplicable"
+    ],
+    "steps": [
+      [
+        "Add move details",
+        "Enter the addresses, date, and destination state."
+      ],
+      [
+        "Check the pack scope",
+        "Review what the pack includes and decide whether it suits your move before purchasing."
+      ],
+      [
+        "Purchase the pack",
+        "Review the one-time $49 fee, save a payment method, and authorize payment."
+      ],
+      [
+        "Complete each update",
+        "Use the official links yourself and track your progress. Qull does not submit address changes."
+      ]
+    ],
+    "limits": [
+      "Qull does not file a USPS change, update bank or government records, book movers, switch utilities, or coordinate providers.",
+      "The pack does not cover every organization you may need to notify. Add your own tasks and check current official deadlines.",
+      "The pack is unlocked only after successful payment. Saving a card alone does not unlock it."
+    ],
+    "scope": "U.S. move planning and supported state address-update resources.",
+    "data": "Name, email, old/new addresses, move date, destination state, checklist progress, generated pack, and Stripe references.",
+    "disclaimer": "Administrative guidance; you complete and verify every address change yourself.",
+    "workflow": [
+      "POST /api/moves",
+      "GET /api/moves/{move_id}",
+      "POST /api/moves/{move_id}/billing/setup",
+      "POST /api/moves/{move_id}/pay",
+      "GET /api/moves/{move_id}/pack",
+      "PATCH /api/moves/{move_id}/checklist"
+    ],
+    "prompts": [
+      "Make an address-change checklist for my move.",
+      "Show me which official sites I need to update after moving.",
+      "Track which address changes I have completed."
+    ],
+    "free_alternative": "You can update addresses directly with each organization without buying a Qull pack.",
+    "example_path": "/api/moves",
+    "example_intake": {
+      "name": "Alex Example",
+      "email": "alex@example.com",
+      "old_address": "100 Example Street",
+      "new_address": "200 Example Road",
+      "move_date": "2026-10-01",
+      "state": "CA"
+    }
+  },
+  {
+    "slug": "401k-match",
+    "folder": "matchmax",
+    "name": "MatchMax",
+    "category": "401(k) education",
+    "headline": "Understand the match in your employer's plan.",
+    "summary": "Model a simple employer-match formula, compare contribution amounts, and get an explanation of the calculation and steps to discuss with your plan administrator.",
+    "price": "$99",
+    "price_basis": "one-time, per analysis and action pack",
+    "fee": "USD $99 once for a plan's detailed analysis and action pack. No automatic annual renewal or recurring billing is included.",
+    "example": "For a $120,000 salary with a 50% match up to 6% of pay, contributing 4% models a $2,400 match; contributing 6% models $3,600 before plan-specific limits and timing.",
+    "deliverables": [
+      "A transparent calculation of current contributions and modeled employer matching.",
+      "A comparison of the current rate with the rate needed for the supported formula.",
+      "A paid action pack with per-paycheck figures and questions for your plan administrator."
+    ],
+    "inputs": [
+      "Annual salary and pay frequency",
+      "Current employee contribution percentage",
+      "Employer matching percentage and eligible pay cap",
+      "Whether your plan provides a true-up, as confirmed by its documents"
+    ],
+    "steps": [
+      [
+        "Read your plan formula",
+        "Get the actual matching terms from your employer or plan documents. Do not assume the example formula applies."
+      ],
+      [
+        "Enter your figures",
+        "Supply salary, pay frequency, current contribution, and the confirmed match terms."
+      ],
+      [
+        "Review the comparison",
+        "Check the assumptions and modeled annual amounts. The summary is educational."
+      ],
+      [
+        "Choose the detailed pack",
+        "If useful, authorize the one-time $99 fee. Make any payroll changes yourself after checking your plan's rules."
+      ]
+    ],
+    "limits": [
+      "The model covers a simple percentage match up to a percentage of pay; it does not model every tiered or discretionary plan.",
+      "Annualized figures are not a midyear payroll plan. Prior contributions, changing pay, catch-up eligibility, vesting, and payroll timing may change the result.",
+      "Qull does not access retirement accounts, change payroll elections, choose investments, or guarantee employer contributions."
+    ],
+    "scope": "Educational calculations for the supported U.S. employer-match formula. Confirm all rules with your plan administrator.",
+    "data": "Salary, pay frequency, contribution/match percentages, true-up assumption, optional name/employer details, calculated plan, and Stripe references.",
+    "disclaimer": "Financial education only; no investment, tax, fiduciary, or individualized financial advice.",
+    "workflow": [
+      "POST /api/plans",
+      "GET /api/plans/{plan_id}",
+      "POST /api/plans/{plan_id}/billing/setup",
+      "POST /api/plans/{plan_id}/pay",
+      "GET /api/plans/{plan_id}/pack"
+    ],
+    "prompts": [
+      "Explain how my employer's stated 401(k) match formula works.",
+      "Compare my current contribution with the rate in my plan's match formula.",
+      "Show the per-paycheck math and the assumptions I should check with HR."
+    ],
+    "free_alternative": "Your employer or retirement-plan administrator may provide match information and calculators at no charge.",
+    "example_path": "/api/plans",
+    "example_intake": {
+      "name": "Alex Example",
+      "salary": 120000,
+      "pay_frequency": "biweekly",
+      "current_contrib_pct": 4,
+      "match_pct": 50,
+      "match_cap_pct": 6
+    }
+  },
+  {
+    "slug": "medical-bill-fighter",
+    "folder": "medical-bill-fighter",
+    "name": "Medical Bill Fighter",
+    "category": "Medical billing",
+    "headline": "Ask better questions about a medical bill.",
+    "summary": "Review bill and EOB details you enter for a limited set of potential billing issues, then prepare a dispute-letter PDF to send to the billing office yourself.",
+    "price": "25%",
+    "price_basis": "of the bill reduction you confirm",
+    "fee": "25% of the actual bill reduction you report and confirm. A flagged item is not a verified error or a guaranteed saving.",
+    "example": "If a provider reduces your bill by $800 and you confirm that reduction, the fee is $200 and the net saving is $600.",
+    "deliverables": [
+      "Potential issue flags from supported duplicate-line and bill/EOB consistency checks.",
+      "An explanation of the facts that triggered each flag.",
+      "A dispute-letter PDF and a record of the result you report."
+    ],
+    "inputs": [
+      "Patient and provider contact details needed for a letter",
+      "Bill total, line-item dates, codes, descriptions, and amounts",
+      "Relevant insurer explanation-of-benefits figures",
+      "Original and revised balance if the provider changes it"
+    ],
+    "steps": [
+      [
+        "Enter relevant billing details",
+        "Use the itemized bill and EOB. Omit medical histories and identifiers the review does not need."
+      ],
+      [
+        "Review the flags",
+        "Treat each finding as a question to check with the provider, not a proven billing error."
+      ],
+      [
+        "Send your letter",
+        "Review the generated PDF and send it yourself to the provider or billing office."
+      ],
+      [
+        "Confirm a reduction",
+        "Use the revised statement to record actual savings and review the fee before authorizing it."
+      ]
+    ],
+    "limits": [
+      "Qull does not contact providers, negotiate balances, access insurer accounts, submit insurance appeals, or pay bills for you.",
+      "The rules are limited and can miss issues or flag legitimate charges. Unverified code-pair rules are disabled; this is not a complete coding, clinical, or insurance audit.",
+      "Do not provide Social Security numbers, insurer passwords, full medical records, or unnecessary diagnosis information."
+    ],
+    "scope": "Structured U.S. medical-billing information and the checks supported by the current rule set.",
+    "data": "Patient/provider contact details, bill and EOB figures, line-item codes/descriptions, potential issue flags, generated letter, reported reduction, and Stripe references.",
+    "disclaimer": "Billing-organization assistance; no medical, legal, insurance, or clinical coding advice.",
+    "workflow": [
+      "POST /api/cases",
+      "GET /api/cases/{case_id}",
+      "GET /api/cases/{case_id}/pack",
+      "POST /api/cases/{case_id}/outcome",
+      "POST /api/cases/{case_id}/billing/setup",
+      "GET /api/cases/{case_id}/fee-quote",
+      "POST /api/cases/{case_id}/reduction-confirmed"
+    ],
+    "prompts": [
+      "Check these itemized bill and EOB figures for the issues your rules support.",
+      "Explain why this bill line was flagged so I can ask the provider about it.",
+      "Prepare a billing-dispute letter for me to review and send."
+    ],
+    "free_alternative": "You can ask the provider or insurer to explain or correct a bill directly without using Qull.",
+    "example_path": "/api/cases",
+    "example_intake": {
+      "patient_name": "Alex Example",
+      "provider_name": "Example Clinic",
+      "bill_date": "2026-09-01",
+      "billed_patient_responsibility": 500,
+      "line_items": [
+        {
+          "code": "99213",
+          "description": "Office visit",
+          "amount": 250
+        },
+        {
+          "code": "99213",
+          "description": "Office visit",
+          "amount": 250
+        }
+      ]
+    }
+  }
+]

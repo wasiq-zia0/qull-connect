@@ -46,7 +46,7 @@ MERCHANT_ALIASES = {
 CURRENCY_SYMBOLS = {"$": "USD", "€": "EUR", "£": "GBP"}
 
 AMOUNT_RE = re.compile(
-    r"(?P<sym>[$€£])\s?(?P<amt>\d{1,3}(?:,\d{3})*(?:\.\d{2})?)"
+    r"(?P<sym>[$€£])\s?(?P<amt>(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{2})?)"
     r"|(?P<cur>USD|CAD|EUR|GBP)\s?(?P<amt2>\d+(?:\.\d{2})?)",
     re.IGNORECASE,
 )
@@ -124,7 +124,10 @@ def detect_recurring(receipts: list[dict]) -> list[dict]:
     display: dict[str, str] = {}
     for r in receipts:
         name, key = normalise_merchant(r.get("sender", ""), r.get("subject", ""))
-        groups[key].append(r)
+        _, currency = extract_amount(f"{r.get('subject','')} {r.get('snippet','')} {r.get('body','')}")
+        key = f"{key}_{currency.lower()}"
+        if r not in groups[key]:
+            groups[key].append(r)
         display[key] = name
 
     out = []
@@ -141,16 +144,15 @@ def detect_recurring(receipts: list[dict]) -> list[dict]:
                 span_days = (d1 - d0).days
             except ValueError:
                 span_days = 0
-        same_amount_twice = any(billed.count(a) >= 2 for a in set(billed)) if billed else False
-        recurring = len(items) >= 2 and (span_days >= 20 or same_amount_twice)
+        recurring = len(set(dates)) >= 2 and span_days >= 20
 
         freq_counts: dict[str, int] = defaultdict(int)
         for i in items:
             freq_counts[infer_frequency(f"{i.get('subject','')} {i.get('body','')}")] += 1
         frequency = max(freq_counts, key=freq_counts.get) if freq_counts else "monthly"
 
-        amount = billed[-1] if billed else None
-        currency = amounts[-1][1] if amounts else "USD"
+        latest = max(items, key=lambda item: item.get("date", ""))
+        amount, currency = extract_amount(f"{latest.get('subject','')} {latest.get('snippet','')} {latest.get('body','')}")
         keyword_hits = sum(
             1 for i in items
             if is_receipt_candidate(i.get("subject", ""), i.get("snippet", ""), i.get("sender", ""))

@@ -1,156 +1,105 @@
-"""Unclaimed-property connector: MCP server (streamable HTTP, port 8577).
-
-Mirrors the REST actions as MCP tools so a Muse agent can drive the whole
-flow conversationally. Every tool result carries a `user_message` field — a
-warm, speakable sentence — alongside the machine data.
-
-Run:  .venv/bin/python mcp_server.py   (or via run.py for REST + MCP together)
-"""
+"""Authenticated MCP tools using the same validated business functions as REST."""
 import json
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent))
-
+import os
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from mcp.server.mcpserver import MCPServer
+from mcp.server.transport_security import TransportSecuritySettings
+from urllib.parse import urlsplit
+from identity import IdentityMiddleware, require_owner
+from limits import RateLimitMiddleware, BodySizeLimitMiddleware
+import app as api
 
-import app
-import store
-from identity import require_owner, IdentityError
-
-store.init()
-
-server = MCPServer(
-    name="unclaimed-property",
-    title="Unclaimed Property Finder",
-    description="Finds unclaimed funds across all 50 states + DC, builds per-state claim "
-                "packs the user files themselves, and bills a 10% (state-capped) contingency "
-                "fee on user-confirmed recoveries.",
-    version="0.2.0",
-)
+server = MCPServer("unclaimed-property")
 
 
 def create_mcp_app():
-    from identity import IdentityMiddleware
-    mcp_app = server.streamable_http_app(streamable_http_path="/mcp")
+    # Stateless requests bind every tool call to this request's verified user.
+    base = urlsplit(os.environ.get("PUBLIC_BASE_URL", "http://127.0.0.1"))
+    transport = TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=["127.0.0.1:*", "localhost:*", base.netloc],
+        allowed_origins=["http://127.0.0.1:*", "http://localhost:*", f"{base.scheme}://{base.netloc}"],
+    )
+    mcp_app = server.streamable_http_app(streamable_http_path="/mcp", stateless_http=True, json_response=True, transport_security=transport)
     mcp_app.add_middleware(IdentityMiddleware)
+    mcp_app.add_middleware(RateLimitMiddleware)
+    mcp_app.add_middleware(BodySizeLimitMiddleware)
     return mcp_app
 
 
-def _unwrap(resp) -> dict:
-    """Normalize FastAPI route results (dict or JSONResponse) to a plain dict."""
-    if isinstance(resp, JSONResponse):
-        return json.loads(resp.body.decode())
-    return resp
-
-
 def _call(fn, *args, **kwargs) -> dict:
+    require_owner()
     try:
-        return _unwrap(fn(*args, **kwargs))
-    except IdentityError as e:
-        return {"error": "unauthorized", "message": str(e),
-                "user_message": str(e)}
-    except HTTPException as e:
-        return {"error": "http_error", "message": e.detail,
-                "user_message": "Something didn't line up — let's try that again."}
+        result = fn(*args, **kwargs)
+        if isinstance(result, JSONResponse):
+            data = json.loads(result.body)
+            if result.status_code >= 400:
+                return {"error": data, "status_code": result.status_code}
+            return data
+        return result
+    except HTTPException as exc:
+        return {"error": exc.detail, "status_code": exc.status_code}
 
 
 @server.tool()
 def list_states() -> dict:
-    """List all 50 states + DC with their official unclaimed-property portals."""
-    owner = require_owner()
-    return _call(app.list_states)
-
+    """List official state portals. The user performs the search on those portals."""
+    return _call(api.list_states)
 
 @server.tool()
-def start_search(full_legal_name: str, email: str, states: str,
-                 prior_names: str = "", dob: str = "", dob_consent: bool = False) -> dict:
-    """Start an unclaimed-property search.
-    states: JSON list like '[{"abbr":"TX","years":"2018-2021"}]'.
-    prior_names: comma-separated maiden/prior names (optional).
-    dob: YYYY-MM-DD only with dob_consent=true (some states need it at filing).
-    """
-    owner = require_owner()
-    req = app.IntakeRequest(
-        full_legal_name=full_legal_name,
-        prior_names=[p.strip() for p in prior_names.split(",") if p.strip()],
-        email=email,
-        states_of_residence=json.loads(states),
-        dob=dob or None,
-        dob_consent=dob_consent,
-    )
-    return _call(app.create_search, req)
-
+def start_search(full_legal_name: str, email: str, states: list[dict], prior_names: list[str] | None = None, dob: str | None = None, dob_consent: bool = False) -> dict:
+    """Prepare a free state-by-state claim guide. This does not search or file with any state."""
+    return _call(api.create_search, api.IntakeRequest(full_legal_name=full_legal_name, email=email, states_of_residence=states, prior_names=prior_names or [], dob=dob, dob_consent=dob_consent))
 
 @server.tool()
-def handle_life_event(event_type: str, payload: str) -> dict:
-    """Handle a fanned-out life event from the shared bus.
-    payload: JSON object, e.g. '{"from_state":"TX","to_state":"CO"}'.
-    A 'move' pre-fills the state checklist and returns the proactive nudge."""
-    owner = require_owner()
-    evt = app.LifeEvent(event_type=event_type, payload=json.loads(payload))
-    res = _call(app.receive_life_event, evt)
-    # Drafts created without an owner are claimed by the calling user.
-    if isinstance(res, dict) and res.get("search_id"):
-        store.adopt_search(res["search_id"], owner)
-    return res
-
+def handle_life_event(event_type: str, payload: dict) -> dict:
+    """Create a move-related draft for the authenticated user only."""
+    return _call(api.receive_life_event, api.LifeEvent(event_type=event_type, payload=payload))
 
 @server.tool()
-def complete_search(search_id: str, full_legal_name: str) -> dict:
-    """The one-tap confirmation after a move nudge: supply the claimant's full
-    legal name to activate a draft search and generate claim packs."""
-    owner = require_owner()
-    body = app.DraftUpdate(full_legal_name=full_legal_name)
-    return _call(app.update_search, search_id, body)
+def complete_search(search_id: str, full_legal_name: str, email: str | None = None) -> dict:
+    """Complete the user's draft claim guide."""
+    return _call(api.update_search, search_id, api.DraftUpdate(full_legal_name=full_legal_name, email=email))
 
+@server.tool()
+def get_search(search_id: str) -> dict:
+    """Read the user's claim checklist and reported status."""
+    return _call(api.get_search, search_id)
 
 @server.tool()
 def get_claim_pack(search_id: str, state: str) -> dict:
-    """Get the claim pack for one state: portal link, filing steps, document
-    checklist, and a pre-filled cover sheet. The user files; never the connector."""
-    owner = require_owner()
-    return _call(app.claim_pack, search_id, state)
-
+    """Return a claim guide and official portal. The user searches and files for free."""
+    return _call(api.claim_pack, search_id, state)
 
 @server.tool()
 def update_claim_status(search_id: str, state: str, status: str) -> dict:
-    """Update a state's claim status: not_started, in_progress, filed, paid, denied."""
-    owner = require_owner()
-    body = app.StatusUpdate(status=status)
-    return _call(app.update_state_status, search_id, state, body)
-
+    """Record the status reported by the user; no state agency is contacted."""
+    return _call(api.update_state_status, search_id, state, api.StatusUpdate(status=status))
 
 @server.tool()
-def setup_billing(search_id: str) -> dict:
-    """Set up billing: creates the Stripe customer + SetupIntent for an off-session
-    card save. States the exact fee BEFORE the card is saved."""
-    owner = require_owner()
-    return _call(app.billing_setup, search_id)
-
+def setup_billing(search_id: str, accept_fee_terms: bool) -> dict:
+    """Paid assistance is unavailable pending state fee and agreement review."""
+    return _call(api.billing_setup, search_id, api.BillingConsent(accept_fee_terms=accept_fee_terms))
 
 @server.tool()
-def confirm_recovery(search_id: str, amount: float, state: str = "") -> dict:
-    """Confirm a recovery and charge the 10% (state-capped) contingency fee off-session.
-    Requires billing/setup to have been completed first."""
-    owner = require_owner()
-    body = app.RecoveryConfirmed(amount=amount, state_abbr=state or None)
-    return _call(app.recovery_confirmed, search_id, body)
-
+def confirm_recovery(search_id: str, amount: float, state: str, confirm_fee: bool, fee_amount_cents: int) -> dict:
+    """Paid assistance remains blocked until state-specific fee eligibility is implemented."""
+    return _call(api.recovery_confirmed, search_id, api.RecoveryConfirmed(amount=amount, state_abbr=state, confirm_fee=confirm_fee, fee_amount_cents=fee_amount_cents))
 
 @server.tool()
 def billing_status(search_id: str) -> dict:
-    """Poll billing state: card state + whether the recovery fee is settled."""
-    owner = require_owner()
-    return _call(app.billing_status, search_id)
+    """Read the billing status for the authenticated user's search."""
+    return _call(api.billing_status, search_id)
+
+@server.tool()
+def delete_my_data(consent: bool) -> dict:
+    """Delete this user's operational records after explicit confirmation. Required payment records are retained separately."""
+    if consent is not True:
+        raise ValueError("Explicit deletion confirmation required")
+    return _call(api.delete_my_data)
 
 
 if __name__ == "__main__":
-    import os as _os
-
     import uvicorn
-
-    port = int(_os.environ.get("MCP_PORT", "8577"))
-    uvicorn.run(create_mcp_app(), host="127.0.0.1", port=port, log_level="warning")
+    uvicorn.run(create_mcp_app(), host="127.0.0.1", port=int(os.environ.get("MCP_PORT", "8580")))
