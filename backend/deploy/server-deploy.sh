@@ -5,6 +5,8 @@
 set -euo pipefail
 if [[ "$(id -u)" -ne 0 ]]; then echo 'Run as root.' >&2; exit 1; fi
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+exec 9>/run/lock/qull-deploy.lock
+flock -n 9 || { echo "Another Qull deployment is running." >&2; exit 1; }
 DOMAIN="${DOMAIN:-api.qull.io}"
 MODE="${MODE:-prepare}"
 if [[ ! "$MODE" =~ ^(prepare|activate)$ ]]; then echo 'MODE must be prepare or activate' >&2; exit 1; fi
@@ -25,7 +27,7 @@ for slug in "${SLUGS[@]}"; do
   id "$user" >/dev/null 2>&1 || useradd --system --user-group --no-create-home --shell /usr/sbin/nologin "$user"
   usermod -a -G connectors "$user"
   if [[ ! -d "/srv/connectors/$slug" ]]; then install -d -o root -g "$user" -m 0750 "/srv/connectors/$slug"; fi
-  install -d -o "$user" -g "$user" -m 0700 "/var/lib/qull/$slug"
+  if [[ ! -d "/var/lib/qull/$slug" ]]; then install -d -o "$user" -g "$user" -m 0700 "/var/lib/qull/$slug"; fi
   envf="/etc/connectors/$slug.env"
   if [[ ! -f "$envf" ]]; then
     install -o root -g "$user" -m 0640 /dev/null "$envf"
@@ -36,21 +38,11 @@ STRIPE_SECRET_KEY=
 STRIPE_PUBLISHABLE_KEY=
 EOF
   fi
-  if [[ "$MODE" == activate ]]; then chown root:"$user" "$envf"; chmod 0640 "$envf"; fi
-  # Nonsecret managed values are separated from existing operator secrets.
-  cat > "/etc/connectors/$slug.managed.env" <<EOF
-ENV=production
-HOST=127.0.0.1
-DATA_DIR=/var/lib/qull/$slug
-BILLING_LEDGER_PATH=/var/lib/qull/$slug/billing.sqlite3
-QULL_API_KEYS_FILE=/etc/connectors/user-keys.json
-PUBLIC_BASE_URL=https://$DOMAIN/$slug
-EOF
-  chown root:"$user" "/etc/connectors/$slug.managed.env"
-  chmod 0640 "/etc/connectors/$slug.managed.env"
   # Stage separately so prepare mode cannot alter a running service's code.
   staged="/srv/connectors/.staged-$slug"
   install -d -o root -g "$user" -m 0750 "$staged"
+  # Prepare never changes environment files consumed by the running service.
+  python3 "$ROOT/deploy/stage-config.py" --directory "$staged" --domain "$DOMAIN" --slug "$slug"
   rsync -a --delete-delay --exclude '.venv' --exclude '__pycache__' --exclude '*.db*' \
     --exclude '*.sqlite*' --exclude '.env*' --exclude '*.env' --exclude 'letters_out' --exclude 'packs_out' \
     "$ROOT/$slug/" "$staged/"
@@ -65,20 +57,35 @@ if [[ "$MODE" == prepare ]]; then
   echo 'Prepared all ten releases. Configure Stripe keys and user API-key registry, then use MODE=activate.'
   exit 0
 fi
+# Read-only inventory catches path ambiguity, key-mode and nginx conflicts before any stop.
+python3 "$ROOT/deploy/deployment_acceptance.py" preflight --domain "$DOMAIN" --phase activate
+nginx -t
 # Check certificate prerequisites before any service is stopped.
 test -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" || { echo "Missing TLS certificate for $DOMAIN." >&2; exit 1; }
 test -f "/etc/letsencrypt/live/$DOMAIN/privkey.pem"
+openssl x509 -in "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" -noout -checkend 86400
+openssl x509 -in "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" -noout -checkhost "$DOMAIN"
+# Validate the candidate including TLS paths without changing enabled vhosts.
+candidate="$(mktemp -d)"
+trap 'rm -rf "$candidate"' EXIT
+python3 "$ROOT/deploy/render-nginx.py" --domain "$DOMAIN" --tls > "$candidate/connector.conf"
+printf 'events {}\nhttp { include %s/connector.conf; }\n' "$candidate" > "$candidate/nginx.conf"
+nginx -t -c "$candidate/nginx.conf"
 # Preflight the staged release as its service identity without shell-sourcing secrets.
 for slug in "${SLUGS[@]}"; do
   systemd-run --quiet --wait --pipe --collect -p "User=qull-$slug" \
     -p "WorkingDirectory=/srv/connectors/.staged-$slug" \
     -p "EnvironmentFile=/etc/connectors/$slug.env" \
-    -p "EnvironmentFile=/etc/connectors/$slug.managed.env" \
+    -p "EnvironmentFile=/srv/connectors/.staged-$slug/.managed.env" \
     /srv/connectors/.staged-"$slug"/.venv/bin/python -c \
     "import importlib.util,pathlib,sys,os; legacy=os.environ.get('FINAL_PAYCHECK_DB'); expected=str(pathlib.Path(os.environ['DATA_DIR'])/'app.db'); assert not legacy or legacy == expected, 'Migrate custom FINAL_PAYCHECK_DB before activation'; p=pathlib.Path('src/identity.py'); p=p if p.exists() else pathlib.Path('identity.py'); s=importlib.util.spec_from_file_location('identity_check',p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); ready,_=m.readiness(); print('configuration ready' if ready else 'configuration incomplete'); sys.exit(0 if ready else 1)"
 done
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
 install -d -m 0700 "/var/backups/qull/$stamp"
+# Private snapshots include old env files and nginx symlinks before any replacement.
+tar -czf "/var/backups/qull/$stamp/etc-connectors.tar.gz" -C /etc connectors
+tar -czf "/var/backups/qull/$stamp/etc-nginx.tar.gz" -C /etc nginx
+printf '%s\n' "$DOMAIN" > "/var/backups/qull/$stamp/domain.txt"
 for slug in "${SLUGS[@]}"; do
   if [[ -f "/etc/systemd/system/qull-$slug.service" ]]; then
     cp -a "/etc/systemd/system/qull-$slug.service" "/var/backups/qull/$stamp/$slug.service"
@@ -89,14 +96,20 @@ for slug in "${SLUGS[@]}"; do
   tar -czf "/var/backups/qull/$stamp/$slug-data.tar.gz" -C /var/lib/qull "$slug"
   if [[ -f "/srv/connectors/$slug/data/app.db" && ! -f "/var/lib/qull/$slug/app.db" ]]; then
     python3 - "$slug" <<'PY'
-import sqlite3,sys
+import sqlite3,sys,json,hashlib
+from pathlib import Path
 slug=sys.argv[1]
 with sqlite3.connect(f'/srv/connectors/{slug}/data/app.db') as source:
+    if source.execute('PRAGMA quick_check').fetchone()[0] != 'ok':
+        raise RuntimeError('Legacy database integrity check failed; snapshot preserved')
     with sqlite3.connect(f'/var/lib/qull/{slug}/app.db') as destination:
         source.backup(destination)
+legacy=Path(f'/srv/connectors/{slug}/data/app.db')
+marker={'legacy_sha256':hashlib.sha256(legacy.read_bytes()).hexdigest(),'source':str(legacy)}
+Path(f'/var/lib/qull/{slug}/.legacy-migration.json').write_text(json.dumps(marker)+'\n')
 PY
   fi
-  for dir in letters_out packs_out claim_packs; do
+  for dir in letters_out packs_out claim_packs letters; do
     if [[ -d "/srv/connectors/$slug/$dir" ]]; then
       target="$dir"
       if [[ "$dir" == letters_out ]]; then target=letters; fi
@@ -107,6 +120,9 @@ PY
   done
   rsync -a --delete-delay --exclude 'data/*.db*' --exclude '*.sqlite*' --exclude 'letters_out' --exclude 'packs_out' \
     "/srv/connectors/.staged-$slug/" "/srv/connectors/$slug/"
+  install -o root -g "qull-$slug" -m 0640 "/srv/connectors/.staged-$slug/.managed.env" "/etc/connectors/$slug.managed.env"
+  chown root:"qull-$slug" "/etc/connectors/$slug.env"
+  chmod 0640 "/etc/connectors/$slug.env"
   chown -R root:"qull-$slug" "/srv/connectors/$slug"
   chown -R "qull-$slug:qull-$slug" "/var/lib/qull/$slug"
   cat > "/etc/systemd/system/qull-$slug.service" <<EOF
@@ -136,17 +152,25 @@ ReadWritePaths=/var/lib/qull/$slug
 [Install]
 WantedBy=multi-user.target
 EOF
-done
-systemctl daemon-reload
-for index in "${!SLUGS[@]}"; do
-  slug="${SLUGS[$index]}"
-  systemctl enable --now "qull-$slug.service"
+  # Restart and verify this connector before stopping the next one.
+  systemctl daemon-reload
+  systemctl enable "qull-$slug.service"
+  systemctl restart "qull-$slug.service"
+  index=0
+  for candidate_slug in "${SLUGS[@]}"; do
+    if [[ "$candidate_slug" == "$slug" ]]; then break; fi
+    index=$((index+1))
+  done
   ok=0
   for attempt in {1..20}; do
     if curl --fail --silent --max-time 2 "http://127.0.0.1:$((8471+index))/ready" >/dev/null; then ok=1; break; fi
     sleep 1
   done
-  if [[ "$ok" != 1 ]]; then echo "$slug did not become ready. Prior snapshot: /var/backups/qull/$stamp" >&2; exit 1; fi
+  if [[ "$ok" != 1 ]]; then
+    systemctl stop "qull-$slug.service"
+    echo "$slug did not become ready and has been stopped. Other services remain available. Snapshot: /var/backups/qull/$stamp" >&2
+    exit 1
+  fi
 done
 # Preserve TLS on every redeploy. Initial certificate issuance is a separate action.
 test -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" || { echo 'Issue the domain TLS certificate before activating nginx.' >&2; exit 1; }
@@ -155,7 +179,11 @@ if [[ -f "$vhost" ]]; then cp -a "$vhost" "/var/backups/qull/$stamp/nginx.conf";
 python3 "$ROOT/deploy/render-nginx.py" --domain "$DOMAIN" --tls > "$vhost"
 ln -sfn "$vhost" /etc/nginx/sites-enabled/qull-connectors
 if ! nginx -t; then
-  if [[ -f "/var/backups/qull/$stamp/nginx.conf" ]]; then cp -a "/var/backups/qull/$stamp/nginx.conf" "$vhost"; fi
+  if [[ -f "/var/backups/qull/$stamp/nginx.conf" ]]; then
+    cp -a "/var/backups/qull/$stamp/nginx.conf" "$vhost"
+  else
+    rm -f /etc/nginx/sites-enabled/qull-connectors
+  fi
   echo 'nginx validation failed; existing running nginx was not reloaded.' >&2; exit 1
 fi
 systemctl reload nginx

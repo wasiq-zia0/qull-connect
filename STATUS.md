@@ -52,6 +52,14 @@ and environment recorded in the verification files.
 
 ## Required external evidence
 
+The deployment follow-up adds configuration-preserving staging, preflight
+conflict checks, private configuration snapshots and sequential service cutover.
+The combined local suite now passes **92 tests**, including a deployment
+verifier exercised against all ten isolated applications. These are local
+results; no VPS activation or remote authenticated acceptance is claimed.
+See `backend/deploy/OPERATOR_ACCEPTANCE.md` and
+`tools/verify_deployment.py` for the prepared procedures.
+
 | Gate | Current evidence / completion criterion |
 |---|---|
 | Backend deployment | Reviewed commit must be deployed; authenticated behavior, persistence and restart recovery must be verified on that exact build. |

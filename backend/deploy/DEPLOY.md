@@ -26,7 +26,7 @@ VPS_HOST=your-verified-ssh-alias DOMAIN=api.qull.io MODE=prepare \
   bash backend/deploy/deploy.sh
 ```
 
-`prepare` installs isolated staged releases and dependency environments. It does not replace running application code or start the new release. It retains packaged JSON/CSV reference data; the old scripts incorrectly excluded the entire `data/` directory.
+`prepare` installs isolated staged releases and dependency environments. It does not replace running application code, overwrite an existing managed environment, change existing secret-file ownership, or start the new release. The new managed configuration is staged inside `.staged-<slug>/.managed.env` until activation. It retains packaged JSON/CSV reference data; the old scripts incorrectly excluded the entire `data/` directory.
 
 Configure the Stripe test secret and publishable keys privately in each existing `/etc/connectors/<slug>.env`. No existing secret file is overwritten. Provision separate user/reviewer API keys following [ENV.md](ENV.md). The generated managed settings select production identity, durable paths, and each connector's public HTTPS base URL.
 
@@ -40,7 +40,7 @@ Point the hostname's DNS to the server and obtain its TLS certificate before act
 sudo DOMAIN=api.qull.io MODE=activate bash backend/deploy/server-deploy.sh
 ```
 
-Activation checks all ten staged configurations as their service users before stopping services. It creates private timestamped code and data backups, migrates the standard legacy SQLite database using SQLite's backup API, preserves generated documents, installs reviewed code and systemd units, restarts the services, and waits for `/ready`. A failed step exits with an error; the timestamped snapshot is retained for operator rollback. There is no claim of atomic all-ten deployment.
+Activation checks all ten staged configurations as their service users, checks legacy/durable database ambiguity and configured port/key modes, and validates both current and candidate nginx/TLS configuration before stopping a service. It snapshots the prior connector configuration and full nginx tree, then creates private timestamped code and data backups, migrates the standard legacy SQLite database using SQLite's backup API, preserves generated documents, installs reviewed code and systemd units, restarts one service at a time, and waits for its `/ready` before stopping the next service. A failed step exits with an error; the timestamped snapshot is retained for operator rollback. There is no claim of atomic all-ten deployment.
 
 The nginx configuration routes `/<slug>/api/...` to the REST application's `/api/...` path and `/<slug>/mcp` to MCP. It also routes health, readiness, and payment return/authentication pages. It forwards the bearer credential, strips untrusted identity headers, sets an exact 1,000,000-byte body cap, and limits requests by client IP. TLS directives are included on every deployment so an existing certificate is not accidentally removed from the vhost. `nginx -t` must pass before reload; a failed generated vhost restores the previous saved configuration when available.
 
@@ -56,7 +56,7 @@ Moving from test mode to live requires matching live secret/publishable keys, `S
 
 ## Backups and rollback
 
-Activation snapshots are under `/var/backups/qull/<UTC timestamp>/`. Each connector has separate `-code.tar.gz` and `-data.tar.gz` archives; treat both as sensitive. The preexisting nginx file is saved separately. These are release snapshots, not a scheduled backup system. Establish encrypted off-host backups, retention, and restore drills before relying on the service commercially.
+Activation snapshots are under `/var/backups/qull/<UTC timestamp>/`. Each connector has separate `-code.tar.gz` and `-data.tar.gz` archives; treat both as sensitive. Prior connector environment files, nginx configuration and enabled symlinks, and per-service systemd units are also saved. The [operator acceptance supplement](OPERATOR_ACCEPTANCE.md) gives the exact verification and rollback sequence. These are release snapshots, not a scheduled backup system. Establish encrypted off-host backups, retention, and restore drills before relying on the service commercially.
 
 For rollback, stop the affected service, restore its code and data from the same snapshot into their respective parent directories, restore service-unit/configuration changes where needed, set the recorded service ownership, then restart and verify readiness. Preserve the failed release for investigation. Restoring an older payment ledger after a real payment can lose local payment history: reconcile Stripe and the ledger before allowing further charges. Never erase a database to fix startup.
 
