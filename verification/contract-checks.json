@@ -1,0 +1,157 @@
+{
+  "scope": "Static contract checks only; no network or payment requests",
+  "results": [
+    {
+      "file": "401k-match.json",
+      "operations": 10,
+      "issues": [
+        "POST /api/life-events: authentication is unspecified or optional",
+        "POST /api/plans: authentication is unspecified or optional",
+        "POST /api/plans/draft: authentication is unspecified or optional",
+        "POST /api/plans/draft/{draft_id}/answer: authentication is unspecified or optional",
+        "GET /api/plans/{plan_id}: authentication is unspecified or optional",
+        "POST /api/plans/{plan_id}/billing/setup: authentication is unspecified or optional",
+        "GET /api/plans/{plan_id}/billing/status: authentication is unspecified or optional",
+        "POST /api/plans/{plan_id}/pay: authentication is unspecified or optional",
+        "GET /api/plans/{plan_id}/pack: authentication is unspecified or optional"
+      ]
+    },
+    {
+      "file": "bill-negotiator.json",
+      "operations": 10,
+      "issues": [
+        "GET /api/providers: authentication is unspecified or optional",
+        "POST /api/cases: authentication is unspecified or optional",
+        "GET /api/cases/{cid}: authentication is unspecified or optional",
+        "GET /api/cases/{cid}/script: authentication is unspecified or optional",
+        "POST /api/cases/{cid}/outcome: authentication is unspecified or optional",
+        "POST /api/cases/{cid}/billing/setup: authentication is unspecified or optional",
+        "GET /api/cases/{cid}/billing/status: authentication is unspecified or optional",
+        "POST /api/cases/{cid}/savings-confirmed: authentication is unspecified or optional",
+        "POST /api/life-events: authentication is unspecified or optional"
+      ]
+    },
+    {
+      "file": "class-action-cash.json",
+      "operations": 9,
+      "issues": [
+        "GET /api/settlements: authentication is unspecified or optional",
+        "POST /api/scan: authentication is unspecified or optional",
+        "GET /api/matches: authentication is unspecified or optional",
+        "POST /api/matches/{match_id}/claim-pack: authentication is unspecified or optional",
+        "POST /api/matches/{match_id}/billing/setup: authentication is unspecified or optional",
+        "GET /api/matches/{match_id}/billing/status: authentication is unspecified or optional",
+        "POST /api/matches/{match_id}/payout-confirmed: authentication is unspecified or optional",
+        "POST /api/life-events: authentication is unspecified or optional"
+      ]
+    },
+    {
+      "file": "deposit-recovery.json",
+      "operations": 13,
+      "issues": [
+        "GET /api/state-laws: authentication is unspecified or optional",
+        "GET /api/state-laws/{abbr}: authentication is unspecified or optional",
+        "POST /api/cases: authentication is unspecified or optional",
+        "GET /api/cases/{cid}: authentication is unspecified or optional",
+        "POST /api/cases/{cid}/demand-letter: authentication is unspecified or optional",
+        "POST /api/cases/{cid}/letter-status: authentication is unspecified or optional",
+        "POST /api/cases/{cid}/billing/setup: authentication is unspecified or optional",
+        "GET /api/cases/{cid}/billing/status: authentication is unspecified or optional",
+        "POST /api/cases/{cid}/recovery-confirmed: authentication is unspecified or optional",
+        "POST /api/life-events: authentication is unspecified or optional",
+        "GET /api/drafts/{draft_id}: authentication is unspecified or optional",
+        "POST /api/drafts/{draft_id}/promote: authentication is unspecified or optional"
+      ]
+    },
+    {
+      "file": "eu261-flight-comp.json",
+      "operations": 8,
+      "issues": [
+        "POST /api/life-events: authentication is unspecified or optional",
+        "POST /api/claims: authentication is unspecified or optional",
+        "GET /api/claims/{cid}: authentication is unspecified or optional",
+        "POST /api/claims/{cid}/claim-pack: authentication is unspecified or optional",
+        "POST /api/claims/{cid}/billing/setup: authentication is unspecified or optional",
+        "GET /api/claims/{cid}/billing/status: authentication is unspecified or optional",
+        "POST /api/claims/{cid}/payout-confirmed: authentication is unspecified or optional"
+      ]
+    },
+    {
+      "file": "final-paycheck.json",
+      "operations": 11,
+      "issues": [
+        "GET /api/state-laws: authentication is unspecified or optional",
+        "GET /api/state-laws/{abbr}: authentication is unspecified or optional",
+        "POST /api/cases: authentication is unspecified or optional",
+        "GET /api/cases/{case_id}: authentication is unspecified or optional",
+        "POST /api/cases/{case_id}/confirm: authentication is unspecified or optional",
+        "POST /api/cases/{case_id}/demand-letter: authentication is unspecified or optional",
+        "POST /api/cases/{case_id}/billing/setup: authentication is unspecified or optional",
+        "GET /api/cases/{case_id}/billing/status: authentication is unspecified or optional",
+        "POST /api/cases/{case_id}/recovery-confirmed: authentication is unspecified or optional",
+        "POST /api/life-events: authentication is unspecified or optional"
+      ]
+    },
+    {
+      "file": "medical-bill-fighter.json",
+      "operations": 12,
+      "issues": [
+        "POST /api/life-events: authentication is unspecified or optional",
+        "POST /api/cases/draft: authentication is unspecified or optional",
+        "POST /api/cases/{case_id}/answer: authentication is unspecified or optional",
+        "POST /api/cases: authentication is unspecified or optional",
+        "GET /api/cases/{case_id}: authentication is unspecified or optional",
+        "GET /api/cases/{case_id}/pack: authentication is unspecified or optional",
+        "GET /api/packs: authentication is unspecified or optional",
+        "POST /api/cases/{case_id}/outcome: authentication is unspecified or optional",
+        "POST /api/cases/{case_id}/billing/setup: authentication is unspecified or optional",
+        "GET /api/cases/{case_id}/billing/status: authentication is unspecified or optional",
+        "POST /api/cases/{case_id}/reduction-confirmed: authentication is unspecified or optional"
+      ]
+    },
+    {
+      "file": "moving-concierge.json",
+      "operations": 9,
+      "issues": [
+        "POST /api/life-events: authentication is unspecified or optional",
+        "POST /api/moves: authentication is unspecified or optional",
+        "GET /api/moves/{move_id}: authentication is unspecified or optional",
+        "GET /api/moves/{move_id}/pack: authentication is unspecified or optional",
+        "PATCH /api/moves/{move_id}/checklist: authentication is unspecified or optional",
+        "POST /api/moves/{move_id}/billing/setup: authentication is unspecified or optional",
+        "GET /api/moves/{move_id}/billing/status: authentication is unspecified or optional",
+        "POST /api/moves/{move_id}/pay: authentication is unspecified or optional"
+      ]
+    },
+    {
+      "file": "subscription-slayer.json",
+      "operations": 9,
+      "issues": [
+        "POST /api/scan: authentication is unspecified or optional",
+        "GET /api/subscriptions: authentication is unspecified or optional",
+        "PATCH /api/subscriptions/{sub_id}: authentication is unspecified or optional",
+        "GET /api/subscriptions/{sub_id}/cancel-pack: authentication is unspecified or optional",
+        "POST /api/billing/setup: authentication is unspecified or optional",
+        "GET /api/billing/status: authentication is unspecified or optional",
+        "POST /api/savings/confirmed: authentication is unspecified or optional",
+        "POST /api/life-events: authentication is unspecified or optional"
+      ]
+    },
+    {
+      "file": "unclaimed-property.json",
+      "operations": 11,
+      "issues": [
+        "GET /api/states: authentication is unspecified or optional",
+        "POST /api/life-events: authentication is unspecified or optional",
+        "POST /api/searches: authentication is unspecified or optional",
+        "PATCH /api/searches/{search_id}: authentication is unspecified or optional",
+        "GET /api/searches/{search_id}: authentication is unspecified or optional",
+        "GET /api/searches/{search_id}/claim-pack: authentication is unspecified or optional",
+        "PATCH /api/searches/{search_id}/states/{abbr}: authentication is unspecified or optional",
+        "POST /api/searches/{search_id}/billing/setup: authentication is unspecified or optional",
+        "GET /api/searches/{search_id}/billing/status: authentication is unspecified or optional",
+        "POST /api/searches/{search_id}/recovery-confirmed: authentication is unspecified or optional"
+      ]
+    }
+  ]
+}

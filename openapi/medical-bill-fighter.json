@@ -772,7 +772,7 @@
   },
   "servers": [
     {
-      "url": "https://5.78.152.6.nip.io/medical-bill-fighter/api"
+      "url": "https://5.78.152.6.nip.io/medical-bill-fighter"
     }
   ]
 }

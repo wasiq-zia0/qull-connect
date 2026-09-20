@@ -1,16 +1,22 @@
 # Qull Connect — Meta Muse directory kit
 
-Everything needed to list Qull's 10 money-recovery connectors in Meta's Muse directory.
+Submission material and API contracts for 10 proposed Muse connectors. Backend source and deployment configuration are not in this repository. See [STATUS.md](STATUS.md) for verified evidence and outstanding work.
 
 ## Contents
-- `connectors.md` — the 10 connectors: names, slugs, pricing, what each does.
-- `openapi/` — OpenAPI 3.x specs for all 10 APIs (`<slug>.json`), with the live server URL baked in.
-- `prompts/codex-privacy-terms-prompt.txt` — prompt for building the 20 privacy/terms pages on qull.io.
-- `prompts/codex-api-docs-prompt.txt` — prompt for hosting the 10 API docs pages + specs on qull.io.
-- `meta-submission/deposit-recovery.md` — paste-ready answers for the Meta submission form (connector #1).
-- `assets/deposit-recovery-icon-512.png` — connector icon for the submission form.
-- `STATUS.md` — where things stand.
+- `connectors.md` — names, intended pricing and documented workflows.
+- `openapi/` — API contracts; authentication still needs to be specified.
+- `prompts/` — original page-building prompts, with corrected API server roots.
+- `meta-submission/` — submission draft and published URL references.
+- `assets/` — submission icon.
+- `tools/check_contracts.py` — repeatable contract checks.
+- `STATUS.md` — readiness findings.
 
 ## Live services
-Base: `https://5.78.152.6.nip.io/<slug>/api` · Health: `https://5.78.152.6.nip.io/<slug>/health`
-Stripe billing is live (Qull, Inc.). No live charges in testing — a witnessed charge-and-refund is the only exception.
+Application endpoint prefix: `https://5.78.152.6.nip.io/<slug>/api`.
+Public health: `https://5.78.152.6.nip.io/<slug>/health`.
+
+OpenAPI server roots end at `/<slug>` because operation paths already include `/api`. This branch corrects the former duplicate prefix. Authenticated routing still needs backend verification.
+
+The connected Stripe account is Qull, Inc. in live mode. Connector payment flows have not been verified end to end in this audit. Use Stripe test mode for payment testing; this repository does not authorize live charges or refunds.
+
+Run `python tools/check_contracts.py`. A nonzero result means contract issues remain; this is not a Meta certification tool.

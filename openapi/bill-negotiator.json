@@ -542,7 +542,7 @@
   },
   "servers": [
     {
-      "url": "https://5.78.152.6.nip.io/bill-negotiator/api"
+      "url": "https://5.78.152.6.nip.io/bill-negotiator"
     }
   ]
 }

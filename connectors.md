@@ -1,25 +1,27 @@
-# Qull Connect — connector facts
+# Qull Connect — documented workflows
 
 Company: Qull, Inc. Founder: Muhammad Wasiq Zia.
-Product line: 10 AI connectors for Meta's Muse directory. Each recovers or saves users money; Qull takes a contingency fee or flat fee via Stripe.
 
-Live API base: `https://5.78.152.6.nip.io/<slug>/api`
-Auth: API keys. Rate limits: 120 req/min per client (20/min on payment endpoints); 1 MB max request body.
-OpenAPI specs: `openapi/<slug>.json` in this repo.
+These descriptions reflect the supplied API contracts, not independently verified service delivery. Pricing is the stated commercial model; fee enforceability and implemented collection remain to be reviewed.
 
-| # | Connector | Slug | Pricing | What it does |
-|---|-----------|------|---------|--------------|
-| 1 | Deposit Recovery | deposit-recovery | 25% contingency | Recovers rental security deposits; tracks state return deadlines, generates demand letters. US, all 50 states + DC. |
-| 2 | FlightPay | eu261-flight-comp | 30% contingency | Claims EU261 compensation for delayed/cancelled flights. |
-| 3 | Subscription Slayer | subscription-slayer | $10 per completed cancellation | Cancels unwanted subscriptions on the user's behalf. |
-| 4 | BillCut | bill-negotiator | 35% of documented savings, capped at 12 months | Negotiates down recurring bills (internet, cable, phone). |
-| 5 | Final Paycheck Recovery | final-paycheck | 25% contingency | Recovers unpaid final wages after job separation. |
-| 6 | Class Action Cash | class-action-cash | 20% contingency | Finds class action settlements you're eligible for and files claims. |
-| 7 | Found Money | unclaimed-property | Max 10%, subject to state rules | Finds unclaimed property in state databases and helps claim it. |
-| 8 | Moving Concierge | moving-concierge | $49 flat per move | Move planning: checklists, timelines, mover coordination. |
-| 9 | MatchMax | 401k-match | $99/year | 401(k) employer-match education and calculations. Education only — not financial advice. |
-| 10 | Medical Bill Fighter | medical-bill-fighter | 25% of documented savings | Reviews medical bills for errors and negotiates them down. |
+Application API prefix: `https://5.78.152.6.nip.io/<slug>/api`.
+Specs: `openapi/<slug>.json`.
 
-Contingency fees are charged only after the user confirms the recovery/saving. Nothing recovered = nothing charged.
+The original kit describes API-key authentication, 120 requests/minute per client, 20 payment requests/minute and a 1 MB request limit. The implementation details and enforcement are unverified.
 
-Legal framing (applies where relevant): the recovery connectors are template automation, not law firms; no legal advice; no attorney-client relationship. MatchMax is education/calculation only, not financial advice, not a fiduciary. Medical Bill Fighter gives no medical advice.
+| Connector | Slug | Stated pricing | Workflow described by the API |
+|---|---|---|---|
+| Deposit Recovery | deposit-recovery | 25% of recovery | State information, case intake and demand-letter preparation. The user reviews and sends the letter, then confirms recovery. |
+| FlightPay | eu261-flight-comp | 30% of compensation | Eligibility assessment and claim-pack generation for flight disruptions; user confirms payout. Airline submission and collection are not established. |
+| Subscription Slayer | subscription-slayer | $10 per completed cancellation | Subscription intake/listing and cancellation instructions; user-confirmed cancellation triggers billing. Provider-side cancellation is not established. |
+| BillCut | bill-negotiator | 35% of documented savings over at most 12 months | Generates a negotiation script; user reports an outcome and confirms savings. Provider negotiations are not established. |
+| Final Paycheck Recovery | final-paycheck | 25% of recovered wages | State information, case intake, demand-letter preparation and user-confirmed recovery. Letter delivery and wage collection are not established. |
+| Class Action Cash | class-action-cash | 20% of payout | Settlement scanning, matching and claim-pack preparation; user confirms payout. Claim filing is not established. |
+| Found Money | unclaimed-property | Up to 10%, subject to state rules | Search intake, state status tracking and claim-pack preparation. Live state-database search and filing require verification. |
+| Moving Concierge | moving-concierge | $49 per move | Move intake, checklist and planning pack. Mover booking or coordination is not established. |
+| MatchMax | 401k-match | $99/year | Conversational intake and a paid employer-match education/calculation pack. Renewal/subscription behavior requires verification. |
+| Medical Bill Fighter | medical-bill-fighter | 25% of reduction | Bill intake, assistance pack and user-reported outcome/reduction. Provider negotiations are not established. |
+
+Contingency models depend on verified recovery/savings and user confirmation. Moving Concierge and MatchMax use separate flat-fee models; the general “nothing recovered = nothing charged” statement does not describe them.
+
+The intended services include template assistance and education. Disclaimers alone do not establish legal compliance; final terms must match the delivered service, data handling and supported jurisdictions.

@@ -11,7 +11,7 @@ Suggested URL pattern (adjust to the existing folder structure):
 Requirements:
 - Match the header, footer, fonts, and styling of our existing qull.io/connect/ pages.
 - Each docs page gets a clear title, e.g. "Deposit Recovery — API documentation".
-- Short note at the top of each docs page: "These endpoints require an API key."
+- Describe authentication only from a verified implementation contract. The current specs omit security schemes; do not invent the header name, identity protocol, or credential provisioning flow. Keep request execution disabled until these are verified.
 - Clean URLs, no .html extension. Mobile-friendly.
 - Reply with all 10 docs page URLs and all 10 spec file URLs, plus a list of anything you were unsure about.
 
@@ -809,7 +809,7 @@ SPEC FILES — save each JSON verbatim under its FILE header
   },
   "servers": [
     {
-      "url": "https://5.78.152.6.nip.io/deposit-recovery/api"
+      "url": "https://5.78.152.6.nip.io/deposit-recovery"
     }
   ]
 }
@@ -1378,7 +1378,7 @@ SPEC FILES — save each JSON verbatim under its FILE header
   },
   "servers": [
     {
-      "url": "https://5.78.152.6.nip.io/eu261-flight-comp/api"
+      "url": "https://5.78.152.6.nip.io/eu261-flight-comp"
     }
   ]
 }
@@ -1879,7 +1879,7 @@ SPEC FILES — save each JSON verbatim under its FILE header
   },
   "servers": [
     {
-      "url": "https://5.78.152.6.nip.io/subscription-slayer/api"
+      "url": "https://5.78.152.6.nip.io/subscription-slayer"
     }
   ]
 }
@@ -2429,7 +2429,7 @@ SPEC FILES — save each JSON verbatim under its FILE header
   },
   "servers": [
     {
-      "url": "https://5.78.152.6.nip.io/bill-negotiator/api"
+      "url": "https://5.78.152.6.nip.io/bill-negotiator"
     }
   ]
 }
@@ -3110,7 +3110,7 @@ SPEC FILES — save each JSON verbatim under its FILE header
   },
   "servers": [
     {
-      "url": "https://5.78.152.6.nip.io/final-paycheck/api"
+      "url": "https://5.78.152.6.nip.io/final-paycheck"
     }
   ]
 }
@@ -3616,7 +3616,7 @@ SPEC FILES — save each JSON verbatim under its FILE header
   },
   "servers": [
     {
-      "url": "https://5.78.152.6.nip.io/class-action-cash/api"
+      "url": "https://5.78.152.6.nip.io/class-action-cash"
     }
   ]
 }
@@ -4388,7 +4388,7 @@ SPEC FILES — save each JSON verbatim under its FILE header
   },
   "servers": [
     {
-      "url": "https://5.78.152.6.nip.io/unclaimed-property/api"
+      "url": "https://5.78.152.6.nip.io/unclaimed-property"
     }
   ]
 }
@@ -4913,7 +4913,7 @@ SPEC FILES — save each JSON verbatim under its FILE header
   },
   "servers": [
     {
-      "url": "https://5.78.152.6.nip.io/moving-concierge/api"
+      "url": "https://5.78.152.6.nip.io/moving-concierge"
     }
   ]
 }
@@ -5462,7 +5462,7 @@ SPEC FILES — save each JSON verbatim under its FILE header
   },
   "servers": [
     {
-      "url": "https://5.78.152.6.nip.io/401k-match/api"
+      "url": "https://5.78.152.6.nip.io/401k-match"
     }
   ]
 }
@@ -6242,7 +6242,7 @@ SPEC FILES — save each JSON verbatim under its FILE header
   },
   "servers": [
     {
-      "url": "https://5.78.152.6.nip.io/medical-bill-fighter/api"
+      "url": "https://5.78.152.6.nip.io/medical-bill-fighter"
     }
   ]
 }

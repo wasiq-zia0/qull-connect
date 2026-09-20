@@ -541,7 +541,7 @@
   },
   "servers": [
     {
-      "url": "https://5.78.152.6.nip.io/401k-match/api"
+      "url": "https://5.78.152.6.nip.io/401k-match"
     }
   ]
 }
