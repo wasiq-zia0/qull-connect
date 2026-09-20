@@ -1,0 +1,770 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Unclaimed Property Connector",
+    "version": "0.2.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/states": {
+      "get": {
+        "summary": "List States",
+        "operationId": "list_states_api_states_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response List States Api States Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/life-events": {
+      "post": {
+        "summary": "Receive Life Event",
+        "description": "Receive a fanned-out life event from the shared bus.\n\nGolden path entry point: a 'move' event arrives -> draft search is created\nwith from/to states pre-filled -> the response's user_message is the\nproactive nudge the agent speaks to the user.",
+        "operationId": "receive_life_event_api_life_events_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LifeEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/searches": {
+      "post": {
+        "summary": "Create Search",
+        "operationId": "create_search_api_searches_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntakeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/searches/{search_id}": {
+      "patch": {
+        "summary": "Update Search",
+        "description": "Conversational step: complete a draft search (the 'one tap' after the nudge)\nor update an existing one. Each call returns a speakable user_message.",
+        "operationId": "update_search_api_searches__search_id__patch",
+        "parameters": [
+          {
+            "name": "search_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Search Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get Search",
+        "operationId": "get_search_api_searches__search_id__get",
+        "parameters": [
+          {
+            "name": "search_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Search Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Search Api Searches  Search Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/searches/{search_id}/claim-pack": {
+      "get": {
+        "summary": "Claim Pack",
+        "operationId": "claim_pack_api_searches__search_id__claim_pack_get",
+        "parameters": [
+          {
+            "name": "search_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Search Id"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2,
+              "title": "State"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Claim Pack Api Searches  Search Id  Claim Pack Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/searches/{search_id}/states/{abbr}": {
+      "patch": {
+        "summary": "Update State Status",
+        "operationId": "update_state_status_api_searches__search_id__states__abbr__patch",
+        "parameters": [
+          {
+            "name": "search_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Search Id"
+            }
+          },
+          {
+            "name": "abbr",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Abbr"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatusUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Update State Status Api Searches  Search Id  States  Abbr  Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/searches/{search_id}/billing/setup": {
+      "post": {
+        "summary": "Billing Setup",
+        "operationId": "billing_setup_api_searches__search_id__billing_setup_post",
+        "parameters": [
+          {
+            "name": "search_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Search Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/searches/{search_id}/billing/status": {
+      "get": {
+        "summary": "Billing Status",
+        "description": "Pollable billing state: card state + whether the recovery fee is done.",
+        "operationId": "billing_status_api_searches__search_id__billing_status_get",
+        "parameters": [
+          {
+            "name": "search_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Search Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Billing Status Api Searches  Search Id  Billing Status Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/searches/{search_id}/recovery-confirmed": {
+      "post": {
+        "summary": "Recovery Confirmed",
+        "operationId": "recovery_confirmed_api_searches__search_id__recovery_confirmed_post",
+        "parameters": [
+          {
+            "name": "search_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Search Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecoveryConfirmed"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DraftUpdate": {
+        "properties": {
+          "full_legal_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Legal Name"
+          },
+          "prior_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prior Names"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "dob": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dob"
+          },
+          "dob_consent": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dob Consent"
+          },
+          "states_of_residence": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StateOfResidence"
+                },
+                "type": "array",
+                "maxItems": 51
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "States Of Residence"
+          }
+        },
+        "type": "object",
+        "title": "DraftUpdate"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "IntakeRequest": {
+        "properties": {
+          "full_legal_name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Full Legal Name",
+            "description": "Full legal name to search for"
+          },
+          "prior_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Prior Names",
+            "description": "Maiden/prior names"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "states_of_residence": {
+            "items": {
+              "$ref": "#/components/schemas/StateOfResidence"
+            },
+            "type": "array",
+            "maxItems": 51,
+            "minItems": 1,
+            "title": "States Of Residence",
+            "description": "States where the claimant has lived"
+          },
+          "dob": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dob",
+            "description": "YYYY-MM-DD; optional, some states need it at filing"
+          },
+          "dob_consent": {
+            "type": "boolean",
+            "title": "Dob Consent",
+            "description": "Must be true to store dob. Explicit consent required; never store SSN.",
+            "default": false
+          },
+          "recent_move": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecentMove"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional: emit a 'move' life event so the suite (deposit-recovery, moving-concierge) can act on it too."
+          }
+        },
+        "type": "object",
+        "required": [
+          "full_legal_name",
+          "email",
+          "states_of_residence"
+        ],
+        "title": "IntakeRequest"
+      },
+      "LifeEvent": {
+        "properties": {
+          "event_type": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Event Type"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_type"
+        ],
+        "title": "LifeEvent"
+      },
+      "RecentMove": {
+        "properties": {
+          "from_state": {
+            "type": "string",
+            "maxLength": 2,
+            "minLength": 2,
+            "title": "From State"
+          },
+          "to_state": {
+            "type": "string",
+            "maxLength": 2,
+            "minLength": 2,
+            "title": "To State"
+          }
+        },
+        "type": "object",
+        "required": [
+          "from_state",
+          "to_state"
+        ],
+        "title": "RecentMove"
+      },
+      "RecoveryConfirmed": {
+        "properties": {
+          "amount": {
+            "type": "number",
+            "maximum": 100000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "Recovered amount in USD"
+          },
+          "state_abbr": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State Abbr",
+            "description": "State the recovery came from"
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount"
+        ],
+        "title": "RecoveryConfirmed"
+      },
+      "StateOfResidence": {
+        "properties": {
+          "abbr": {
+            "type": "string",
+            "maxLength": 2,
+            "minLength": 2,
+            "title": "Abbr",
+            "description": "Two-letter state abbreviation"
+          },
+          "years": {
+            "type": "string",
+            "maxLength": 40,
+            "title": "Years",
+            "description": "e.g. '2015-2019'",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "abbr"
+        ],
+        "title": "StateOfResidence"
+      },
+      "StatusUpdate": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "One of: not_started, in_progress, filed, paid, denied"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "StatusUpdate"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://5.78.152.6.nip.io/unclaimed-property/api"
+    }
+  ]
+}

@@ -1,0 +1,567 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "EU261 Flight Compensation API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/life-events": {
+      "post": {
+        "summary": "Life Events In",
+        "description": "Receive a fanned-out life event. Creates a draft claim and returns the nudge.\n\nService-key authenticated (see IdentityMiddleware) \u2014 there is no user\nowner here, so the draft claim stores owner_id=NULL.\n\nGolden path: trigger -> one tap -> done. The payload pre-fills the draft;\nanything missing is asked for conversationally, one question at a time.",
+        "operationId": "life_events_in_api_life_events_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LifeEventIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/claims": {
+      "post": {
+        "summary": "Create Claim",
+        "description": "Intake a flight disruption and return the EU261 eligibility verdict.",
+        "operationId": "create_claim_api_claims_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/claims/{cid}": {
+      "get": {
+        "summary": "Get Claim",
+        "description": "Eligibility verdict + tier + amount for a stored claim.\n\nAlso exposes the money state (billing_status, payout/fee amounts,\npayment_intent_id) so the agent can poll the charge after confirming.",
+        "operationId": "get_claim_api_claims__cid__get",
+        "parameters": [
+          {
+            "name": "cid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/claims/{cid}/claim-pack": {
+      "post": {
+        "summary": "Claim Pack",
+        "description": "Generate the claim letter/form pack PDF. Only available when eligible.",
+        "operationId": "claim_pack_api_claims__cid__claim_pack_post",
+        "parameters": [
+          {
+            "name": "cid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/claims/{cid}/billing/setup": {
+      "post": {
+        "summary": "Billing Setup",
+        "description": "Create the Stripe customer and a card SetupIntent. Card is saved; NO charge is made.",
+        "operationId": "billing_setup_api_claims__cid__billing_setup_post",
+        "parameters": [
+          {
+            "name": "cid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/claims/{cid}/billing/status": {
+      "get": {
+        "summary": "Billing Status",
+        "description": "Pollable card-save + billing state for a claim.",
+        "operationId": "billing_status_api_claims__cid__billing_status_get",
+        "parameters": [
+          {
+            "name": "cid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/claims/{cid}/payout-confirmed": {
+      "post": {
+        "summary": "Payout Confirmed",
+        "description": "User confirms the airline paid out: charge the 30% contingency fee off-session.\n\nThe fee basis is the STORED compensation tier from the eligibility\nverdict \u2014 never the asserted amount. If the asserted payout differs\nfrom the stored tier, the request is rejected as implausible.",
+        "operationId": "payout_confirmed_api_claims__cid__payout_confirmed_post",
+        "parameters": [
+          {
+            "name": "cid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PayoutIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ClaimIn": {
+        "properties": {
+          "passenger_name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Passenger Name"
+          },
+          "passenger_email": {
+            "type": "string",
+            "format": "email",
+            "title": "Passenger Email"
+          },
+          "flight_number": {
+            "type": "string",
+            "maxLength": 10,
+            "minLength": 2,
+            "title": "Flight Number"
+          },
+          "flight_date": {
+            "type": "string",
+            "title": "Flight Date",
+            "description": "Flight date, YYYY-MM-DD"
+          },
+          "airline": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Airline"
+          },
+          "airline_eu_licensed": {
+            "type": "boolean",
+            "title": "Airline Eu Licensed",
+            "description": "True if the carrier is licensed in the EU/EEA",
+            "default": false
+          },
+          "from_iata": {
+            "type": "string",
+            "maxLength": 3,
+            "minLength": 3,
+            "title": "From Iata",
+            "description": "Departure airport IATA code"
+          },
+          "to_iata": {
+            "type": "string",
+            "maxLength": 3,
+            "minLength": 3,
+            "title": "To Iata",
+            "description": "Arrival airport IATA code"
+          },
+          "distance_km": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance Km",
+            "description": "Great-circle distance in km; used only if an airport code is unknown"
+          },
+          "disruption": {
+            "type": "string",
+            "enum": [
+              "delay",
+              "cancellation",
+              "denied_boarding"
+            ],
+            "title": "Disruption"
+          },
+          "scheduled_arrival": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Arrival",
+            "description": "Scheduled arrival, ISO datetime"
+          },
+          "actual_arrival": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Arrival",
+            "description": "Actual arrival, ISO datetime"
+          },
+          "arrival_delay_h": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arrival Delay H",
+            "description": "Arrival delay in hours"
+          },
+          "notice_days": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notice Days",
+            "description": "Cancellation notice, days before departure"
+          },
+          "rerouted": {
+            "type": "boolean",
+            "title": "Rerouted",
+            "default": false
+          },
+          "reroute_dep_early_h": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reroute Dep Early H"
+          },
+          "reroute_arr_delay_h": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reroute Arr Delay H"
+          },
+          "extraordinary_circumstances": {
+            "type": "boolean",
+            "title": "Extraordinary Circumstances",
+            "description": "True if the airline claims extraordinary circumstances",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "passenger_name",
+          "passenger_email",
+          "flight_number",
+          "flight_date",
+          "airline",
+          "from_iata",
+          "to_iata",
+          "disruption"
+        ],
+        "title": "ClaimIn"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LifeEventIn": {
+        "properties": {
+          "event_type": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Event Type"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_type"
+        ],
+        "title": "LifeEventIn"
+      },
+      "PayoutIn": {
+        "properties": {
+          "amount_eur": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Amount Eur",
+            "description": "Airline payout the user confirms they received"
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount_eur"
+        ],
+        "title": "PayoutIn"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://5.78.152.6.nip.io/eu261-flight-comp/api"
+    }
+  ]
+}
