@@ -1,12 +1,13 @@
 {
   "date": "2026-09-20",
-  "deployment_reviewed": "6ab032a445a27f47d903df49",
+  "deployment_reviewed": "6ab034d1987f7a66c90b29fc",
   "pages": [
     "https://qull.io/connect/",
     "https://qull.io/connect/deposit-recovery/",
     "https://qull.io/connect/deposit-recovery/api-docs/",
     "https://qull.io/connect/deposit-recovery/terms/",
-    "https://qull.io/connect/medical-bill-fighter/api-docs/"
+    "https://qull.io/connect/medical-bill-fighter/api-docs/",
+    "https://qull.io/connect/found-money/"
   ],
   "viewport_width": 1348,
   "checks": {
@@ -20,12 +21,25 @@
     "deposit_request_model": "rendered with tenancy_end and forwarding_date",
     "try_it_out_buttons": 0,
     "preview_and_draft_labels": "present",
-    "medical_disabled_code_pair_scope": "present"
+    "medical_disabled_code_pair_scope": "present",
+    "deposit_intake_success_example": "Structured JSON object renders case_id, deadline, assessment caveats and official source; clearly marked fictional local test response, not a live result. Former generic JSON string example corrected.",
+    "medical_pdf_response": "200 application/pdf with attachment Content-Disposition; describes owner authentication and no letter sending. Binary response represented by an OpenAPI string is intentional.",
+    "fee_quote_guidance": "Exact returned fee_amount_cents/currency displayed before confirmation; quote does not charge.",
+    "processing_response": "202 explicitly keeps payment unpaid;402 and503 distinctions documented.",
+    "connecticut_intake": "Requires tenancy legally-ended date and landlord receipt of written forwarding address.",
+    "found_money_scope": "NAUPA directory entry point; historical per-state links explicitly unreviewed; no automatic state search or filing; free preview and fee collection disabled."
   },
   "limitations": [
     "Mobile viewport was not exercised.",
     "These are public documentation checks, not backend workflow or Meta acceptance tests.",
-    "Pending final wording updates cover explicit fee quoting, payment error branches, and Found Money NAUPA directory scope.",
-    "Generic success-response schemas render unhelpful string examples; reported to root for correction."
+    "Broad desktop layout/link checks were performed on the initial deployment; final deployment review targeted the corrected response examples and wording listed above."
+  ],
+  "initial_visual_deployment": "6ab032a445a27f47d903df49",
+  "final_review_scope": [
+    "Deposit API intake success response",
+    "Medical PDF response",
+    "Deposit fee-quote and payment-error guidance",
+    "Connecticut tenancy-end intake requirement",
+    "Found Money directory wording and disabled collection"
   ]
 }
