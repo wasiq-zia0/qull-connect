@@ -1,5 +1,5 @@
 # Wasiq's context card
-Last updated: 2026-09-26
+Last updated: 2026-09-27
 
 Share this file with any AI assistant working with me. Read it fresh at the start of every conversation and keep your advice consistent with it. If something durable gets decided here, say so plainly, so it lands back in this card — this card is the live sync surface between my AIs.
 
@@ -33,5 +33,6 @@ Share this file with any AI assistant working with me. Read it fresh at the star
 - Free pilot with 12 families whose kids do speech-sound/articulation practice. Built with guidance from our SLP advisor. It does not diagnose and does not replace professional care. Apraxia is out of scope.
 - Recruiting through Facebook parent groups. Pipeline is 0/12. The roster-confirmation deadline (2026-09-25) has now PASSED unmet, and the clearance message to Elizabeth (admin of the 69k-member "Parents of Children with Speech and Language Delay" group) is still unsent — the founder post is the one unlock only I can pull.
 - New 2026-09-25: the morning watch surfaced a genuinely in-scope parent (10-year-old, speech-only IEP for R, L, R-blend articulation; school may be ending the IEP) and a value-first reply comment was drafted for me. Both are still sitting unsent — nothing in the pilot moves without my sends.
+- New 2026-09-26: the watch surfaced a second in-scope parent (parent of a 2.5-year-old exiting early intervention, asking about insurance coverage and therapy frequency, feels once a week isn't enough) with another value-first reply comment drafted. Also still unsent — my sends are the only thing that can move the pipeline.
 - Never cold-DM parents. Every outreach message is drafted for me and sent only after I approve it.
 - Key dates: first sessions and investor video Oct 2; materials Oct 6; I travel to Spain Oct 7–21; investor meetings Oct 24–Nov 6.
