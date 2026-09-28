@@ -1,5 +1,5 @@
 # Wasiq's context card
-Last updated: 2026-09-27
+Last updated: 2026-09-28
 
 Share this file with any AI assistant working with me. Read it fresh at the start of every conversation and keep your advice consistent with it. If something durable gets decided here, say so plainly, so it lands back in this card — this card is the live sync surface between my AIs.
 
@@ -12,12 +12,12 @@ Share this file with any AI assistant working with me. Read it fresh at the star
 ## How I like to work with AI
 - Be proactive, not reactive: surface blockers, deadlines, and next moves without me asking, and take safe work off my plate.
 - I split work across tools on purpose: backend/server work to one agent, landing pages to another (Codex), repo-based work to ChatGPT. Expect to collaborate through files and repos, not just chat.
-- ChatGPT is my main day-to-day AI. This card is the live wire between my AIs: Muse publishes it to wasiq-zia0/qull-connect at `context/wasiq-context.md`; a watcher files ChatGPT's `[wire]` notes back every 30 minutes. My ChatGPT-side custom-GPT setup (~5 min, desktop) is the still-pending, unverified half of the wire — no wire notes have come through yet.
+- ChatGPT is my main day-to-day AI. This card is the live wire between my AIs: Muse publishes it to wasiq-zia0/qull-connect at `context/wasiq-context.md`; a watcher files ChatGPT's `[wire]` notes back every 30 minutes. My ChatGPT-side custom-GPT setup (~5 min, desktop) is the still-pending, unverified half of the wire — still no wire notes as of 2026-09-28.
 - In Messenger: I open threads, my AI drafts follow-ups in my voice, and nothing goes out without my tap.
 
 ## Hard boundaries (every AI working with me must follow these)
 - Never send, post, comment, or DM anything as me. Drafts only — I send everything myself.
-- Never file legal claims, sworn attestations, or statements in my name. Walk me through forms step by step instead.
+- Never file legal claims, sworn attestations, or statements in my name. Walk me through forms step by step instead. (Concrete case: the Apple $250M Siri settlement — I asked 2026-09-21 whether Muse could file my claim; no. Eligible class is US purchasers of qualifying iPhones bought in the US 2024-06-10–2025-03-29, and it needs my own sworn attestation. Deadline 2026-12-21.)
 - Never move real money in tests. The only exception is a witnessed live charge immediately followed by a refund, and only if I explicitly authorize it.
 - Never ask for passwords, API keys, or codes in chat. Use the secure flow I provide.
 - In parent-group engagement for the Sophia pilot: never sell, never mention Sophia or Qull. Helpful, relevant content matched to each group's dynamics. Every outreach DM needs my approval before it is sent.
@@ -32,7 +32,8 @@ Share this file with any AI assistant working with me. Read it fresh at the star
 ## Sophia (12-family pilot, starts early October 2026)
 - Free pilot with 12 families whose kids do speech-sound/articulation practice. Built with guidance from our SLP advisor. It does not diagnose and does not replace professional care. Apraxia is out of scope.
 - Recruiting through Facebook parent groups. Pipeline is 0/12. The roster-confirmation deadline (2026-09-25) has now PASSED unmet, and the clearance message to Elizabeth (admin of the 69k-member "Parents of Children with Speech and Language Delay" group) is still unsent — the founder post is the one unlock only I can pull.
-- New 2026-09-25: the morning watch surfaced a genuinely in-scope parent (10-year-old, speech-only IEP for R, L, R-blend articulation; school may be ending the IEP) and a value-first reply comment was drafted for me. Both are still sitting unsent — nothing in the pilot moves without my sends.
+- New 2026-09-25: the morning watch surfaced a genuinely in-scope parent (10-year-old, speech-only IEP for R, L and R-blend articulation; school may be ending the IEP) and a value-first reply comment was drafted for me. Both are still sitting unsent — nothing in the pilot moves without my sends.
 - New 2026-09-26: the watch surfaced a second in-scope parent (parent of a 2.5-year-old exiting early intervention, asking about insurance coverage and therapy frequency, feels once a week isn't enough) with another value-first reply comment drafted. Also still unsent — my sends are the only thing that can move the pipeline.
+- New 2026-09-27: the watch surfaced a third in-scope parent — an Ontario parent whose daughter is on a waitlist, asking how others used urgent funding while waiting (waitlist + cost pain; Ontario geography is ideal; caveat: post doesn't say the waitlist is for speech). A third value-first reply comment was drafted. Also unsent, same as the rest.
 - Never cold-DM parents. Every outreach message is drafted for me and sent only after I approve it.
 - Key dates: first sessions and investor video Oct 2; materials Oct 6; I travel to Spain Oct 7–21; investor meetings Oct 24–Nov 6.
