@@ -1,5 +1,5 @@
 # Wasiq's context card
-Last updated: 2026-10-01
+Last updated: 2026-10-03
 
 Share this file with any AI assistant working with me. Read it fresh at the start of every conversation and keep your advice consistent with it. If something durable gets decided here, say so plainly, so it lands back in this card — this card is the live sync surface between my AIs.
 
@@ -12,7 +12,7 @@ Share this file with any AI assistant working with me. Read it fresh at the star
 ## How I like to work with AI
 - Be proactive, not reactive: surface blockers, deadlines, and next moves without me asking, and take safe work off my plate.
 - I split work across tools on purpose: backend/server work to one agent, landing pages to another (Codex), repo-based work to ChatGPT. Expect to collaborate through files and repos, not just chat.
-- ChatGPT is my main day-to-day AI. This card is the live wire between my AIs: Muse publishes it to wasiq-zia0/qull-connect at `context/wasiq-context.md`; a watcher files ChatGPT's `[wire]` notes back every 30 minutes. My ChatGPT-side custom-GPT setup (~5 min, desktop) is the still-pending, unverified half of the wire — seven days in, still zero wire notes as of 2026-10-01.
+- ChatGPT is my main day-to-day AI. This card is the live wire between my AIs: Muse publishes it to wasiq-zia0/qull-connect at `context/wasiq-context.md`; a watcher files ChatGPT's `[wire]` notes back every 30 minutes. My ChatGPT-side custom-GPT setup (~5 min, desktop) is the still-pending, unverified half of the wire — nine days in, still zero wire notes as of 2026-10-03.
 - In Messenger: I open threads, my AI drafts follow-ups in my voice, and nothing goes out without my tap.
 
 ## Hard boundaries (every AI working with me must follow these)
@@ -29,9 +29,10 @@ Share this file with any AI assistant working with me. Read it fresh at the star
 - Open work: fix the doubled /api/api paths in the ten OpenAPI specs; confirm the requests library is installed in all ten service environments (a paste block is sitting with me, not yet run — the first real card setup could error). Meta Muse directory submission is staged but blocked on privacy/terms/API-docs pages (being built from the repo), my work email, and my support email. (Open question: whether Meta forces connector payments through its own setup or allows my Stripe integration.)
 - Public launch is blocked on independent verification: auth/tenant isolation, public hosting, legal review, and a witnessed live charge-and-refund test.
 
-## Sophia (12-family pilot, starts early October 2026)
+## Sophia (12-family pilot, started October 2026)
 - Free pilot with 12 families whose kids do speech-sound/articulation practice. Built with guidance from our SLP advisor. It does not diagnose and does not replace professional care. Apraxia is out of scope.
 - Recruiting through Facebook parent groups. Pipeline is 0/12. The roster-confirmation deadline (2026-09-25) has now PASSED unmet, and the clearance message to Elizabeth (admin of the 69k-member "Parents of Children with Speech and Language Delay" group) is still unsent — the founder post is the one unlock only I can pull.
-- Sept 25–27: the daily watch surfaced three in-scope parents — a 10-year-old with a speech-only IEP for R, L and R-blend articulation (school may end the IEP), a parent of a 2.5-year-old exiting early intervention asking about insurance coverage and therapy frequency, and an Ontario parent whose daughter is on a waitlist asking how others used urgent funding while waiting. A value-first reply comment was drafted for each. All three are still sitting unsent — nothing in the pilot moves without my sends. The Sept 28, Sept 29, and Sept 30 watches found no new candidates.
+- The daily watch has found no new candidates since Sept 27. Four value-first reply comments are drafted and still unsent (a 10-year-old's speech-only R/L IEP post, a 2.5-year-old's early-intervention exit/insurance post, an Ontario mom's waitlist/funding post, and an articulation-printables post). Nothing in the pilot moves without my sends.
+- Oct 1: CI failed on the Everything-Qull repo's main branch (Lint, test, and build job, commit a04bbf5) — cause not yet diagnosed. Note: the repos are different (wasiq-zia0/qull-connect holds the Qull Connect work; wasiq-zia0/Everything-Qull holds the Sophia work).
 - Never cold-DM parents. Every outreach message is drafted for me and sent only after I approve it.
-- Key dates: first sessions and investor video TOMORROW, Oct 2; materials Oct 6; I travel to Spain Oct 7–21; investor meetings Oct 24–Nov 6.
+- Key dates: first sessions and investor video were Oct 2 (no outcome recorded yet); materials Oct 6; I travel to Spain Oct 7–21; investor meetings Oct 24–Nov 6.
