@@ -1,5 +1,5 @@
 # Wasiq's context card
-Last updated: 2026-10-03
+Last updated: 2026-10-04
 
 Share this file with any AI assistant working with me. Read it fresh at the start of every conversation and keep your advice consistent with it. If something durable gets decided here, say so plainly, so it lands back in this card — this card is the live sync surface between my AIs.
 
@@ -12,7 +12,7 @@ Share this file with any AI assistant working with me. Read it fresh at the star
 ## How I like to work with AI
 - Be proactive, not reactive: surface blockers, deadlines, and next moves without me asking, and take safe work off my plate.
 - I split work across tools on purpose: backend/server work to one agent, landing pages to another (Codex), repo-based work to ChatGPT. Expect to collaborate through files and repos, not just chat.
-- ChatGPT is my main day-to-day AI. This card is the live wire between my AIs: Muse publishes it to wasiq-zia0/qull-connect at `context/wasiq-context.md`; a watcher files ChatGPT's `[wire]` notes back every 30 minutes. My ChatGPT-side custom-GPT setup (~5 min, desktop) is the still-pending, unverified half of the wire — nine days in, still zero wire notes as of 2026-10-03.
+- ChatGPT is my main day-to-day AI. This card is the live wire between my AIs: Muse publishes it to wasiq-zia0/qull-connect at `context/wasiq-context.md`; a watcher files ChatGPT's `[wire]` notes back every 30 minutes. My ChatGPT-side custom-GPT setup (~5 min, desktop) is the still-pending, unverified half of the wire — ten days in, still zero wire notes as of 2026-10-04.
 - In Messenger: I open threads, my AI drafts follow-ups in my voice, and nothing goes out without my tap.
 
 ## Hard boundaries (every AI working with me must follow these)
@@ -32,7 +32,7 @@ Share this file with any AI assistant working with me. Read it fresh at the star
 ## Sophia (12-family pilot, started October 2026)
 - Free pilot with 12 families whose kids do speech-sound/articulation practice. Built with guidance from our SLP advisor. It does not diagnose and does not replace professional care. Apraxia is out of scope.
 - Recruiting through Facebook parent groups. Pipeline is 0/12. The roster-confirmation deadline (2026-09-25) has now PASSED unmet, and the clearance message to Elizabeth (admin of the 69k-member "Parents of Children with Speech and Language Delay" group) is still unsent — the founder post is the one unlock only I can pull.
-- The daily watch has found no new candidates since Sept 27. Four value-first reply comments are drafted and still unsent (a 10-year-old's speech-only R/L IEP post, a 2.5-year-old's early-intervention exit/insurance post, an Ontario mom's waitlist/funding post, and an articulation-printables post). Nothing in the pilot moves without my sends.
+- Oct 1 watch found one in-scope parent (69k group: parent of a 4-year-old doing home articulation practice, struggling with repetitive drills and costly materials); Oct 2 and Oct 3 watches found no new candidates. Four value-first reply comments are drafted and still unsent (a 10-year-old's speech-only R/L IEP post, a 2.5-year-old's early-intervention exit/insurance post, an Ontario mom's waitlist/funding post, and the Oct 1 articulation-printables post). Nothing in the pilot moves without my sends.
 - Oct 1: CI failed on the Everything-Qull repo's main branch (Lint, test, and build job, commit a04bbf5) — cause not yet diagnosed. Note: the repos are different (wasiq-zia0/qull-connect holds the Qull Connect work; wasiq-zia0/Everything-Qull holds the Sophia work).
 - Never cold-DM parents. Every outreach message is drafted for me and sent only after I approve it.
 - Key dates: first sessions and investor video were Oct 2 (no outcome recorded yet); materials Oct 6; I travel to Spain Oct 7–21; investor meetings Oct 24–Nov 6.
