@@ -1,10 +1,10 @@
 # Wasiq's context card
-Last updated: 2026-10-07
+Last updated: 2026-10-08
 
 Share this file with any AI assistant working with me. Read it fresh at the start of every conversation and keep your advice consistent with it. If something durable gets decided here, say so plainly, so it lands back in this card — this card is the live sync surface between my AIs.
 
 ## Who I am
-- Muhammad Wasiq Zia ("Wasiq"), founder. I live in Ajax, Ontario, Canada (timezone America/Toronto). Married to Romaesa.
+- Muhammad Wasiq Zia ("Wasiq"), founder. I live in Ajax, Ontario, Canada (timezone America/Toronto; currently on Europe/Lisbon time — Spain/Portugal trip Oct 7–21). Married to Romaesa.
 - I run two things: Qull (qull.io) — AI personalities for specialized expertise; and Sophia (meetsophia.now) — an AI speech-practice partner for kids, my flagship product.
 - I grew up with a stammer. That is why Sophia exists.
 - I work from my iPhone, in short messages and screenshots. When I need to run something on a computer, give me the exact copy-paste-ready command and nothing else around it ("Just give the paste thing").
@@ -12,8 +12,8 @@ Share this file with any AI assistant working with me. Read it fresh at the star
 ## How I like to work with AI
 - Be proactive, not reactive: surface blockers, deadlines, and next moves without me asking, and take safe work off my plate.
 - I split work across tools on purpose: backend/server work to one agent, landing pages to another (Codex), repo-based work to ChatGPT. Expect to collaborate through files and repos, not just chat.
-- ChatGPT is my main day-to-day AI. This card is the live wire between my AIs: Muse publishes it to wasiq-zia0/qull-connect at `context/wasiq-context.md`; a watcher files ChatGPT's `[wire]` notes back every 30 minutes. My ChatGPT-side custom-GPT setup (~5 min, desktop) is the still-pending, unverified half of the wire — thirteen days in, still zero wire notes as of 2026-10-07.
-- Outreach volume matters to me right now: I set a target of ~80–100 first-message drafts/day (2026-10-07) and expect the scanning engine to get its speed up. Drafts are always in my voice, paired with the source post; I send every first message myself.
+- ChatGPT is my main day-to-day AI. This card is the live wire between my AIs: Muse publishes it to wasiq-zia0/qull-connect at `context/wasiq-context.md`; a watcher files ChatGPT's `[wire]` notes back every 30 minutes. My ChatGPT-side custom-GPT setup (~5 min, desktop) is the still-pending, unverified half of the wire — fourteen days in, still zero wire notes as of 2026-10-08.
+- Outreach volume matters to me right now: I set a target of ~80–100 first-message drafts/day (2026-10-07) and expect the scanning engine to get its speed up. Drafts are always in my voice, paired with the source post; I send every first message myself. ~32 openers are queued awaiting my sends as of 2026-10-08 — 32 is fine, I need 80–100.
 
 ## Hard boundaries (every AI working with me must follow these)
 - Never send, post, comment, or DM anything as me. Drafts only — I send everything myself.
@@ -33,9 +33,11 @@ Share this file with any AI assistant working with me. Read it fresh at the star
 
 ## Sophia (pilot rescoped: 100 applicants → select 10 families, decided 2026-10-06)
 - Free pilot for 10 families whose kids do speech-sound/articulation practice. Built with guidance from our SLP advisor. It does not diagnose and does not replace professional care. Apraxia is out of scope.
-- Recruiting through Facebook parent groups. Pipeline: 0/100 applications as of 2026-10-07 morning. A widened hourly scanning engine (runs 07:00–23:00 my local time, incl. Europe/Madrid while I travel) has built a draft queue of ~28 first-message openers awaiting my sends; the API-visible parent pool in the side groups is nearly exhausted.
+- Recruiting through Facebook parent groups. Pipeline: 0/100 applications as of 2026-10-07 (application form verified live, 0 responses). A widened hourly scanning engine (runs 07:00–23:00 my local time, incl. Europe/Madrid–Europe/Lisbon while I travel) has built a draft queue of ~32 first-message openers awaiting my sends.
+- New supply unlocked 2026-10-08: "Parents of Toddlers with Speech Delay (Late-Talkers)" (62k members) — I was already a member but it was never scanned; API-visible with fresh posts, now a Tier 1 group in the engine's rotation. A join list for 6–7 more big parent groups (86k down to 1k members) is with me; the engine picks them up once I join. Older groups' API-visible pool is nearly exhausted (2,700+ posts scanned; the 69k group's keyword-sweep pool is recycled — plain newest-scans are the productive channel there now).
 - Elizabeth clearance message (admin of the 69k-member "Parents of Children with Speech and Language Delay" group — the founder post is the main funnel unlock): I said I sent it 2026-10-07 ~01:25 EDT; delivery is not yet confirmed.
+- Founder-post draft for the 69k group was presented to me 2026-10-07 for approval. Still needs Elizabeth's clearance, the $50 promo fee, the live form link, and my explicit approval before anything goes up.
 - Workflow: I send every first message myself. The assistant carries threads after I open them and sends the application form link on a clear yes (see exception in Hard boundaries). The form is moving from the Google Form to one I build on meetsophia.now (submissions to my email) — no form link goes out until I provide the URL.
 - Never cold-DM parents: no first message goes out before I send it.
-- Key dates: I travel to Spain Oct 7–21; investor meetings Oct 24–Nov 6. An investor one-pager draft is with me for plane review — three decisions still mine: is the $2M USD or CAD, does the narrative lead with Sophia or Qull Connect, and the use-of-funds split.
+- Key dates: I travel in Spain/Portugal Oct 7–21; investor meetings Oct 24–Nov 6. An investor one-pager draft is with me for plane review — three decisions still mine: is the $2M USD or CAD, does the narrative lead with Sophia or Qull Connect, and the use-of-funds split.
 - Note: the repos are different (wasiq-zia0/qull-connect holds the Qull Connect work; wasiq-zia0/Everything-Qull holds the Sophia work).
